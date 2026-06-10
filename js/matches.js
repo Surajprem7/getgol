@@ -49,21 +49,29 @@ const MATCHES = [
   {id:48,group:'H',home:'Croatia',away:'Italy',date:'2026-06-25',time:'00:30',venue:'BC Place, Vancouver'},
 ];
 
-const FLAGS = {
-  'USA':'🇺🇸','Mexico':'🇲🇽','Panama':'🇵🇦','Ecuador':'🇪🇨',
-  'Argentina':'🇦🇷','Albania':'🇦🇱','Morocco':'🇲🇦','Uzbekistan':'🇺🇿',
-  'Brazil':'🇧🇷','Croatia':'🇭🇷','Japan':'🇯🇵','Chile':'🇨🇱',
-  'England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Serbia':'🇷🇸','Denmark':'🇩🇰','Senegal':'🇸🇳',
-  'France':'🇫🇷','Guatemala':'🇬🇹','Germany':'🇩🇪','Saudi Arabia':'🇸🇦',
-  'Spain':'🇪🇸','South Korea':'🇰🇷','Belgium':'🇧🇪','New Zealand':'🇳🇿',
-  'Portugal':'🇵🇹','Hungary':'🇭🇺','Netherlands':'🇳🇱','Iraq':'🇮🇶',
-  'Italy':'🇮🇹','Uruguay':'🇺🇾','Tanzania':'🇹🇿',
-};
+function getFlag(team) {
+  const codes = {
+    'USA':'us','Mexico':'mx','Panama':'pa','Ecuador':'ec',
+    'Argentina':'ar','Albania':'al','Morocco':'ma','Uzbekistan':'uz',
+    'Brazil':'br','Croatia':'hr','Japan':'jp','Chile':'cl',
+    'England':'gb-eng','Serbia':'rs','Denmark':'dk','Senegal':'sn',
+    'France':'fr','Guatemala':'gt','Germany':'de','Saudi Arabia':'sa',
+    'Spain':'es','South Korea':'kr','Belgium':'be','New Zealand':'nz',
+    'Portugal':'pt','Hungary':'hu','Netherlands':'nl','Iraq':'iq',
+    'Italy':'it','Uruguay':'uy','Tanzania':'tz','Australia':'au',
+    'Switzerland':'ch',
+  };
+  const code = codes[team];
+  if (!code) return '🏳️';
+  return `<img src="https://flagcdn.com/40x30/${code}.png" width="40" height="30" style="border-radius:3px" alt="${team}">`;
+}
 
-function getFlag(team){return FLAGS[team]||'🏳️';}
-function getTeamMatches(team){return MATCHES.filter(m=>m.home===team||m.away===team);}
-function formatIST(date,time){
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const d=new Date(date);
+function getTeamMatches(team){
+  return MATCHES.filter(m => m.home === team || m.away === team);
+}
+
+function formatIST(date, time) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const d = new Date(date);
   return `${d.getDate()} ${months[d.getMonth()]} • ${time} IST`;
 }
