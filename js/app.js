@@ -1,14 +1,17 @@
 function getCountryCode(team) {
   const codes = {
-    'USA':'us','Mexico':'mx','Panama':'pa','Ecuador':'ec',
-    'Argentina':'ar','Albania':'al','Morocco':'ma','Uzbekistan':'uz',
-    'Brazil':'br','Croatia':'hr','Japan':'jp','Chile':'cl',
-    'England':'gb-eng','Serbia':'rs','Denmark':'dk','Senegal':'sn',
-    'France':'fr','Guatemala':'gt','Germany':'de','Saudi Arabia':'sa',
-    'Spain':'es','South Korea':'kr','Belgium':'be','New Zealand':'nz',
-    'Portugal':'pt','Hungary':'hu','Netherlands':'nl','Iraq':'iq',
-    'Italy':'it','Uruguay':'uy','Tanzania':'tz','Australia':'au',
-    'Switzerland':'ch','Uzbekistan':'uz','Albania':'al',
+    'Mexico':'mx','South Africa':'za','South Korea':'kr','Czech Republic':'cz',
+    'Canada':'ca','Bosnia':'ba','Qatar':'qa','Switzerland':'ch',
+    'Brazil':'br','Morocco':'ma','Haiti':'ht','Scotland':'gb-sct',
+    'USA':'us','Paraguay':'py','Australia':'au','Turkey':'tr',
+    'Curacao':'cw','Ivory Coast':'ci','Ecuador':'ec','Germany':'de',
+    'Netherlands':'nl','Japan':'jp','Tunisia':'tn','Sweden':'se',
+    'Belgium':'be','Egypt':'eg','Iran':'ir','New Zealand':'nz',
+    'Spain':'es','Cape Verde':'cv','Saudi Arabia':'sa','Uruguay':'uy',
+    'France':'fr','Senegal':'sn','Norway':'no','Iraq':'iq',
+    'Argentina':'ar','Algeria':'dz','Austria':'at','Jordan':'jo',
+    'Portugal':'pt','Uzbekistan':'uz','Colombia':'co','DR Congo':'cd',
+    'England':'gb-eng','Croatia':'hr','Ghana':'gh','Panama':'pa',
   };
   return codes[team] || 'un';
 }
@@ -36,53 +39,82 @@ function registerSW() {
 
 function showTeamPicker() {
   const teams = [
-    {name:'Argentina',color:'#74ACDF'},
-    {name:'Brazil',color:'#009C3B'},
-    {name:'England',color:'#CF111B'},
-    {name:'France',color:'#002395'},
-    {name:'Germany',color:'#FFD700'},
-    {name:'Spain',color:'#AA151B'},
-    {name:'Portugal',color:'#006600'},
-    {name:'Netherlands',color:'#FF6600'},
-    {name:'Italy',color:'#003399'},
-    {name:'Belgium',color:'#EF3340'},
-    {name:'Croatia',color:'#FF0000'},
-    {name:'Uruguay',color:'#5EB6E4'},
+    // Group A
     {name:'Mexico',color:'#006847'},
-    {name:'USA',color:'#B22234'},
-    {name:'Japan',color:'#BC002D'},
+    {name:'South Africa',color:'#007A4D'},
     {name:'South Korea',color:'#003478'},
-    {name:'Morocco',color:'#C1272D'},
-    {name:'Senegal',color:'#00853F'},
-    {name:'Denmark',color:'#C60C30'},
-    {name:'Serbia',color:'#C6363C'},
-    {name:'Ecuador',color:'#FFD100'},
-    {name:'Saudi Arabia',color:'#006C35'},
-    {name:'Australia',color:'#FFCD00'},
+    {name:'Czech Republic',color:'#D7141A'},
+    // Group B
+    {name:'Canada',color:'#FF0000'},
+    {name:'Bosnia',color:'#002395'},
+    {name:'Qatar',color:'#8D1B3D'},
     {name:'Switzerland',color:'#FF0000'},
-    {name:'Chile',color:'#D52B1E'},
-    {name:'Hungary',color:'#CE2939'},
-    {name:'Albania',color:'#E41E20'},
+    // Group C
+    {name:'Brazil',color:'#009C3B'},
+    {name:'Morocco',color:'#C1272D'},
+    {name:'Haiti',color:'#00209F'},
+    {name:'Scotland',color:'#003F87'},
+    // Group D
+    {name:'USA',color:'#B22234'},
+    {name:'Paraguay',color:'#D52B1E'},
+    {name:'Australia',color:'#FFCD00'},
+    {name:'Turkey',color:'#E30A17'},
+    // Group E
+    {name:'Germany',color:'#FFD700'},
+    {name:'Curacao',color:'#002B7F'},
+    {name:'Ivory Coast',color:'#F77F00'},
+    {name:'Ecuador',color:'#FFD100'},
+    // Group F
+    {name:'Netherlands',color:'#FF6600'},
+    {name:'Japan',color:'#BC002D'},
+    {name:'Tunisia',color:'#E70013'},
+    {name:'Sweden',color:'#006AA7'},
+    // Group G
+    {name:'Belgium',color:'#EF3340'},
+    {name:'Egypt',color:'#CE1126'},
+    {name:'Iran',color:'#239F40'},
     {name:'New Zealand',color:'#00247D'},
-    {name:'Guatemala',color:'#4997D0'},
-    {name:'Panama',color:'#005293'},
+    // Group H
+    {name:'Spain',color:'#AA151B'},
+    {name:'Cape Verde',color:'#003893'},
+    {name:'Saudi Arabia',color:'#006C35'},
+    {name:'Uruguay',color:'#5EB6E4'},
+    // Group I
+    {name:'France',color:'#002395'},
+    {name:'Senegal',color:'#00853F'},
+    {name:'Norway',color:'#EF2B2D'},
     {name:'Iraq',color:'#007A3D'},
-    {name:'Tanzania',color:'#1EB53A'},
+    // Group J
+    {name:'Argentina',color:'#74ACDF'},
+    {name:'Algeria',color:'#006233'},
+    {name:'Austria',color:'#ED2939'},
+    {name:'Jordan',color:'#007A3D'},
+    // Group K
+    {name:'Portugal',color:'#006600'},
+    {name:'Uzbekistan',color:'#1EB53A'},
+    {name:'Colombia',color:'#FCD116'},
+    {name:'DR Congo',color:'#007FFF'},
+    // Group L
+    {name:'England',color:'#CF111B'},
+    {name:'Croatia',color:'#FF0000'},
+    {name:'Ghana',color:'#006B3F'},
+    {name:'Panama',color:'#005293'},
   ];
 
   document.getElementById('app').innerHTML = `
     <div style="min-height:100vh;background:#0d0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem">
       <div style="font-size:3rem">⚽</div>
       <h1 style="font-size:2rem;font-weight:900;color:#fff;margin-bottom:0.25rem">Gol!</h1>
-      <p style="color:#aaa;margin-bottom:2rem">Pick your team to get started</p>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;max-width:480px;width:100%">
+      <p style="color:#aaa;margin-bottom:0.5rem">FIFA World Cup 2026</p>
+      <p style="color:#666;font-size:0.8rem;margin-bottom:2rem">48 teams • 12 groups • 104 matches</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;max-width:520px;width:100%">
         ${teams.map(t => `
           <button onclick="selectTeam('${t.name}','${t.color}')"
-            style="background:#1a1a2e;border:2px solid #333;border-radius:12px;padding:0.75rem 0.5rem;cursor:pointer;color:#fff;font-size:0.7rem;text-align:center"
+            style="background:#1a1a2e;border:2px solid #333;border-radius:12px;padding:0.75rem 0.5rem;cursor:pointer;color:#fff;font-size:0.65rem;text-align:center"
             onmouseover="this.style.borderColor='${t.color}'"
             onmouseout="this.style.borderColor='#333'">
             <img src="https://flagcdn.com/40x30/${getCountryCode(t.name)}.png" width="40" height="30" style="border-radius:3px;display:block;margin:0 auto">
-            <div style="margin-top:0.4rem">${t.name}</div>
+            <div style="margin-top:0.4rem;line-height:1.2">${t.name}</div>
           </button>
         `).join('')}
       </div>
@@ -114,9 +146,9 @@ function showApp() {
         </div>
       </header>
       <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto">
-        <button onclick="showTab('matches')" id="tab-matches" style="padding:0.5rem 1rem;border-radius:20px;border:none;background:${APP.teamColor};color:#000;font-weight:700;cursor:pointer;white-space:nowrap">Matches</button>
-        <button onclick="showTab('predict')" id="tab-predict" style="padding:0.5rem 1rem;border-radius:20px;border:2px solid #333;background:transparent;color:#fff;cursor:pointer;white-space:nowrap">Predict</button>
-        <button onclick="showTab('watch')" id="tab-watch" style="padding:0.5rem 1rem;border-radius:20px;border:2px solid #333;background:transparent;color:#fff;cursor:pointer;white-space:nowrap">Watch</button>
+        <button onclick="showTab('matches')" style="padding:0.5rem 1rem;border-radius:20px;border:none;background:${APP.teamColor};color:#000;font-weight:700;cursor:pointer;white-space:nowrap">Matches</button>
+        <button onclick="showTab('predict')" style="padding:0.5rem 1rem;border-radius:20px;border:2px solid #333;background:transparent;color:#fff;cursor:pointer;white-space:nowrap">Predict</button>
+        <button onclick="showTab('watch')" style="padding:0.5rem 1rem;border-radius:20px;border:2px solid #333;background:transparent;color:#fff;cursor:pointer;white-space:nowrap">Watch</button>
       </nav>
       <div id="tab-content"></div>
     </div>
