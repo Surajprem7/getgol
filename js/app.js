@@ -1,3 +1,18 @@
+function getCountryCode(team) {
+  const codes = {
+    'USA':'us','Mexico':'mx','Panama':'pa','Ecuador':'ec',
+    'Argentina':'ar','Albania':'al','Morocco':'ma','Uzbekistan':'uz',
+    'Brazil':'br','Croatia':'hr','Japan':'jp','Chile':'cl',
+    'England':'gb-eng','Serbia':'rs','Denmark':'dk','Senegal':'sn',
+    'France':'fr','Guatemala':'gt','Germany':'de','Saudi Arabia':'sa',
+    'Spain':'es','South Korea':'kr','Belgium':'be','New Zealand':'nz',
+    'Portugal':'pt','Hungary':'hu','Netherlands':'nl','Iraq':'iq',
+    'Italy':'it','Uruguay':'uy','Tanzania':'tz','Australia':'au',
+    'Switzerland':'ch','Uzbekistan':'uz','Albania':'al',
+  };
+  return codes[team] || 'un';
+}
+
 const APP = {
   team: localStorage.getItem('gol_team') || null,
   teamName: localStorage.getItem('gol_team_name') || null,
@@ -21,38 +36,38 @@ function registerSW() {
 
 function showTeamPicker() {
   const teams = [
-    {name:'Argentina',flag:'🇦🇷',color:'#74ACDF'},
-    {name:'Brazil',flag:'🇧🇷',color:'#009C3B'},
-    {name:'England',flag:'🏴',color:'#CF111B'},
-    {name:'France',flag:'🇫🇷',color:'#002395'},
-    {name:'Germany',flag:'🇩🇪',color:'#FFD700'},
-    {name:'Spain',flag:'🇪🇸',color:'#AA151B'},
-    {name:'Portugal',flag:'🇵🇹',color:'#006600'},
-    {name:'Netherlands',flag:'🇳🇱',color:'#FF6600'},
-    {name:'Italy',flag:'🇮🇹',color:'#003399'},
-    {name:'Belgium',flag:'🇧🇪',color:'#EF3340'},
-    {name:'Croatia',flag:'🇭🇷',color:'#FF0000'},
-    {name:'Uruguay',flag:'🇺🇾',color:'#5EB6E4'},
-    {name:'Mexico',flag:'🇲🇽',color:'#006847'},
-    {name:'USA',flag:'🇺🇸',color:'#B22234'},
-    {name:'Japan',flag:'🇯🇵',color:'#BC002D'},
-    {name:'South Korea',flag:'🇰🇷',color:'#003478'},
-    {name:'Morocco',flag:'🇲🇦',color:'#C1272D'},
-    {name:'Senegal',flag:'🇸🇳',color:'#00853F'},
-    {name:'Denmark',flag:'🇩🇰',color:'#C60C30'},
-    {name:'Serbia',flag:'🇷🇸',color:'#C6363C'},
-    {name:'Ecuador',flag:'🇪🇨',color:'#FFD100'},
-    {name:'Saudi Arabia',flag:'🇸🇦',color:'#006C35'},
-    {name:'Australia',flag:'🇦🇺',color:'#FFCD00'},
-    {name:'Switzerland',flag:'🇨🇭',color:'#FF0000'},
-    {name:'Chile',flag:'🇨🇱',color:'#D52B1E'},
-    {name:'Hungary',flag:'🇭🇺',color:'#CE2939'},
-    {name:'Albania',flag:'🇦🇱',color:'#E41E20'},
-    {name:'New Zealand',flag:'🇳🇿',color:'#00247D'},
-    {name:'Guatemala',flag:'🇬🇹',color:'#4997D0'},
-    {name:'Panama',flag:'🇵🇦',color:'#005293'},
-    {name:'Iraq',flag:'🇮🇶',color:'#007A3D'},
-    {name:'Tanzania',flag:'🇹🇿',color:'#1EB53A'},
+    {name:'Argentina',color:'#74ACDF'},
+    {name:'Brazil',color:'#009C3B'},
+    {name:'England',color:'#CF111B'},
+    {name:'France',color:'#002395'},
+    {name:'Germany',color:'#FFD700'},
+    {name:'Spain',color:'#AA151B'},
+    {name:'Portugal',color:'#006600'},
+    {name:'Netherlands',color:'#FF6600'},
+    {name:'Italy',color:'#003399'},
+    {name:'Belgium',color:'#EF3340'},
+    {name:'Croatia',color:'#FF0000'},
+    {name:'Uruguay',color:'#5EB6E4'},
+    {name:'Mexico',color:'#006847'},
+    {name:'USA',color:'#B22234'},
+    {name:'Japan',color:'#BC002D'},
+    {name:'South Korea',color:'#003478'},
+    {name:'Morocco',color:'#C1272D'},
+    {name:'Senegal',color:'#00853F'},
+    {name:'Denmark',color:'#C60C30'},
+    {name:'Serbia',color:'#C6363C'},
+    {name:'Ecuador',color:'#FFD100'},
+    {name:'Saudi Arabia',color:'#006C35'},
+    {name:'Australia',color:'#FFCD00'},
+    {name:'Switzerland',color:'#FF0000'},
+    {name:'Chile',color:'#D52B1E'},
+    {name:'Hungary',color:'#CE2939'},
+    {name:'Albania',color:'#E41E20'},
+    {name:'New Zealand',color:'#00247D'},
+    {name:'Guatemala',color:'#4997D0'},
+    {name:'Panama',color:'#005293'},
+    {name:'Iraq',color:'#007A3D'},
+    {name:'Tanzania',color:'#1EB53A'},
   ];
 
   document.getElementById('app').innerHTML = `
@@ -66,8 +81,8 @@ function showTeamPicker() {
             style="background:#1a1a2e;border:2px solid #333;border-radius:12px;padding:0.75rem 0.5rem;cursor:pointer;color:#fff;font-size:0.7rem;text-align:center"
             onmouseover="this.style.borderColor='${t.color}'"
             onmouseout="this.style.borderColor='#333'">
-            <div style="font-size:1.8rem">${t.flag}</div>
-            <div style="margin-top:0.25rem">${t.name}</div>
+            <img src="https://flagcdn.com/40x30/${getCountryCode(t.name)}.png" width="40" height="30" style="border-radius:3px;display:block;margin:0 auto">
+            <div style="margin-top:0.4rem">${t.name}</div>
           </button>
         `).join('')}
       </div>
@@ -93,7 +108,10 @@ function showApp() {
           <span style="font-size:1.5rem;font-weight:900;color:${APP.teamColor}">Gol!</span>
           <span style="color:#aaa;font-size:0.8rem;margin-left:0.5rem">WC 2026</span>
         </div>
-        <div style="color:#aaa;font-size:0.8rem;cursor:pointer" onclick="resetTeam()">${getFlag(APP.teamName)} ${APP.teamName} ✕</div>
+        <div style="display:flex;align-items:center;gap:0.5rem;color:#aaa;font-size:0.8rem;cursor:pointer" onclick="resetTeam()">
+          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px">
+          ${APP.teamName} ✕
+        </div>
       </header>
       <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto">
         <button onclick="showTab('matches')" id="tab-matches" style="padding:0.5rem 1rem;border-radius:20px;border:none;background:${APP.teamColor};color:#000;font-weight:700;cursor:pointer;white-space:nowrap">Matches</button>
@@ -118,12 +136,12 @@ function showTab(tab) {
         <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.5rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="text-align:center;flex:1">
-            <div style="font-size:1.8rem">${getFlag(m.home)}</div>
+            <img src="https://flagcdn.com/40x30/${getCountryCode(m.home)}.png" width="40" height="30" style="border-radius:3px">
             <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem">${m.home}</div>
           </div>
           <div style="font-size:1.2rem;font-weight:900;color:#aaa;padding:0 1rem">VS</div>
           <div style="text-align:center;flex:1">
-            <div style="font-size:1.8rem">${getFlag(m.away)}</div>
+            <img src="https://flagcdn.com/40x30/${getCountryCode(m.away)}.png" width="40" height="30" style="border-radius:3px">
             <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem">${m.away}</div>
           </div>
         </div>
@@ -133,7 +151,10 @@ function showTab(tab) {
 
     content.innerHTML = `
       ${myMatches.length > 0 ? `
-        <div style="color:${APP.teamColor};font-weight:700;margin-bottom:0.75rem">${getFlag(APP.teamName)} ${APP.teamName} matches</div>
+        <div style="color:${APP.teamColor};font-weight:700;margin-bottom:0.75rem">
+          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px;vertical-align:middle;margin-right:4px">
+          ${APP.teamName} matches
+        </div>
         ${myMatches.map(m => renderMatch(m, true)).join('')}
         <div style="color:#aaa;font-weight:700;margin:1rem 0 0.75rem">All other matches</div>
       ` : ''}
@@ -141,7 +162,7 @@ function showTab(tab) {
     `;
 
   } else if (tab === 'predict') {
-    const upcoming = MATCHES.slice(0, 6);
+    const upcoming = MATCHES.slice(0, 8);
     content.innerHTML = `
       <div style="margin-bottom:1rem">
         <h2 style="color:#fff;margin-bottom:0.25rem">🎯 Predict & Win</h2>
@@ -152,24 +173,24 @@ function showTab(tab) {
           <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.75rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
           <div style="display:flex;gap:0.5rem">
             <button onclick="predict(${m.id},'${m.home}')" id="pred-${m.id}-home"
-              style="flex:1;padding:0.75rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.8rem">
-              ${getFlag(m.home)} ${m.home}
+              style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.75rem;text-align:center">
+              <img src="https://flagcdn.com/32x24/${getCountryCode(m.home)}.png" style="border-radius:2px;display:block;margin:0 auto 4px">
+              ${m.home}
             </button>
             <button onclick="predict(${m.id},'draw')" id="pred-${m.id}-draw"
-              style="padding:0.75rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#aaa;cursor:pointer;font-size:0.8rem">
+              style="padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#aaa;cursor:pointer;font-size:0.75rem">
               Draw
             </button>
             <button onclick="predict(${m.id},'${m.away}')" id="pred-${m.id}-away"
-              style="flex:1;padding:0.75rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.8rem">
-              ${getFlag(m.away)} ${m.away}
+              style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.75rem;text-align:center">
+              <img src="https://flagcdn.com/32x24/${getCountryCode(m.away)}.png" style="border-radius:2px;display:block;margin:0 auto 4px">
+              ${m.away}
             </button>
           </div>
         </div>
       `).join('')}
     `;
-
-    // Load saved predictions
-    MATCHES.slice(0,6).forEach(m => {
+    MATCHES.slice(0,8).forEach(m => {
       const saved = localStorage.getItem('pred_'+m.id);
       if (saved) highlightPrediction(m.id, saved);
     });
@@ -206,7 +227,7 @@ function showTab(tab) {
           <div style="font-size:2rem">💬</div>
           <div>
             <div style="font-size:1.1rem;font-weight:700;color:#25D366">Share Gol!</div>
-            <div style="color:#aaa;font-size:0.85rem;margin-top:0.25rem">Share with your friends</div>
+            <div style="color:#aaa;font-size:0.85rem;margin-top:0.25rem">Tell your friends about this app</div>
             <button onclick="shareApp()" style="margin-top:0.5rem;padding:0.4rem 1rem;background:#25D366;border:none;border-radius:8px;color:#000;font-weight:700;cursor:pointer;font-size:0.8rem">Share via WhatsApp</button>
           </div>
         </div>
@@ -231,9 +252,9 @@ function highlightPrediction(matchId, pick) {
     b.style.borderColor = '#333';
     b.style.background = '#0d0d1a';
   });
-  if (pick === m.home && homeBtn) { homeBtn.style.borderColor = APP.teamColor; homeBtn.style.background = APP.teamColor+'33'; }
-  else if (pick === 'draw' && drawBtn) { drawBtn.style.borderColor = '#aaa'; drawBtn.style.background = '#aaa33'; }
-  else if (pick === m.away && awayBtn) { awayBtn.style.borderColor = APP.teamColor; awayBtn.style.background = APP.teamColor+'33'; }
+  if (pick === m.home) { homeBtn.style.borderColor = APP.teamColor; homeBtn.style.background = APP.teamColor+'33'; }
+  else if (pick === 'draw') { drawBtn.style.borderColor = '#aaa'; drawBtn.style.background = '#ffffff22'; }
+  else if (pick === m.away) { awayBtn.style.borderColor = APP.teamColor; awayBtn.style.background = APP.teamColor+'33'; }
 }
 
 function shareApp() {
