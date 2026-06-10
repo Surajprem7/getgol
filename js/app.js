@@ -1,5 +1,3 @@
-// Gol! — Main App Logic
-
 const APP = {
   team: localStorage.getItem('gol_team') || null,
   teamName: localStorage.getItem('gol_team_name') || null,
@@ -23,22 +21,38 @@ function registerSW() {
 
 function showTeamPicker() {
   const teams = [
-    {code:'Argentina',color:'#74ACDF'},{code:'Brazil',color:'#009C3B'},
-    {code:'England',color:'#CF111B'},{code:'France',color:'#002395'},
-    {code:'Germany',color:'#000000'},{code:'Spain',color:'#AA151B'},
-    {code:'Portugal',color:'#006600'},{code:'Netherlands',color:'#FF6600'},
-    {code:'Italy',color:'#003399'},{code:'Belgium',color:'#EF3340'},
-    {code:'Croatia',color:'#FF0000'},{code:'Uruguay',color:'#5EB6E4'},
-    {code:'Mexico',color:'#006847'},{code:'USA',color:'#B22234'},
-    {code:'Japan',color:'#BC002D'},{code:'South Korea',color:'#003478'},
-    {code:'Morocco',color:'#C1272D'},{code:'Senegal',color:'#00853F'},
-    {code:'Denmark',color:'#C60C30'},{code:'Serbia',color:'#C6363C'},
-    {code:'Poland',color:'#DC143C'},{code:'Ecuador',color:'#FFD100'},
-    {code:'Saudi Arabia',color:'#006C35'},{code:'Ghana',color:'#006B3F'},
-    {code:'Australia',color:'#FFCD00'},{code:'Switzerland',color:'#FF0000'},
-    {code:'Chile',color:'#D52B1E'},{code:'Hungary',color:'#CE2939'},
-    {code:'Albania',color:'#E41E20'},{code:'New Zealand',color:'#00247D'},
-    {code:'Guatemala',color:'#4997D0'},{code:'Panama',color:'#005293'},
+    {name:'Argentina',flag:'🇦🇷',color:'#74ACDF'},
+    {name:'Brazil',flag:'🇧🇷',color:'#009C3B'},
+    {name:'England',flag:'🏴',color:'#CF111B'},
+    {name:'France',flag:'🇫🇷',color:'#002395'},
+    {name:'Germany',flag:'🇩🇪',color:'#FFD700'},
+    {name:'Spain',flag:'🇪🇸',color:'#AA151B'},
+    {name:'Portugal',flag:'🇵🇹',color:'#006600'},
+    {name:'Netherlands',flag:'🇳🇱',color:'#FF6600'},
+    {name:'Italy',flag:'🇮🇹',color:'#003399'},
+    {name:'Belgium',flag:'🇧🇪',color:'#EF3340'},
+    {name:'Croatia',flag:'🇭🇷',color:'#FF0000'},
+    {name:'Uruguay',flag:'🇺🇾',color:'#5EB6E4'},
+    {name:'Mexico',flag:'🇲🇽',color:'#006847'},
+    {name:'USA',flag:'🇺🇸',color:'#B22234'},
+    {name:'Japan',flag:'🇯🇵',color:'#BC002D'},
+    {name:'South Korea',flag:'🇰🇷',color:'#003478'},
+    {name:'Morocco',flag:'🇲🇦',color:'#C1272D'},
+    {name:'Senegal',flag:'🇸🇳',color:'#00853F'},
+    {name:'Denmark',flag:'🇩🇰',color:'#C60C30'},
+    {name:'Serbia',flag:'🇷🇸',color:'#C6363C'},
+    {name:'Ecuador',flag:'🇪🇨',color:'#FFD100'},
+    {name:'Saudi Arabia',flag:'🇸🇦',color:'#006C35'},
+    {name:'Australia',flag:'🇦🇺',color:'#FFCD00'},
+    {name:'Switzerland',flag:'🇨🇭',color:'#FF0000'},
+    {name:'Chile',flag:'🇨🇱',color:'#D52B1E'},
+    {name:'Hungary',flag:'🇭🇺',color:'#CE2939'},
+    {name:'Albania',flag:'🇦🇱',color:'#E41E20'},
+    {name:'New Zealand',flag:'🇳🇿',color:'#00247D'},
+    {name:'Guatemala',flag:'🇬🇹',color:'#4997D0'},
+    {name:'Panama',flag:'🇵🇦',color:'#005293'},
+    {name:'Iraq',flag:'🇮🇶',color:'#007A3D'},
+    {name:'Tanzania',flag:'🇹🇿',color:'#1EB53A'},
   ];
 
   document.getElementById('app').innerHTML = `
@@ -48,12 +62,12 @@ function showTeamPicker() {
       <p style="color:#aaa;margin-bottom:2rem">Pick your team to get started</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;max-width:480px;width:100%">
         ${teams.map(t => `
-          <button onclick="selectTeam('${t.code}','${t.color}')"
+          <button onclick="selectTeam('${t.name}','${t.color}')"
             style="background:#1a1a2e;border:2px solid #333;border-radius:12px;padding:0.75rem 0.5rem;cursor:pointer;color:#fff;font-size:0.7rem;text-align:center"
             onmouseover="this.style.borderColor='${t.color}'"
             onmouseout="this.style.borderColor='#333'">
-            <div style="font-size:1.5rem">${getFlag(t.code)}</div>
-            <div style="margin-top:0.25rem">${t.code}</div>
+            <div style="font-size:1.8rem">${t.flag}</div>
+            <div style="margin-top:0.25rem">${t.name}</div>
           </button>
         `).join('')}
       </div>
@@ -82,9 +96,9 @@ function showApp() {
         <div style="color:#aaa;font-size:0.8rem;cursor:pointer" onclick="resetTeam()">${getFlag(APP.teamName)} ${APP.teamName} ✕</div>
       </header>
       <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto">
-        <button onclick="showTab('matches')" id="tab-matches" style="padding:0.5rem 1rem;border-radius:20px;border:none;background:${APP.teamColor};color:#000;font-weight:700;cursor:pointer">Matches</button>
-        <button onclick="showTab('predict')" id="tab-predict" style="padding:0.5rem 1rem;border-radius:20px;border:2px solid #333;background:transparent;color:#fff;cursor:pointer">Predict</button>
-        <button onclick="showTab('watch')" id="tab-watch" style="padding:0.5rem 1rem;border-radius:20px;border:2px solid #333;background:transparent;color:#fff;cursor:pointer">Watch</button>
+        <button onclick="showTab('matches')" id="tab-matches" style="padding:0.5rem 1rem;border-radius:20px;border:none;background:${APP.teamColor};color:#000;font-weight:700;cursor:pointer;white-space:nowrap">Matches</button>
+        <button onclick="showTab('predict')" id="tab-predict" style="padding:0.5rem 1rem;border-radius:20px;border:2px solid #333;background:transparent;color:#fff;cursor:pointer;white-space:nowrap">Predict</button>
+        <button onclick="showTab('watch')" id="tab-watch" style="padding:0.5rem 1rem;border-radius:20px;border:2px solid #333;background:transparent;color:#fff;cursor:pointer;white-space:nowrap">Watch</button>
       </nav>
       <div id="tab-content"></div>
     </div>
@@ -94,6 +108,7 @@ function showApp() {
 
 function showTab(tab) {
   const content = document.getElementById('tab-content');
+
   if (tab === 'matches') {
     const myMatches = getTeamMatches(APP.teamName);
     const otherMatches = MATCHES.filter(m => m.home !== APP.teamName && m.away !== APP.teamName);
@@ -103,12 +118,12 @@ function showTab(tab) {
         <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.5rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="text-align:center;flex:1">
-            <div style="font-size:1.5rem">${getFlag(m.home)}</div>
+            <div style="font-size:1.8rem">${getFlag(m.home)}</div>
             <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem">${m.home}</div>
           </div>
           <div style="font-size:1.2rem;font-weight:900;color:#aaa;padding:0 1rem">VS</div>
           <div style="text-align:center;flex:1">
-            <div style="font-size:1.5rem">${getFlag(m.away)}</div>
+            <div style="font-size:1.8rem">${getFlag(m.away)}</div>
             <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem">${m.away}</div>
           </div>
         </div>
@@ -124,30 +139,106 @@ function showTab(tab) {
       ` : ''}
       ${otherMatches.map(m => renderMatch(m, false)).join('')}
     `;
+
   } else if (tab === 'predict') {
+    const upcoming = MATCHES.slice(0, 6);
     content.innerHTML = `
-      <div style="text-align:center;padding:3rem;color:#aaa">
-        <div style="font-size:3rem">🎯</div>
-        <p style="margin-top:1rem">Predictions coming soon!</p>
-      </div>`;
+      <div style="margin-bottom:1rem">
+        <h2 style="color:#fff;margin-bottom:0.25rem">🎯 Predict & Win</h2>
+        <p style="color:#aaa;font-size:0.85rem">Who will win these matches?</p>
+      </div>
+      ${upcoming.map(m => `
+        <div style="background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:1rem;margin-bottom:0.75rem">
+          <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.75rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
+          <div style="display:flex;gap:0.5rem">
+            <button onclick="predict(${m.id},'${m.home}')" id="pred-${m.id}-home"
+              style="flex:1;padding:0.75rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.8rem">
+              ${getFlag(m.home)} ${m.home}
+            </button>
+            <button onclick="predict(${m.id},'draw')" id="pred-${m.id}-draw"
+              style="padding:0.75rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#aaa;cursor:pointer;font-size:0.8rem">
+              Draw
+            </button>
+            <button onclick="predict(${m.id},'${m.away}')" id="pred-${m.id}-away"
+              style="flex:1;padding:0.75rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.8rem">
+              ${getFlag(m.away)} ${m.away}
+            </button>
+          </div>
+        </div>
+      `).join('')}
+    `;
+
+    // Load saved predictions
+    MATCHES.slice(0,6).forEach(m => {
+      const saved = localStorage.getItem('pred_'+m.id);
+      if (saved) highlightPrediction(m.id, saved);
+    });
+
   } else if (tab === 'watch') {
     content.innerHTML = `
-      <div style="padding:1rem">
+      <div style="padding:0.5rem 0">
         <h2 style="color:#fff;margin-bottom:1rem">📺 Where to Watch in India</h2>
-        <div style="background:#1a1a2e;border-radius:12px;padding:1rem;margin-bottom:0.75rem">
-          <div style="font-size:1.2rem;font-weight:700;color:#00b4d8">JioCinema</div>
-          <div style="color:#aaa;font-size:0.9rem;margin-top:0.25rem">Free streaming — jiocinema.com</div>
+        <div style="background:#1a1a2e;border-radius:12px;padding:1.25rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:1rem">
+          <div style="font-size:2rem">📱</div>
+          <div>
+            <div style="font-size:1.1rem;font-weight:700;color:#00b4d8">JioCinema</div>
+            <div style="color:#aaa;font-size:0.85rem;margin-top:0.25rem">Free streaming online & app</div>
+            <div style="color:#555;font-size:0.75rem">jiocinema.com</div>
+          </div>
         </div>
-        <div style="background:#1a1a2e;border-radius:12px;padding:1rem;margin-bottom:0.75rem">
-          <div style="font-size:1.2rem;font-weight:700;color:#ff6b35">Sports18</div>
-          <div style="color:#aaa;font-size:0.9rem;margin-top:0.25rem">TV broadcast — check your cable provider</div>
+        <div style="background:#1a1a2e;border-radius:12px;padding:1.25rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:1rem">
+          <div style="font-size:2rem">📺</div>
+          <div>
+            <div style="font-size:1.1rem;font-weight:700;color:#ff6b35">Sports18</div>
+            <div style="color:#aaa;font-size:0.85rem;margin-top:0.25rem">TV broadcast on cable & DTH</div>
+            <div style="color:#555;font-size:0.75rem">Check your cable provider</div>
+          </div>
         </div>
-        <div style="background:#1a1a2e;border-radius:12px;padding:1rem">
-          <div style="font-size:1.2rem;font-weight:700;color:#4cc9f0">DD Sports</div>
-          <div style="color:#aaa;font-size:0.9rem;margin-top:0.25rem">Free TV — DD Free Dish channel 64</div>
+        <div style="background:#1a1a2e;border-radius:12px;padding:1.25rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:1rem">
+          <div style="font-size:2rem">🆓</div>
+          <div>
+            <div style="font-size:1.1rem;font-weight:700;color:#4cc9f0">DD Sports</div>
+            <div style="color:#aaa;font-size:0.85rem;margin-top:0.25rem">Free TV — no subscription needed</div>
+            <div style="color:#555;font-size:0.75rem">DD Free Dish channel 64</div>
+          </div>
         </div>
-      </div>`;
+        <div style="background:#1a1a2e;border-radius:12px;padding:1.25rem;display:flex;align-items:center;gap:1rem">
+          <div style="font-size:2rem">💬</div>
+          <div>
+            <div style="font-size:1.1rem;font-weight:700;color:#25D366">Share Gol!</div>
+            <div style="color:#aaa;font-size:0.85rem;margin-top:0.25rem">Share with your friends</div>
+            <button onclick="shareApp()" style="margin-top:0.5rem;padding:0.4rem 1rem;background:#25D366;border:none;border-radius:8px;color:#000;font-weight:700;cursor:pointer;font-size:0.8rem">Share via WhatsApp</button>
+          </div>
+        </div>
+      </div>
+    `;
   }
+}
+
+function predict(matchId, pick) {
+  localStorage.setItem('pred_'+matchId, pick);
+  highlightPrediction(matchId, pick);
+}
+
+function highlightPrediction(matchId, pick) {
+  const m = MATCHES.find(x => x.id === matchId);
+  if (!m) return;
+  const homeBtn = document.getElementById('pred-'+matchId+'-home');
+  const drawBtn = document.getElementById('pred-'+matchId+'-draw');
+  const awayBtn = document.getElementById('pred-'+matchId+'-away');
+  if (!homeBtn) return;
+  [homeBtn, drawBtn, awayBtn].forEach(b => {
+    b.style.borderColor = '#333';
+    b.style.background = '#0d0d1a';
+  });
+  if (pick === m.home && homeBtn) { homeBtn.style.borderColor = APP.teamColor; homeBtn.style.background = APP.teamColor+'33'; }
+  else if (pick === 'draw' && drawBtn) { drawBtn.style.borderColor = '#aaa'; drawBtn.style.background = '#aaa33'; }
+  else if (pick === m.away && awayBtn) { awayBtn.style.borderColor = APP.teamColor; awayBtn.style.background = APP.teamColor+'33'; }
+}
+
+function shareApp() {
+  const text = `⚽ I'm using Gol! to follow FIFA World Cup 2026! Check it out: https://getgol.in`;
+  window.open('https://wa.me/?text='+encodeURIComponent(text), '_blank');
 }
 
 function resetTeam() {
