@@ -39,62 +39,50 @@ function registerSW() {
 
 function showTeamPicker() {
   const teams = [
-    // Group A
     {name:'Mexico',color:'#006847'},
     {name:'South Africa',color:'#007A4D'},
     {name:'South Korea',color:'#003478'},
     {name:'Czech Republic',color:'#D7141A'},
-    // Group B
     {name:'Canada',color:'#FF0000'},
     {name:'Bosnia',color:'#002395'},
     {name:'Qatar',color:'#8D1B3D'},
     {name:'Switzerland',color:'#FF0000'},
-    // Group C
     {name:'Brazil',color:'#009C3B'},
     {name:'Morocco',color:'#C1272D'},
     {name:'Haiti',color:'#00209F'},
     {name:'Scotland',color:'#003F87'},
-    // Group D
     {name:'USA',color:'#B22234'},
     {name:'Paraguay',color:'#D52B1E'},
     {name:'Australia',color:'#FFCD00'},
     {name:'Turkey',color:'#E30A17'},
-    // Group E
     {name:'Germany',color:'#FFD700'},
     {name:'Curacao',color:'#002B7F'},
     {name:'Ivory Coast',color:'#F77F00'},
     {name:'Ecuador',color:'#FFD100'},
-    // Group F
     {name:'Netherlands',color:'#FF6600'},
     {name:'Japan',color:'#BC002D'},
     {name:'Tunisia',color:'#E70013'},
     {name:'Sweden',color:'#006AA7'},
-    // Group G
     {name:'Belgium',color:'#EF3340'},
     {name:'Egypt',color:'#CE1126'},
     {name:'Iran',color:'#239F40'},
     {name:'New Zealand',color:'#00247D'},
-    // Group H
     {name:'Spain',color:'#AA151B'},
     {name:'Cape Verde',color:'#003893'},
     {name:'Saudi Arabia',color:'#006C35'},
     {name:'Uruguay',color:'#5EB6E4'},
-    // Group I
     {name:'France',color:'#002395'},
     {name:'Senegal',color:'#00853F'},
     {name:'Norway',color:'#EF2B2D'},
     {name:'Iraq',color:'#007A3D'},
-    // Group J
     {name:'Argentina',color:'#74ACDF'},
     {name:'Algeria',color:'#006233'},
     {name:'Austria',color:'#ED2939'},
     {name:'Jordan',color:'#007A3D'},
-    // Group K
     {name:'Portugal',color:'#006600'},
     {name:'Uzbekistan',color:'#1EB53A'},
     {name:'Colombia',color:'#FCD116'},
     {name:'DR Congo',color:'#007FFF'},
-    // Group L
     {name:'England',color:'#CF111B'},
     {name:'Croatia',color:'#FF0000'},
     {name:'Ghana',color:'#006B3F'},
@@ -105,7 +93,7 @@ function showTeamPicker() {
     <div style="min-height:100vh;background:#0d0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem">
       <div style="font-size:3rem">⚽</div>
       <h1 style="font-size:2rem;font-weight:900;color:#fff;margin-bottom:0.25rem">Gol!</h1>
-      <p style="color:#aaa;margin-bottom:0.5rem">FIFA World Cup 2026</p>
+      <p style="color:#aaa;margin-bottom:0.25rem">FIFA World Cup 2026</p>
       <p style="color:#666;font-size:0.8rem;margin-bottom:2rem">48 teams • 12 groups • 104 matches</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;max-width:520px;width:100%">
         ${teams.map(t => `
@@ -113,7 +101,7 @@ function showTeamPicker() {
             style="background:#1a1a2e;border:2px solid #333;border-radius:12px;padding:0.75rem 0.5rem;cursor:pointer;color:#fff;font-size:0.65rem;text-align:center"
             onmouseover="this.style.borderColor='${t.color}'"
             onmouseout="this.style.borderColor='#333'">
-            <img src="https://flagcdn.com/40x30/${getCountryCode(t.name)}.png" width="40" height="30" style="border-radius:3px;display:block;margin:0 auto">
+            <img src="https://flagcdn.com/40x30/${getCountryCode(t.name)}.png" width="40" height="30" style="border-radius:3px;display:block;margin:0 auto" onerror="this.style.display='none'">
             <div style="margin-top:0.4rem;line-height:1.2">${t.name}</div>
           </button>
         `).join('')}
@@ -141,7 +129,7 @@ function showApp() {
           <span style="color:#aaa;font-size:0.8rem;margin-left:0.5rem">WC 2026</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem;color:#aaa;font-size:0.8rem;cursor:pointer" onclick="resetTeam()">
-          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px">
+          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
           ${APP.teamName} ✕
         </div>
       </header>
@@ -168,12 +156,12 @@ function showTab(tab) {
         <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.5rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="text-align:center;flex:1">
-            <img src="https://flagcdn.com/40x30/${getCountryCode(m.home)}.png" width="40" height="30" style="border-radius:3px">
+            <img src="https://flagcdn.com/40x30/${getCountryCode(m.home)}.png" width="40" height="30" style="border-radius:3px" onerror="this.style.display='none'">
             <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem">${m.home}</div>
           </div>
           <div style="font-size:1.2rem;font-weight:900;color:#aaa;padding:0 1rem">VS</div>
           <div style="text-align:center;flex:1">
-            <img src="https://flagcdn.com/40x30/${getCountryCode(m.away)}.png" width="40" height="30" style="border-radius:3px">
+            <img src="https://flagcdn.com/40x30/${getCountryCode(m.away)}.png" width="40" height="30" style="border-radius:3px" onerror="this.style.display='none'">
             <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem">${m.away}</div>
           </div>
         </div>
@@ -184,7 +172,7 @@ function showTab(tab) {
     content.innerHTML = `
       ${myMatches.length > 0 ? `
         <div style="color:${APP.teamColor};font-weight:700;margin-bottom:0.75rem">
-          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px;vertical-align:middle;margin-right:4px">
+          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'">
           ${APP.teamName} matches
         </div>
         ${myMatches.map(m => renderMatch(m, true)).join('')}
@@ -206,7 +194,7 @@ function showTab(tab) {
           <div style="display:flex;gap:0.5rem">
             <button onclick="predict(${m.id},'${m.home}')" id="pred-${m.id}-home"
               style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.75rem;text-align:center">
-              <img src="https://flagcdn.com/32x24/${getCountryCode(m.home)}.png" style="border-radius:2px;display:block;margin:0 auto 4px">
+              <img src="https://flagcdn.com/32x24/${getCountryCode(m.home)}.png" style="border-radius:2px;display:block;margin:0 auto 4px" onerror="this.style.display='none'">
               ${m.home}
             </button>
             <button onclick="predict(${m.id},'draw')" id="pred-${m.id}-draw"
@@ -215,7 +203,7 @@ function showTab(tab) {
             </button>
             <button onclick="predict(${m.id},'${m.away}')" id="pred-${m.id}-away"
               style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.75rem;text-align:center">
-              <img src="https://flagcdn.com/32x24/${getCountryCode(m.away)}.png" style="border-radius:2px;display:block;margin:0 auto 4px">
+              <img src="https://flagcdn.com/32x24/${getCountryCode(m.away)}.png" style="border-radius:2px;display:block;margin:0 auto 4px" onerror="this.style.display='none'">
               ${m.away}
             </button>
           </div>
