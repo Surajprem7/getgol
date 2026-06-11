@@ -90,18 +90,19 @@ function showTeamPicker() {
   ];
 
   document.getElementById('app').innerHTML = `
-    <div style="min-height:100vh;background:#0d0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem">
-      <div style="font-size:3rem">⚽</div>
-      <h1 style="font-size:2.5rem;font-weight:900;color:#fff;margin-bottom:0.1rem">Gol!</h1>
-      <p style="color:#aaa;margin-bottom:0.1rem">FIFA World Cup 2026</p>
-      <p style="color:#f0a500;font-size:0.9rem;font-style:italic;margin-bottom:0.4rem">¡Pasion por el Gol!</p>
+    <div style="min-height:100vh;background:linear-gradient(135deg,#0d0d1a 0%,#1a1a2e 50%,#0d0d1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 50% 30%,#f0a50015 0%,transparent 70%);pointer-events:none"></div>
+      <div style="font-size:3.5rem;filter:drop-shadow(0 0 20px #f0a500)">⚽</div>
+      <h1 style="font-size:3rem;font-weight:900;color:#fff;margin-bottom:0.1rem;text-shadow:0 0 30px #f0a50066">Gol!</h1>
+      <p style="color:#aaa;margin-bottom:0.1rem;font-size:0.9rem">FIFA World Cup 2026</p>
+      <p style="color:#f0a500;font-size:1rem;font-style:italic;margin-bottom:0.5rem;text-shadow:0 0 10px #f0a50088">¡Pasion por el Gol!</p>
       <p style="color:#666;font-size:0.8rem;margin-bottom:2rem">48 teams • 12 groups • 104 matches</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;max-width:520px;width:100%">
         ${teams.map(t => `
           <button onclick="selectTeam('${t.name}','${t.color}')"
-            style="background:#1a1a2e;border:2px solid #333;border-radius:12px;padding:0.75rem 0.5rem;cursor:pointer;color:#fff;font-size:0.65rem;text-align:center"
-            onmouseover="this.style.borderColor='${t.color}'"
-            onmouseout="this.style.borderColor='#333'">
+            style="background:rgba(26,26,46,0.8);backdrop-filter:blur(10px);border:2px solid #333;border-radius:12px;padding:0.75rem 0.5rem;cursor:pointer;color:#fff;font-size:0.65rem;text-align:center;transition:all 0.2s"
+            onmouseover="this.style.borderColor='${t.color}';this.style.boxShadow='0 0 15px ${t.color}44'"
+            onmouseout="this.style.borderColor='#333';this.style.boxShadow='none'">
             <img src="https://flagcdn.com/40x30/${getCountryCode(t.name)}.png" width="40" height="30" style="border-radius:3px;display:block;margin:0 auto" onerror="this.style.display='none'">
             <div style="margin-top:0.4rem;line-height:1.2">${t.name}</div>
           </button>
@@ -124,9 +125,9 @@ function selectTeam(name, color) {
 function showApp() {
   document.getElementById('app').innerHTML = `
     <div style="max-width:600px;margin:0 auto;padding:1rem">
-      <header style="display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:2px solid ${APP.teamColor}">
+      <header style="display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:2px solid ${APP.teamColor};margin-bottom:0.5rem">
         <div>
-          <span style="font-size:1.5rem;font-weight:900;color:${APP.teamColor}">Gol!</span>
+          <span style="font-size:1.5rem;font-weight:900;color:${APP.teamColor};text-shadow:0 0 10px ${APP.teamColor}66">Gol!</span>
           <span style="color:#f0a500;font-size:0.7rem;font-style:italic;margin-left:0.4rem">¡Pasion por el Gol!</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem;color:#aaa;font-size:0.8rem;cursor:pointer" onclick="resetTeam()">
@@ -153,26 +154,26 @@ function showTab(tab) {
     const otherMatches = MATCHES.filter(m => m.home !== APP.teamName && m.away !== APP.teamName);
 
     const renderMatch = (m, highlight) => `
-      <div style="background:${highlight ? APP.teamColor+'22' : '#1a1a2e'};border:1px solid ${highlight ? APP.teamColor : '#333'};border-radius:12px;padding:1rem;margin-bottom:0.75rem">
+      <div style="background:${highlight ? APP.teamColor+'22' : '#1a1a2e'};border:1px solid ${highlight ? APP.teamColor : '#333'};border-radius:12px;padding:1rem;margin-bottom:0.75rem;${highlight ? 'box-shadow:0 0 15px '+APP.teamColor+'33' : ''}">
         <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.5rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="text-align:center;flex:1">
             <img src="https://flagcdn.com/40x30/${getCountryCode(m.home)}.png" width="40" height="30" style="border-radius:3px" onerror="this.style.display='none'">
-            <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem">${m.home}</div>
+            <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem;font-weight:600">${m.home}</div>
           </div>
-          <div style="font-size:1.2rem;font-weight:900;color:#aaa;padding:0 1rem">VS</div>
+          <div style="font-size:1.2rem;font-weight:900;color:#555;padding:0 1rem">VS</div>
           <div style="text-align:center;flex:1">
             <img src="https://flagcdn.com/40x30/${getCountryCode(m.away)}.png" width="40" height="30" style="border-radius:3px" onerror="this.style.display='none'">
-            <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem">${m.away}</div>
+            <div style="font-size:0.85rem;color:#fff;margin-top:0.25rem;font-weight:600">${m.away}</div>
           </div>
         </div>
-        <div style="font-size:0.7rem;color:#666;margin-top:0.5rem;text-align:center">${m.venue}</div>
+        <div style="font-size:0.7rem;color:#555;margin-top:0.5rem;text-align:center">${m.venue}</div>
       </div>
     `;
 
     content.innerHTML = `
       ${myMatches.length > 0 ? `
-        <div style="color:${APP.teamColor};font-weight:700;margin-bottom:0.75rem">
+        <div style="color:${APP.teamColor};font-weight:700;margin-bottom:0.75rem;font-size:0.95rem">
           <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'">
           ${APP.teamName} matches
         </div>
@@ -184,46 +185,45 @@ function showTab(tab) {
 
   } else if (tab === 'predict') {
     content.innerHTML = `
-      <div style="margin-bottom:1rem">
-        <h2 style="color:#fff;margin-bottom:0.25rem">🎯 Predict & Win</h2>
-        <p style="color:#aaa;font-size:0.85rem">Who will win? See what others think!</p>
+      <div style="margin-bottom:1.5rem;padding:1.5rem;background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border-radius:16px;border:1px solid #f0a50033;text-align:center;box-shadow:0 0 30px #f0a50022">
+        <div style="font-size:2.5rem;filter:drop-shadow(0 0 10px #f0a500)">🏆</div>
+        <h2 style="color:#f0a500;font-size:1.3rem;font-weight:900;margin:0.5rem 0 0.25rem;text-shadow:0 0 15px #f0a50066">Predict & Win</h2>
+        <p style="color:#aaa;font-size:0.85rem">Who will win? See what the world thinks!</p>
       </div>
       ${MATCHES.map(m => `
-        <div style="background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:1rem;margin-bottom:0.75rem">
-          <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.75rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
-          <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
+        <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:1px solid #333;border-radius:16px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 4px 15px rgba(0,0,0,0.3)">
+          <div style="font-size:0.75rem;color:#aaa;margin-bottom:1rem;text-align:center;background:#ffffff08;padding:0.3rem;border-radius:8px">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
+          <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
             <button onclick="predict(${m.id},'${m.home}')" id="pred-${m.id}-home"
-              style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.75rem;text-align:center">
-              <img src="https://flagcdn.com/32x24/${getCountryCode(m.home)}.png" style="border-radius:2px;display:block;margin:0 auto 4px" onerror="this.style.display='none'">
-              ${m.home}
+              style="flex:1;padding:0.85rem 0.5rem;border-radius:12px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.8rem;text-align:center;transition:all 0.2s">
+              <img src="https://flagcdn.com/48x36/${getCountryCode(m.home)}.png" style="border-radius:4px;display:block;margin:0 auto 6px;width:48px;height:36px" onerror="this.style.display='none'">
+              <div style="font-weight:600">${m.home}</div>
             </button>
             <button onclick="predict(${m.id},'draw')" id="pred-${m.id}-draw"
-              style="padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#aaa;cursor:pointer;font-size:0.75rem">
+              style="padding:0.85rem 0.75rem;border-radius:12px;border:2px solid #333;background:#0d0d1a;color:#aaa;cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s">
               Draw
             </button>
             <button onclick="predict(${m.id},'${m.away}')" id="pred-${m.id}-away"
-              style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.75rem;text-align:center">
-              <img src="https://flagcdn.com/32x24/${getCountryCode(m.away)}.png" style="border-radius:2px;display:block;margin:0 auto 4px" onerror="this.style.display='none'">
-              ${m.away}
+              style="flex:1;padding:0.85rem 0.5rem;border-radius:12px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.8rem;text-align:center;transition:all 0.2s">
+              <img src="https://flagcdn.com/48x36/${getCountryCode(m.away)}.png" style="border-radius:4px;display:block;margin:0 auto 6px;width:48px;height:36px" onerror="this.style.display='none'">
+              <div style="font-weight:600">${m.away}</div>
             </button>
           </div>
-          <div id="counts-${m.id}" style="font-size:0.7rem;color:#666;text-align:center">Loading predictions...</div>
+          <div id="counts-${m.id}" style="font-size:0.75rem;color:#666;text-align:center">Loading...</div>
         </div>
       `).join('')}
     `;
 
-    // Load saved predictions and live counts
     MATCHES.forEach(m => {
       const saved = localStorage.getItem('pred_'+m.id);
       if (saved) highlightPrediction(m.id, saved);
-      
-      // Listen for live prediction counts
+
       getPredictionCounts(m.id, (counts) => {
         const countsEl = document.getElementById('counts-'+m.id);
         if (!countsEl) return;
         const total = Object.values(counts).reduce((a,b) => a+b, 0);
         if (total === 0) {
-          countsEl.innerHTML = 'Be the first to predict!';
+          countsEl.innerHTML = '<span style="color:#555">Be the first to predict!</span>';
           return;
         }
         const homeCount = counts[m.home] || 0;
@@ -233,12 +233,16 @@ function showTab(tab) {
         const drawP = Math.round(drawCount/total*100);
         const awayP = Math.round(awayCount/total*100);
         countsEl.innerHTML = `
-          <div style="display:flex;gap:0.25rem;margin-top:0.25rem;align-items:center">
-            <div style="flex:${homeP || 1};background:#ffffff22;border-radius:4px;padding:2px 4px;text-align:center;font-size:0.65rem;color:#fff">${homeP}%</div>
-            <div style="flex:${drawP || 1};background:#ffffff11;border-radius:4px;padding:2px 4px;text-align:center;font-size:0.65rem;color:#aaa">${drawP}%</div>
-            <div style="flex:${awayP || 1};background:#ffffff22;border-radius:4px;padding:2px 4px;text-align:center;font-size:0.65rem;color:#fff">${awayP}%</div>
+          <div style="display:flex;gap:3px;margin-bottom:4px;height:8px;border-radius:4px;overflow:hidden">
+            <div style="flex:${homeP||1};background:${APP.teamColor};opacity:0.8"></div>
+            <div style="flex:${drawP||1};background:#555"></div>
+            <div style="flex:${awayP||1};background:#4cc9f0;opacity:0.8"></div>
           </div>
-          <div style="margin-top:0.25rem;color:#555">${total} prediction${total>1?'s':''}</div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem">
+            <span style="color:${APP.teamColor}">${homeP}%</span>
+            <span style="color:#555">${total} votes</span>
+            <span style="color:#4cc9f0">${awayP}%</span>
+          </div>
         `;
       });
     });
@@ -299,10 +303,20 @@ function highlightPrediction(matchId, pick) {
   [homeBtn, drawBtn, awayBtn].forEach(b => {
     b.style.borderColor = '#333';
     b.style.background = '#0d0d1a';
+    b.style.boxShadow = 'none';
   });
-  if (pick === m.home) { homeBtn.style.borderColor = APP.teamColor; homeBtn.style.background = APP.teamColor+'33'; }
-  else if (pick === 'draw') { drawBtn.style.borderColor = '#aaa'; drawBtn.style.background = '#ffffff22'; }
-  else if (pick === m.away) { awayBtn.style.borderColor = APP.teamColor; awayBtn.style.background = APP.teamColor+'33'; }
+  if (pick === m.home) {
+    homeBtn.style.borderColor = APP.teamColor;
+    homeBtn.style.background = APP.teamColor+'33';
+    homeBtn.style.boxShadow = '0 0 15px '+APP.teamColor+'44';
+  } else if (pick === 'draw') {
+    drawBtn.style.borderColor = '#aaa';
+    drawBtn.style.background = '#ffffff22';
+  } else if (pick === m.away) {
+    awayBtn.style.borderColor = APP.teamColor;
+    awayBtn.style.background = APP.teamColor+'33';
+    awayBtn.style.boxShadow = '0 0 15px '+APP.teamColor+'44';
+  }
 }
 
 function shareApp() {
