@@ -92,8 +92,9 @@ function showTeamPicker() {
   document.getElementById('app').innerHTML = `
     <div style="min-height:100vh;background:#0d0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem">
       <div style="font-size:3rem">⚽</div>
-      <h1 style="font-size:2rem;font-weight:900;color:#fff;margin-bottom:0.25rem">Gol!</h1>
-      <p style="color:#aaa;margin-bottom:0.25rem">FIFA World Cup 2026</p>
+      <h1 style="font-size:2.5rem;font-weight:900;color:#fff;margin-bottom:0.1rem">Gol!</h1>
+      <p style="color:#aaa;margin-bottom:0.1rem">FIFA World Cup 2026</p>
+      <p style="color:#f0a500;font-size:0.9rem;font-style:italic;margin-bottom:0.4rem">¡Pasion por el Gol!</p>
       <p style="color:#666;font-size:0.8rem;margin-bottom:2rem">48 teams • 12 groups • 104 matches</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;max-width:520px;width:100%">
         ${teams.map(t => `
@@ -126,7 +127,7 @@ function showApp() {
       <header style="display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:2px solid ${APP.teamColor}">
         <div>
           <span style="font-size:1.5rem;font-weight:900;color:${APP.teamColor}">Gol!</span>
-          <span style="color:#aaa;font-size:0.8rem;margin-left:0.5rem">WC 2026</span>
+          <span style="color:#f0a500;font-size:0.7rem;font-style:italic;margin-left:0.4rem">¡Pasion por el Gol!</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem;color:#aaa;font-size:0.8rem;cursor:pointer" onclick="resetTeam()">
           <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
