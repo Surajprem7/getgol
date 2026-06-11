@@ -10,13 +10,29 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
 
+// Sign in anonymously
+let currentUser = null;
+auth.signInAnonymously().then(result => {
+  currentUser = result.user;
+}).catch(err => console.log('Auth error:', err));
+
+// Save prediction to Firebase
 function savePrediction(matchId, pick) {
-  db.ref('predictions/' + matchId + '/' + pick).transaction(count => (count || 0) + 1);
   localStorage.setItem('pred_' + matchId, pick);
+  
+  // Save user's personal prediction
+  if (currentUser) {
+    db.ref('userPredictions/' + currentUser.uid + '/' + matchId).set(pick);
+  }
+  
+  // Save to community count
+  db.ref('predictions/' + matchId + '/' + pick).transaction(count => (count || 0) + 1);
 }
 
-function getPredictions(matchId, callback) {
+// Get community prediction counts for a match
+function getPredictionCounts(matchId, callback) {
   db.ref('predictions/' + matchId).on('value', snapshot => {
     callback(snapshot.val() || {});
   });

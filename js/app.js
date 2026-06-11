@@ -186,12 +186,12 @@ function showTab(tab) {
     content.innerHTML = `
       <div style="margin-bottom:1rem">
         <h2 style="color:#fff;margin-bottom:0.25rem">🎯 Predict & Win</h2>
-        <p style="color:#aaa;font-size:0.85rem">Who will win these matches?</p>
+        <p style="color:#aaa;font-size:0.85rem">Who will win? See what others think!</p>
       </div>
       ${MATCHES.map(m => `
         <div style="background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:1rem;margin-bottom:0.75rem">
           <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.75rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
-          <div style="display:flex;gap:0.5rem">
+          <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
             <button onclick="predict(${m.id},'${m.home}')" id="pred-${m.id}-home"
               style="flex:1;padding:0.6rem;border-radius:8px;border:2px solid #333;background:#0d0d1a;color:#fff;cursor:pointer;font-size:0.75rem;text-align:center">
               <img src="https://flagcdn.com/32x24/${getCountryCode(m.home)}.png" style="border-radius:2px;display:block;margin:0 auto 4px" onerror="this.style.display='none'">
@@ -207,12 +207,40 @@ function showTab(tab) {
               ${m.away}
             </button>
           </div>
+          <div id="counts-${m.id}" style="font-size:0.7rem;color:#666;text-align:center">Loading predictions...</div>
         </div>
       `).join('')}
     `;
+
+    // Load saved predictions and live counts
     MATCHES.forEach(m => {
       const saved = localStorage.getItem('pred_'+m.id);
       if (saved) highlightPrediction(m.id, saved);
+      
+      // Listen for live prediction counts
+      getPredictionCounts(m.id, (counts) => {
+        const countsEl = document.getElementById('counts-'+m.id);
+        if (!countsEl) return;
+        const total = Object.values(counts).reduce((a,b) => a+b, 0);
+        if (total === 0) {
+          countsEl.innerHTML = 'Be the first to predict!';
+          return;
+        }
+        const homeCount = counts[m.home] || 0;
+        const drawCount = counts['draw'] || 0;
+        const awayCount = counts[m.away] || 0;
+        const homeP = Math.round(homeCount/total*100);
+        const drawP = Math.round(drawCount/total*100);
+        const awayP = Math.round(awayCount/total*100);
+        countsEl.innerHTML = `
+          <div style="display:flex;gap:0.25rem;margin-top:0.25rem;align-items:center">
+            <div style="flex:${homeP || 1};background:#ffffff22;border-radius:4px;padding:2px 4px;text-align:center;font-size:0.65rem;color:#fff">${homeP}%</div>
+            <div style="flex:${drawP || 1};background:#ffffff11;border-radius:4px;padding:2px 4px;text-align:center;font-size:0.65rem;color:#aaa">${drawP}%</div>
+            <div style="flex:${awayP || 1};background:#ffffff22;border-radius:4px;padding:2px 4px;text-align:center;font-size:0.65rem;color:#fff">${awayP}%</div>
+          </div>
+          <div style="margin-top:0.25rem;color:#555">${total} prediction${total>1?'s':''}</div>
+        `;
+      });
     });
 
   } else if (tab === 'watch') {
