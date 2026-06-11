@@ -1,5 +1,5 @@
-const CACHE = 'gol-v5';
-const FILES = ['/', '/index.html', '/manifest.json', '/js/matches.js', '/js/app.js'];
+const CACHE = 'gol-v7';
+const FILES = ['/', '/index.html', '/manifest.json', '/js/matches.js', '/js/app.js', '/js/firebase.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
@@ -13,6 +13,10 @@ self.addEventListener('activate', e => {
     )
   );
   self.clients.claim();
+  // Notify all open tabs to refresh
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => client.postMessage({type: 'UPDATE_AVAILABLE'}));
+  });
 });
 
 self.addEventListener('fetch', e => {
