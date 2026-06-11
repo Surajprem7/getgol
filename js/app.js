@@ -257,9 +257,8 @@ function showTab(tab) {
 }
 
 function predict(matchId, pick) {
-  localStorage.setItem('pred_'+matchId, pick);
-  highlightPrediction(matchId, pick);
   savePrediction(matchId, pick);
+  highlightPrediction(matchId, pick);
 }
 
 function highlightPrediction(matchId, pick) {

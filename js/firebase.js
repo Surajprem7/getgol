@@ -1,4 +1,3 @@
-// Firebase configuration for Gol!
 const firebaseConfig = {
   apiKey: "AIzaSyD8A3QjR4y846DnoKppoF6x6WMUkSUm2-c",
   authDomain: "getgol7.firebaseapp.com",
@@ -9,21 +8,16 @@ const firebaseConfig = {
   appId: "1:348385567552:web:6044919c6d0163b7a110a5"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Save prediction to Firebase
 function savePrediction(matchId, pick) {
-  const ref = db.ref('predictions/' + matchId + '/' + pick);
-  ref.transaction(count => (count || 0) + 1);
+  db.ref('predictions/' + matchId + '/' + pick).transaction(count => (count || 0) + 1);
   localStorage.setItem('pred_' + matchId, pick);
 }
 
-// Get predictions from Firebase
 function getPredictions(matchId, callback) {
   db.ref('predictions/' + matchId).on('value', snapshot => {
-    const data = snapshot.val() || {};
-    callback(data);
+    callback(snapshot.val() || {});
   });
 }
