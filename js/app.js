@@ -1,6 +1,6 @@
 function getCountryCode(team) {
   const codes = {
-    'Mexico':'mx','South Africa':'za','South Korea':'kr','Czech Republic':'cz',
+    'Mexico':'mx','South Africa':'za','South Korea':'kr','Czechia':'cz',
     'Canada':'ca','Bosnia':'ba','Qatar':'qa','Switzerland':'ch',
     'Brazil':'br','Morocco':'ma','Haiti':'ht','Scotland':'gb-sct',
     'USA':'us','Paraguay':'py','Australia':'au','Turkey':'tr',
@@ -42,7 +42,7 @@ function showTeamPicker() {
     {name:'Mexico',color:'#006847'},
     {name:'South Africa',color:'#007A4D'},
     {name:'South Korea',color:'#003478'},
-    {name:'Czech Republic',color:'#D7141A'},
+    {name:'Czechia',color:'#D7141A'},
     {name:'Canada',color:'#FF0000'},
     {name:'Bosnia',color:'#002395'},
     {name:'Qatar',color:'#8D1B3D'},
@@ -182,13 +182,12 @@ function showTab(tab) {
     `;
 
   } else if (tab === 'predict') {
-    const upcoming = MATCHES.slice(0, 8);
     content.innerHTML = `
       <div style="margin-bottom:1rem">
         <h2 style="color:#fff;margin-bottom:0.25rem">🎯 Predict & Win</h2>
         <p style="color:#aaa;font-size:0.85rem">Who will win these matches?</p>
       </div>
-      ${upcoming.map(m => `
+      ${MATCHES.map(m => `
         <div style="background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:1rem;margin-bottom:0.75rem">
           <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.75rem">Group ${m.group} • ${formatIST(m.date, m.time)}</div>
           <div style="display:flex;gap:0.5rem">
@@ -210,7 +209,7 @@ function showTab(tab) {
         </div>
       `).join('')}
     `;
-    MATCHES.slice(0,8).forEach(m => {
+    MATCHES.forEach(m => {
       const saved = localStorage.getItem('pred_'+m.id);
       if (saved) highlightPrediction(m.id, saved);
     });
@@ -239,7 +238,7 @@ function showTab(tab) {
           <div style="font-size:2rem">🆓</div>
           <div>
             <div style="font-size:1.1rem;font-weight:700;color:#4cc9f0">DD Sports</div>
-            <div style="color:#aaa;font-size:0.85rem;margin-top:0.25rem">Free TV — no subscription needed</div>
+            <div style="color:#aaa;font-size:0.85rem;margin-top:0.25rem">Free TV - no subscription needed</div>
             <div style="color:#555;font-size:0.75rem">DD Free Dish channel 64</div>
           </div>
         </div>
