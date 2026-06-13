@@ -106,7 +106,7 @@ function showTeamPickerModal() {
         <div style="font-size:2.8rem;font-weight:900;color:#fff;text-shadow:0 0 30px #f0a50066;letter-spacing:-1px;line-height:1">Gol!</div>
         <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-top:0.1rem">FIFA World Cup 2026</div>
         <div style="color:#f0a500;font-size:0.9rem;font-style:italic;margin-top:0.15rem;text-shadow:0 0 12px #f0a50066">¡Pasion por el Gol!</div>
-        <div style="color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:0.3rem">48 teams • 12 groups • 104 matches</div>
+        <div style="color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:0.3rem">48 teams • 12 groups • 72 group matches</div>
 
         <!-- SKIP button top-right -->
         <button onclick="closeTeamPicker()" style="position:absolute;top:0;right:0;background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:rgba(255,255,255,0.5);font-size:0.75rem;font-weight:600;letter-spacing:0.5px;padding:0.3rem 0.85rem;cursor:pointer;transition:all 0.2s"

@@ -136,9 +136,15 @@ async function fetchESPNScores() {
 async function syncLiveDataToFirebase(standings, scores) {
   try {
     const ref = firebase.database().ref('wc2026');
+    // Use granular path updates so each match score is written independently
+    // — this prevents a partial fetch from wiping previously stored results
     const updates = { _updated: Date.now() };
     if (standings) updates.standings = standings;
-    if (scores)    updates.scores    = scores;
+    if (scores) {
+      Object.entries(scores).forEach(([id, sc]) => {
+        updates[`scores/${id}`] = sc;
+      });
+    }
     await ref.update(updates);
   } catch (e) {
     console.warn('[Gol] Firebase sync failed:', e.message);
@@ -193,7 +199,8 @@ function subscribeFirebaseLive() {
     if (!val) return;
 
     if (val.standings) window.LIVE.standings = val.standings;
-    if (val.scores)    window.LIVE.scores    = val.scores;
+    // Merge, never replace — so a partial push doesn't wipe older results
+    if (val.scores)    window.LIVE.scores    = { ...window.LIVE.scores, ...val.scores };
     if (val._updated)  window.LIVE.updatedAt = val._updated;
 
     const activeTab = window._activeTab;
