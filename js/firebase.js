@@ -33,7 +33,9 @@ function savePrediction(matchId, pick) {
 
 // Get community prediction counts for a match
 function getPredictionCounts(matchId, callback) {
-  db.ref('predictions/' + matchId).on('value', snapshot => {
+  const ref = db.ref('predictions/' + matchId);
+  ref.off('value');  // detach any previous listener so tab re-renders don't stack them
+  ref.on('value', snapshot => {
     callback(snapshot.val() || {});
   });
 }
