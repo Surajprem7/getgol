@@ -577,19 +577,19 @@ function showTab(tab) {
   } else if (tab === 'watch') {
     const watchItems = [
       {
-        icon:'📱', name:'JioHotstar', badge:'FREE', badgeColor:'#4ade80',
-        color:'#00b4d8', desc:'Official streaming — all 64 matches live & free',
-        sub:'Download app or visit hotstar.com', url:'https://www.hotstar.com/in/sports/football',
+        icon:'📱', name:'ZEE5', badge:'OFFICIAL', badgeColor:'#a78bfa',
+        color:'#a78bfa', desc:'Official streaming partner — all FIFA WC 2026 matches',
+        sub:'zee5.com · Download ZEE5 app', url:'https://www.zee5.com/sports',
         highlight: true,
       },
       {
-        icon:'📺', name:'Sports18 / Star Sports', badge:'TV', badgeColor:'#f0a500',
-        color:'#ff6b35', desc:'Live TV broadcast — cable, DTH & Tata Play',
-        sub:'Check your local cable / DTH provider', url: null,
+        icon:'📺', name:'Zee Network (TV)', badge:'TV', badgeColor:'#f0a500',
+        color:'#f0a500', desc:'Live TV broadcast on Zee channels — cable & DTH',
+        sub:'Check your cable / DTH provider for Zee channels', url: null,
       },
       {
         icon:'🆓', name:'DD Sports', badge:'FREE TV', badgeColor:'#4ade80',
-        color:'#4cc9f0', desc:'Free-to-air — no subscription needed',
+        color:'#4cc9f0', desc:'Free-to-air broadcast — no subscription needed',
         sub:'DD Free Dish · Channel 64', url:'https://www.ddindia.gov.in',
       },
     ];
@@ -599,7 +599,7 @@ function showTab(tab) {
         <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:0.25rem">All FIFA WC 2026 matches · Official broadcasters only</div>
       </div>
       ${watchItems.map(w => `
-        <div style="${glass};padding:1.25rem;margin-bottom:0.75rem;${w.highlight ? 'border-color:#4ade8033;box-shadow:0 0 24px #4ade8011' : ''}">
+        <div style="${glass};padding:1.25rem;margin-bottom:0.75rem;${w.highlight ? 'border-color:#a78bfa33;box-shadow:0 0 24px #a78bfa11' : ''}">
           <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:${w.url ? '0.75rem' : '0'}">
             <div style="font-size:2rem;filter:drop-shadow(0 0 8px ${w.color}66)">${w.icon}</div>
             <div style="flex:1">
@@ -616,8 +616,8 @@ function showTab(tab) {
       `).join('')}
       <div style="${glass};padding:1rem;margin-top:0.5rem;border-color:rgba(255,255,255,0.06)">
         <div style="font-size:0.7rem;color:rgba(255,255,255,0.25);text-align:center;line-height:1.6">
-          ℹ️ JioHotstar holds official broadcast rights for India.<br>
-          Sports18 & Star Sports on TV. DD Sports free-to-air as per Indian law.
+          ℹ️ ZEE5 holds official FIFA World Cup 2026 streaming rights for India (2026–2034).<br>
+          DD Sports carries free-to-air coverage as required by Indian broadcasting law.
         </div>
       </div>
       <div style="${glass};padding:1.25rem;margin-top:0.75rem;display:flex;align-items:center;gap:1rem;border-color:rgba(37,211,102,0.3)">
