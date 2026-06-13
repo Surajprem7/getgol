@@ -162,6 +162,8 @@ async function syncLiveDataToFirebase(standings, scores) {
 window.LIVE = {
   standings: null,
   scores:    {},
+  rankings:  null,   // [{rank,name,points}] — synced from FIFA via GitHub Action
+  rankingsMeta: null,
   updatedAt: null,
 
   score(matchId) { return this.scores[matchId] || null; },
@@ -207,11 +209,14 @@ function subscribeFirebaseLive() {
     if (val.standings) window.LIVE.standings = val.standings;
     // Merge, never replace — so a partial push doesn't wipe older results
     if (val.scores)    window.LIVE.scores    = { ...window.LIVE.scores, ...val.scores };
+    if (val.rankings)     window.LIVE.rankings     = val.rankings;
+    if (val.rankingsMeta) window.LIVE.rankingsMeta = val.rankingsMeta;
     if (val._updated)  window.LIVE.updatedAt = val._updated;
 
     const activeTab = window._activeTab;
-    if (activeTab === 'groups')  renderGroupsFromLive();
-    if (activeTab === 'matches') refreshMatchScores();
+    if (activeTab === 'groups')   renderGroupsFromLive();
+    if (activeTab === 'matches')  refreshMatchScores();
+    if (activeTab === 'rankings') showTab('rankings');
   });
 }
 

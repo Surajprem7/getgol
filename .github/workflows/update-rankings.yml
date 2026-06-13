@@ -1,0 +1,26 @@
+name: Update FIFA Rankings
+
+on:
+  schedule:
+    # FIFA publishes rankings roughly monthly. Run every Monday 06:00 UTC so
+    # a new edition is picked up within a few days of release.
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}   # adds a manual "Run workflow" button in the Actions tab
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install firebase-admin@12
+
+      - name: Sync FIFA rankings to Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/update-rankings.mjs

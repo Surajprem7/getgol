@@ -464,7 +464,9 @@ function showTab(tab) {
     buildStandingsTab(content, glass);
 
   } else if (tab === 'rankings') {
-    const FIFA_RANKINGS = [
+    // Live FIFA rankings (synced to Firebase by the weekly GitHub Action),
+    // falling back to this built-in snapshot if the live data isn't present.
+    const FIFA_RANKINGS_FALLBACK = [
       {rank:1,  name:'Argentina'},
       {rank:2,  name:'France'},
       {rank:3,  name:'Spain'},
@@ -515,6 +517,18 @@ function showTab(tab) {
       {rank:48, name:'Curacao'},
     ];
 
+    const liveRanks = window.LIVE && window.LIVE.rankings;
+    const FIFA_RANKINGS = (Array.isArray(liveRanks) && liveRanks.length >= 40)
+      ? liveRanks : FIFA_RANKINGS_FALLBACK;
+
+    // Label: use the FIFA update date from the live sync if we have it
+    const meta = window.LIVE && window.LIVE.rankingsMeta;
+    let rankDate = 'June 2026';
+    if (meta && meta.updated) {
+      const d = new Date(meta.updated);
+      if (!isNaN(d)) rankDate = d.toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+    }
+
     const userEntry = FIFA_RANKINGS.find(r => r.name === APP.teamName);
     const userRank = userEntry ? userEntry.rank : null;
     const accentColor = APP.teamColor || '#f0a500';
@@ -541,7 +555,7 @@ function showTab(tab) {
 
     content.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;gap:0.75rem">
-        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">FIFA Rankings • June 2026</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">FIFA Rankings • ${rankDate}</div>
         <div style="position:relative">
           <input id="rank-search" type="text" placeholder="🔍 Search team…" oninput="filterRankings(this.value)"
             style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:0.4rem 0.75rem 0.4rem 0.75rem;color:#fff;font-size:0.8rem;outline:none;width:160px;transition:all 0.2s"
@@ -556,7 +570,7 @@ function showTab(tab) {
           <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-bottom:0.25rem">Your team is ranked</div>
           <div style="font-size:2.8rem;font-weight:900;color:${accentColor};text-shadow:0 0 30px ${accentColor}88;line-height:1">#${userRank}</div>
           <div style="color:#fff;font-weight:700;font-size:1rem;margin-top:0.25rem">${APP.teamName}</div>
-          <div style="color:rgba(255,255,255,0.3);font-size:0.75rem;margin-top:0.25rem">FIFA World Ranking • June 2026</div>
+          <div style="color:rgba(255,255,255,0.3);font-size:0.75rem;margin-top:0.25rem">FIFA World Ranking • ${rankDate}</div>
         </div>
       ` : `
         <div style="${glass};padding:1rem;margin-bottom:1rem;text-align:center;border-color:rgba(240,165,0,0.2)">
