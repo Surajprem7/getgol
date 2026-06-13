@@ -576,27 +576,55 @@ function showTab(tab) {
 
   } else if (tab === 'watch') {
     const watchItems = [
-      {icon:'📱',name:'JioCinema',color:'#00b4d8',desc:'Free streaming online & app',sub:'jiocinema.com'},
-      {icon:'📺',name:'Sports18',color:'#ff6b35',desc:'TV broadcast on cable & DTH',sub:'Check your cable provider'},
-      {icon:'🆓',name:'DD Sports',color:'#4cc9f0',desc:'Free TV - no subscription needed',sub:'DD Free Dish channel 64'},
+      {
+        icon:'📱', name:'JioHotstar', badge:'FREE', badgeColor:'#4ade80',
+        color:'#00b4d8', desc:'Official streaming — all 64 matches live & free',
+        sub:'Download app or visit hotstar.com', url:'https://www.hotstar.com/in/sports/football',
+        highlight: true,
+      },
+      {
+        icon:'📺', name:'Sports18 / Star Sports', badge:'TV', badgeColor:'#f0a500',
+        color:'#ff6b35', desc:'Live TV broadcast — cable, DTH & Tata Play',
+        sub:'Check your local cable / DTH provider', url: null,
+      },
+      {
+        icon:'🆓', name:'DD Sports', badge:'FREE TV', badgeColor:'#4ade80',
+        color:'#4cc9f0', desc:'Free-to-air — no subscription needed',
+        sub:'DD Free Dish · Channel 64', url:'https://www.ddindia.gov.in',
+      },
     ];
     content.innerHTML = `
-      <h2 style="color:#fff;margin-bottom:1rem;font-size:1.1rem">📺 Where to Watch in India</h2>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:#fff">📺 Where to Watch in India</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:0.25rem">All FIFA WC 2026 matches · Official broadcasters only</div>
+      </div>
       ${watchItems.map(w => `
-        <div style="${glass};padding:1.25rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:1rem">
-          <div style="font-size:2rem;filter:drop-shadow(0 0 8px ${w.color}66)">${w.icon}</div>
-          <div>
-            <div style="font-size:1.1rem;font-weight:700;color:${w.color}">${w.name}</div>
-            <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-top:0.2rem">${w.desc}</div>
-            <div style="color:rgba(255,255,255,0.3);font-size:0.75rem">${w.sub}</div>
+        <div style="${glass};padding:1.25rem;margin-bottom:0.75rem;${w.highlight ? 'border-color:#4ade8033;box-shadow:0 0 24px #4ade8011' : ''}">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:${w.url ? '0.75rem' : '0'}">
+            <div style="font-size:2rem;filter:drop-shadow(0 0 8px ${w.color}66)">${w.icon}</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <span style="font-size:1rem;font-weight:700;color:${w.color}">${w.name}</span>
+                <span style="font-size:0.6rem;font-weight:800;background:${w.badgeColor}22;color:${w.badgeColor};border:1px solid ${w.badgeColor}55;border-radius:8px;padding:0.1rem 0.4rem;letter-spacing:0.5px">${w.badge}</span>
+              </div>
+              <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-top:0.15rem">${w.desc}</div>
+              <div style="color:rgba(255,255,255,0.3);font-size:0.7rem;margin-top:0.1rem">${w.sub}</div>
+            </div>
           </div>
+          ${w.url ? `<a href="${w.url}" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;padding:0.55rem;background:${w.color}22;border:1px solid ${w.color}44;border-radius:10px;color:${w.color};font-weight:700;font-size:0.82rem;text-decoration:none">Watch Now →</a>` : ''}
         </div>
       `).join('')}
-      <div style="${glass};padding:1.25rem;display:flex;align-items:center;gap:1rem;border-color:rgba(37,211,102,0.3)">
+      <div style="${glass};padding:1rem;margin-top:0.5rem;border-color:rgba(255,255,255,0.06)">
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.25);text-align:center;line-height:1.6">
+          ℹ️ JioHotstar holds official broadcast rights for India.<br>
+          Sports18 & Star Sports on TV. DD Sports free-to-air as per Indian law.
+        </div>
+      </div>
+      <div style="${glass};padding:1.25rem;margin-top:0.75rem;display:flex;align-items:center;gap:1rem;border-color:rgba(37,211,102,0.3)">
         <div style="font-size:2rem">💬</div>
         <div>
           <div style="font-size:1.1rem;font-weight:700;color:#25D366">Share Gol!</div>
-          <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-top:0.2rem">Tell your friends!</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-top:0.2rem">Tell your friends about the app!</div>
           <button onclick="shareApp()" style="margin-top:0.5rem;padding:0.4rem 1.25rem;background:#25D366;border:none;border-radius:20px;color:#000;font-weight:700;cursor:pointer;font-size:0.85rem">Share via WhatsApp</button>
         </div>
       </div>
