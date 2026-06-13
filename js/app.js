@@ -102,7 +102,7 @@ function showTeamPicker() {
         <p style="color:rgba(255,255,255,0.6);margin-bottom:0.1rem;font-size:0.9rem">FIFA World Cup 2026</p>
         <p style="color:#f0a500;font-size:1rem;font-style:italic;margin-bottom:0.5rem;text-shadow:0 0 15px #f0a50088">¡Pasion por el Gol!</p>
         <p style="color:rgba(255,255,255,0.3);font-size:0.8rem;margin-bottom:0.75rem">48 teams • 12 groups • 104 matches</p>
-        <button onclick="browseRankings()" style="background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:20px;color:rgba(255,255,255,0.45);font-size:0.8rem;padding:0.35rem 1rem;cursor:pointer;margin-bottom:1.75rem;transition:all 0.2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.4)'" onmouseout="this.style.color='rgba(255,255,255,0.45)';this.style.borderColor='rgba(255,255,255,0.15)'">🏅 Skip — just show me FIFA Rankings →</button>
+        <button onclick="browseRankings()" style="background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:20px;color:rgba(255,255,255,0.45);font-size:0.8rem;padding:0.35rem 1rem;cursor:pointer;margin-bottom:1.75rem;transition:all 0.2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.4)'" onmouseout="this.style.color='rgba(255,255,255,0.45)';this.style.borderColor='rgba(255,255,255,0.15)'">📊 Skip — just show me the Standings →</button>
 
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;width:100%">
           ${teams.map(t => `
@@ -124,7 +124,7 @@ function browseRankings() {
   APP.team = null;
   APP.teamName = null;
   APP.teamColor = '#f0a500';
-  showApp('rankings');
+  showApp('standings');
 }
 
 function selectTeam(name, color) {
@@ -165,6 +165,7 @@ function showApp(startTab) {
         <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto;background:rgba(255,255,255,0.05);padding:0.4rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08)">
           <button onclick="showTab('matches')" id="nav-matches" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Matches</button>
           <button onclick="showTab('predict')" id="nav-predict" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Predict</button>
+          <button onclick="showTab('standings')" id="nav-standings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Standings</button>
           <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Rankings</button>
           <button onclick="showTab('watch')" id="nav-watch" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Watch</button>
         </nav>
@@ -180,7 +181,7 @@ function showTab(tab) {
   const content = document.getElementById('tab-content');
 
   // Update nav buttons
-  ['matches','predict','rankings','watch'].forEach(t => {
+  ['matches','predict','standings','rankings','watch'].forEach(t => {
     const btn = document.getElementById('nav-'+t);
     if (!btn) return;
     if (t === tab) {
@@ -292,6 +293,9 @@ function showTab(tab) {
         `;
       });
     });
+
+  } else if (tab === 'standings') {
+    buildStandingsTab(content, glass);
 
   } else if (tab === 'rankings') {
     const FIFA_RANKINGS = [
@@ -475,6 +479,174 @@ function shareApp() {
 function resetTeam() {
   localStorage.clear();
   location.reload();
+}
+
+function buildStandingsTab(content, glass) {
+  // Derive groups and their teams from MATCHES
+  const groupTeams = {};
+  MATCHES.forEach(m => {
+    if (!groupTeams[m.group]) groupTeams[m.group] = new Set();
+    groupTeams[m.group].add(m.home);
+    groupTeams[m.group].add(m.away);
+  });
+
+  // Build empty standings table per team
+  function makeTable(group) {
+    const teams = [...groupTeams[group]];
+    return teams.map(t => ({name:t, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0}));
+  }
+
+  // Load saved results and compute standings
+  const groups = Object.keys(groupTeams).sort();
+  const standings = {};
+  groups.forEach(g => {
+    const table = {};
+    [...groupTeams[g]].forEach(t => { table[t] = {name:t, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0}; });
+    MATCHES.filter(m => m.group === g).forEach(m => {
+      const res = localStorage.getItem('result_'+m.id);
+      if (!res) return;
+      const [hg, ag] = res.split('-').map(Number);
+      const h = table[m.home], a = table[m.away];
+      h.p++; a.p++; h.gf += hg; h.ga += ag; a.gf += ag; a.ga += hg;
+      if (hg > ag)      { h.w++; h.pts+=3; a.l++; }
+      else if (hg < ag) { a.w++; a.pts+=3; h.l++; }
+      else              { h.d++; h.pts++; a.d++; a.pts++; }
+    });
+    standings[g] = Object.values(table).sort((a,b) =>
+      b.pts - a.pts || (b.gf-b.ga) - (a.gf-a.ga) || b.gf - a.gf
+    );
+  });
+
+  // Map every team to its group for search
+  const teamToGroup = {};
+  groups.forEach(g => [...groupTeams[g]].forEach(t => { teamToGroup[t.toLowerCase()] = g; }));
+
+  const accentColor = APP.teamColor || '#f0a500';
+
+  const renderGroup = (g) => {
+    const rows = standings[g];
+    const playedAny = rows.some(r => r.p > 0);
+    return `
+      <div id="group-${g}" style="${glass};margin-bottom:1rem;overflow:hidden">
+        <div style="padding:0.6rem 1rem;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-weight:700;color:#fff;font-size:0.9rem">Group ${g}</span>
+          <span style="font-size:0.65rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px">Top 2 advance</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+          <thead>
+            <tr style="color:rgba(255,255,255,0.35);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px">
+              <th style="text-align:left;padding:0.4rem 0.75rem;font-weight:600">Team</th>
+              <th style="padding:0.4rem 0.3rem;text-align:center;font-weight:600">P</th>
+              <th style="padding:0.4rem 0.3rem;text-align:center;font-weight:600">W</th>
+              <th style="padding:0.4rem 0.3rem;text-align:center;font-weight:600">D</th>
+              <th style="padding:0.4rem 0.3rem;text-align:center;font-weight:600">L</th>
+              <th style="padding:0.4rem 0.3rem;text-align:center;font-weight:600">GF</th>
+              <th style="padding:0.4rem 0.3rem;text-align:center;font-weight:600">GA</th>
+              <th style="padding:0.4rem 0.3rem;text-align:center;font-weight:600">GD</th>
+              <th style="padding:0.4rem 0.5rem;text-align:center;font-weight:700;color:rgba(255,255,255,0.6)">Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((r,i) => {
+              const isUser = r.name === APP.teamName;
+              const advance = i < 2;
+              const maybe = i === 2;
+              const gd = r.gf - r.ga;
+              const borderLeft = advance ? 'border-left:3px solid #4ade80' : maybe ? 'border-left:3px solid #f0a500' : 'border-left:3px solid transparent';
+              const rowBg = isUser ? 'background:'+accentColor+'18' : advance && playedAny ? 'background:rgba(74,222,128,0.04)' : '';
+              return `
+                <tr style="${borderLeft};${rowBg};border-bottom:1px solid rgba(255,255,255,0.05)">
+                  <td style="padding:0.55rem 0.75rem;display:flex;align-items:center;gap:0.5rem">
+                    <img src="https://flagcdn.com/24x18/${getCountryCode(r.name)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
+                    <span style="color:${isUser ? accentColor : '#fff'};font-weight:${isUser ? '700' : '500'}">${r.name}</span>
+                  </td>
+                  <td style="text-align:center;padding:0.55rem 0.3rem;color:rgba(255,255,255,0.7)">${r.p}</td>
+                  <td style="text-align:center;padding:0.55rem 0.3rem;color:rgba(255,255,255,0.7)">${r.w}</td>
+                  <td style="text-align:center;padding:0.55rem 0.3rem;color:rgba(255,255,255,0.7)">${r.d}</td>
+                  <td style="text-align:center;padding:0.55rem 0.3rem;color:rgba(255,255,255,0.7)">${r.l}</td>
+                  <td style="text-align:center;padding:0.55rem 0.3rem;color:rgba(255,255,255,0.7)">${r.gf}</td>
+                  <td style="text-align:center;padding:0.55rem 0.3rem;color:rgba(255,255,255,0.7)">${r.ga}</td>
+                  <td style="text-align:center;padding:0.55rem 0.3rem;color:${gd>0?'#4ade80':gd<0?'#f87171':'rgba(255,255,255,0.5)'}">${gd>0?'+'+gd:gd}</td>
+                  <td style="text-align:center;padding:0.55rem 0.5rem;font-weight:700;color:${isUser ? accentColor : '#fff'}">${r.pts}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+        <div style="padding:0.4rem 0.75rem;display:flex;gap:1rem;font-size:0.62rem;color:rgba(255,255,255,0.25);border-top:1px solid rgba(255,255,255,0.05)">
+          <span><span style="display:inline-block;width:8px;height:8px;background:#4ade80;border-radius:1px;margin-right:3px"></span>Advance to R16</span>
+          <span><span style="display:inline-block;width:8px;height:8px;background:#f0a500;border-radius:1px;margin-right:3px"></span>Best 3rd (maybe)</span>
+        </div>
+      </div>
+    `;
+  };
+
+  content.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:0.75rem">
+      <div>
+        <div style="color:#fff;font-weight:700;font-size:1rem">Group Stage</div>
+        <div style="color:rgba(255,255,255,0.35);font-size:0.72rem">FIFA World Cup 2026</div>
+      </div>
+      <div style="position:relative">
+        <input id="standings-search" type="text" placeholder="🔍 Find team…" oninput="jumpToTeamGroup(this.value)"
+          style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:0.4rem 0.75rem;color:#fff;font-size:0.8rem;outline:none;width:150px;transition:all 0.2s"
+          onfocus="this.style.borderColor='rgba(240,165,0,0.6)';this.style.background='rgba(255,255,255,0.1)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.15)';this.style.background='rgba(255,255,255,0.07)'"
+          autocomplete="off">
+        <div id="search-suggestions" style="position:absolute;right:0;top:110%;background:#1a1a2e;border:1px solid rgba(255,255,255,0.12);border-radius:12px;min-width:170px;z-index:100;display:none;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5)"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
+      ${groups.map(g => `
+        <button onclick="document.getElementById('group-${g}').scrollIntoView({behavior:'smooth',block:'start'})"
+          style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.7);font-size:0.75rem;font-weight:600;padding:0.3rem 0.65rem;cursor:pointer">
+          ${g}
+        </button>
+      `).join('')}
+    </div>
+
+    <div style="font-size:0.7rem;color:rgba(255,255,255,0.25);margin-bottom:0.75rem;padding:0.5rem 0.75rem;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)">
+      ⏱ Standings update as match results come in. Matches in progress will reflect live scores.
+    </div>
+
+    ${groups.map(g => renderGroup(g)).join('')}
+  `;
+
+  // Store team→group map for search
+  window._teamToGroup = teamToGroup;
+  window._allTeams = Object.keys(groupTeams).flatMap(g => [...groupTeams[g]]);
+}
+
+function jumpToTeamGroup(query) {
+  const sugBox = document.getElementById('search-suggestions');
+  if (!query.trim()) { sugBox.style.display = 'none'; return; }
+  const q = query.trim().toLowerCase();
+  const matches = (window._allTeams || []).filter(t => t.toLowerCase().includes(q));
+  if (!matches.length) { sugBox.style.display = 'none'; return; }
+  sugBox.style.display = 'block';
+  sugBox.innerHTML = matches.map(t => `
+    <div onclick="selectStandingsTeam('${t}')"
+      style="padding:0.6rem 0.9rem;cursor:pointer;display:flex;align-items:center;gap:0.6rem;border-bottom:1px solid rgba(255,255,255,0.06);color:#fff;font-size:0.82rem"
+      onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+      onmouseout="this.style.background='transparent'">
+      <img src="https://flagcdn.com/24x18/${getCountryCode(t)}.png" style="border-radius:2px" onerror="this.style.display='none'">
+      ${t}
+      <span style="margin-left:auto;font-size:0.65rem;color:rgba(255,255,255,0.35)">Group ${(window._teamToGroup||{})[t.toLowerCase()]||''}</span>
+    </div>
+  `).join('');
+}
+
+function selectStandingsTeam(team) {
+  const groupId = (window._teamToGroup || {})[team.toLowerCase()];
+  if (groupId) {
+    const el = document.getElementById('group-'+groupId);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  const inp = document.getElementById('standings-search');
+  if (inp) inp.value = team;
+  const sug = document.getElementById('search-suggestions');
+  if (sug) sug.style.display = 'none';
 }
 
 function filterRankings(query) {
