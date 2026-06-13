@@ -194,6 +194,39 @@ function showApp(startTab) {
   showTab(startTab || 'matches');
 }
 
+function jumpToGroup(group) {
+  // Find first match card for this group and scroll to it
+  const cards = document.querySelectorAll('[data-group]');
+  for (const card of cards) {
+    if (card.dataset.group === group) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  }
+}
+
+// Highlight the timeline node whose group is most visible in the viewport
+function updateTimelineActive() {
+  const cards = document.querySelectorAll('[data-group]');
+  let activeGroup = null;
+  const mid = window.innerHeight * 0.4;
+  cards.forEach(card => {
+    const rect = card.getBoundingClientRect();
+    if (rect.top <= mid && rect.bottom > 0) activeGroup = card.dataset.group;
+  });
+  if (!activeGroup) return;
+  document.querySelectorAll('[id^="tl-node-"]').forEach(node => {
+    const g = node.id.replace('tl-node-', '');
+    const isActive = g === activeGroup;
+    node.style.background    = isActive ? (APP.teamColor || '#f0a500') : 'rgba(255,255,255,0.08)';
+    node.style.borderColor   = isActive ? (APP.teamColor || '#f0a500') : 'rgba(255,255,255,0.2)';
+    node.style.color         = isActive ? '#000' : 'rgba(255,255,255,0.7)';
+    node.classList.toggle('tl-node-active', isActive);
+  });
+}
+
+let _tlScrollHandler = null;
+
 function renderVS(matchId) {
   const sc = window.LIVE && window.LIVE.score(matchId);
   if (sc && (sc.status === 'STATUS_FINAL' || sc.status === 'STATUS_IN_PROGRESS')) {
@@ -207,6 +240,10 @@ function renderVS(matchId) {
 
 function showTab(tab) {
   window._activeTab = tab;
+  if (tab !== 'matches' && _tlScrollHandler) {
+    window.removeEventListener('scroll', _tlScrollHandler);
+    _tlScrollHandler = null;
+  }
   const content = document.getElementById('tab-content');
 
   // Update nav buttons
@@ -232,7 +269,7 @@ function showTab(tab) {
     const otherMatches = MATCHES.filter(m => m.home !== APP.teamName && m.away !== APP.teamName);
 
     const renderMatch = (m, highlight) => `
-      <div style="${glass};margin-bottom:0.75rem;overflow:hidden;${highlight ? 'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22' : ''}">
+      <div data-group="${m.group}" style="${glass};margin-bottom:0.75rem;overflow:hidden;${highlight ? 'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22' : ''}">
 
         <!-- Date badge — centered, attractive -->
         <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
@@ -280,16 +317,78 @@ function showTab(tab) {
       </div>
     `;
 
+    // Build group timeline nodes (A–L in order of first appearance)
+    const groups = [...new Set(MATCHES.map(m => m.group))];
+    const timelineNodes = groups.map(g => {
+      const firstMatch = MATCHES.find(m => m.group === g);
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const d = new Date(firstMatch.date);
+      const label = `${d.getDate()} ${months[d.getMonth()]}`;
+      return { g, label };
+    });
+
     content.innerHTML = `
-      ${myMatches.length > 0 ? `
-        <div style="color:${accentColor};font-weight:700;margin-bottom:0.75rem;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem">
-          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:3px" onerror="this.style.display='none'">
-          ${APP.teamName} matches
+      <style>
+        @keyframes timelineFlow {
+          0%   { background-position: 0% 0%; }
+          100% { background-position: 0% 100%; }
+        }
+        @keyframes nodePulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(240,165,0,0); }
+          50%      { box-shadow: 0 0 0 4px rgba(240,165,0,0.25); }
+        }
+        .tl-node-active { animation: nodePulse 2s ease-in-out infinite; }
+      </style>
+
+      <div style="display:flex;gap:0.5rem;align-items:flex-start">
+
+        <!-- Match cards column -->
+        <div style="flex:1;min-width:0">
+          ${myMatches.length > 0 ? `
+            <div style="color:${accentColor};font-weight:700;margin-bottom:0.75rem;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem">
+              <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:3px" onerror="this.style.display='none'">
+              ${APP.teamName} matches
+            </div>
+            ${myMatches.map(m => renderMatch(m, true)).join('')}
+            <div style="color:rgba(255,255,255,0.4);font-weight:600;margin:1.5rem 0 0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px">All matches</div>
+          ` : ''}
+          ${otherMatches.map(m => renderMatch(m, false)).join('')}
         </div>
-        ${myMatches.map(m => renderMatch(m, true)).join('')}
-        <div style="color:rgba(255,255,255,0.4);font-weight:600;margin:1.5rem 0 0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px">All matches</div>
-      ` : ''}
-      ${otherMatches.map(m => renderMatch(m, false)).join('')}
+
+        <!-- Animated timeline strip -->
+        <div style="width:36px;flex-shrink:0;position:relative;padding-top:0.25rem" id="match-timeline">
+          <!-- Flowing gradient line -->
+          <div style="position:absolute;left:50%;transform:translateX(-50%);top:10px;bottom:10px;width:2px;
+            background:linear-gradient(180deg,
+              ${accentColor}00 0%,
+              ${accentColor}cc 15%,
+              #4cc9f0cc 50%,
+              ${accentColor}cc 85%,
+              ${accentColor}00 100%);
+            background-size:100% 300%;
+            animation:timelineFlow 3s linear infinite;
+            border-radius:2px"></div>
+
+          <!-- Group nodes -->
+          ${timelineNodes.map(({g, label}, i) => {
+            const isFirst = i === 0;
+            return `
+              <div onclick="jumpToGroup('${g}')" title="Group ${g}" style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;cursor:pointer;margin-bottom:${Math.floor(MATCHES.filter(m=>m.group===g).length * 13.2)}px">
+                <div class="${isFirst ? 'tl-node-active' : ''}" style="width:22px;height:22px;border-radius:50%;
+                  background:${isFirst ? accentColor : 'rgba(255,255,255,0.08)'};
+                  border:2px solid ${isFirst ? accentColor : 'rgba(255,255,255,0.2)'};
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:0.55rem;font-weight:800;color:${isFirst ? '#000' : 'rgba(255,255,255,0.7)'};
+                  transition:all 0.3s;box-sizing:border-box"
+                  id="tl-node-${g}">
+                  ${g}
+                </div>
+                <div style="font-size:0.45rem;color:rgba(255,255,255,0.3);margin-top:2px;text-align:center;line-height:1.1">${label}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
     `;
 
     // Load saved picks + live vote counts for every visible match
@@ -318,6 +417,12 @@ function showTab(tab) {
         `;
       });
     });
+
+    // Start scroll listener for timeline node highlighting
+    if (_tlScrollHandler) window.removeEventListener('scroll', _tlScrollHandler);
+    _tlScrollHandler = updateTimelineActive;
+    window.addEventListener('scroll', _tlScrollHandler, { passive: true });
+    updateTimelineActive();
 
   } else if (tab === 'groups') {
     buildStandingsTab(content, glass);
