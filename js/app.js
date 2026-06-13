@@ -100,16 +100,22 @@ function showTeamPickerModal() {
       <!-- Handle bar -->
       <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 1rem"></div>
 
-      <!-- Header row -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
-        <div>
-          <div style="font-size:1.1rem;font-weight:800;color:#fff">Pick your team</div>
-          <div style="font-size:0.75rem;color:rgba(255,255,255,0.35)">Personalises your experience — optional</div>
-        </div>
-        <button onclick="closeTeamPicker()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:36px;height:36px;color:rgba(255,255,255,0.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+      <!-- Brand banner -->
+      <div style="text-align:center;padding:0.5rem 0 1.25rem;position:relative">
+        <div style="font-size:3rem;filter:drop-shadow(0 0 20px #f0a500);margin-bottom:0.25rem">⚽</div>
+        <div style="font-size:2.8rem;font-weight:900;color:#fff;text-shadow:0 0 30px #f0a50066;letter-spacing:-1px;line-height:1">Gol!</div>
+        <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-top:0.1rem">FIFA World Cup 2026</div>
+        <div style="color:#f0a500;font-size:0.9rem;font-style:italic;margin-top:0.15rem;text-shadow:0 0 12px #f0a50066">¡Pasion por el Gol!</div>
+        <div style="color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:0.3rem">48 teams • 12 groups • 104 matches</div>
+
+        <!-- SKIP button top-right -->
+        <button onclick="closeTeamPicker()" style="position:absolute;top:0;right:0;background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:rgba(255,255,255,0.5);font-size:0.75rem;font-weight:600;letter-spacing:0.5px;padding:0.3rem 0.85rem;cursor:pointer;transition:all 0.2s"
+          onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.5)'"
+          onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.borderColor='rgba(255,255,255,0.2)'">SKIP</button>
       </div>
 
-      <p style="color:rgba(255,255,255,0.25);font-size:0.72rem;margin-bottom:1rem">48 teams • 12 groups • FIFA World Cup 2026</p>
+      <!-- Pick your team label -->
+      <div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.65rem">Pick your team <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
 
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem">
         ${teams.map(t => `
