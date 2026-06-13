@@ -355,10 +355,10 @@ function showTab(tab) {
           ${otherMatches.map(m => renderMatch(m, false)).join('')}
         </div>
 
-        <!-- Animated timeline strip -->
-        <div style="width:36px;flex-shrink:0;position:relative;padding-top:0.25rem" id="match-timeline">
+        <!-- Animated timeline strip — sticky so it stays on screen while matches scroll -->
+        <div style="width:36px;flex-shrink:0;position:sticky;top:1rem;align-self:flex-start;max-height:calc(100vh - 2rem);overflow:hidden" id="match-timeline">
           <!-- Flowing gradient line -->
-          <div style="position:absolute;left:50%;transform:translateX(-50%);top:10px;bottom:10px;width:2px;
+          <div style="position:absolute;left:50%;transform:translateX(-50%);top:0;bottom:0;width:2px;
             background:linear-gradient(180deg,
               ${accentColor}00 0%,
               ${accentColor}cc 15%,
