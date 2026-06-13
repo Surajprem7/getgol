@@ -209,19 +209,42 @@ function jumpToGroup(group) {
 function updateTimelineActive() {
   const cards = document.querySelectorAll('[data-group]');
   let activeGroup = null;
-  const mid = window.innerHeight * 0.4;
+  const mid = window.innerHeight * 0.45;
   cards.forEach(card => {
     const rect = card.getBoundingClientRect();
     if (rect.top <= mid && rect.bottom > 0) activeGroup = card.dataset.group;
   });
   if (!activeGroup) return;
-  document.querySelectorAll('[id^="tl-node-"]').forEach(node => {
-    const g = node.id.replace('tl-node-', '');
+
+  const accent = APP.teamColor || '#f0a500';
+  const groups = [...new Set(MATCHES.map(m => m.group))];
+  const activeIdx = groups.indexOf(activeGroup);
+  if (activeIdx < 0) return;
+
+  const pct = groups.length === 1 ? 50 : (activeIdx / (groups.length - 1)) * 100;
+
+  // Move glow bloom
+  const bloom = document.getElementById('tl-bloom');
+  const fill  = document.getElementById('tl-fill');
+  const tl    = document.getElementById('match-timeline');
+  if (bloom && tl) {
+    const tlH = tl.offsetHeight;
+    const nodePx = (pct / 100) * tlH;
+    bloom.style.top = (nodePx - 35) + 'px';
+    if (fill) fill.style.height = pct + '%';
+  }
+
+  // Update knob styles
+  groups.forEach((g, i) => {
+    const node = document.getElementById('tl-node-' + g);
+    if (!node) return;
     const isActive = g === activeGroup;
-    node.style.background    = isActive ? (APP.teamColor || '#f0a500') : 'rgba(255,255,255,0.08)';
-    node.style.borderColor   = isActive ? (APP.teamColor || '#f0a500') : 'rgba(255,255,255,0.2)';
-    node.style.color         = isActive ? '#000' : 'rgba(255,255,255,0.7)';
-    node.classList.toggle('tl-node-active', isActive);
+    const isPast   = i < activeIdx;
+    node.style.background   = isActive ? accent          : '#0d0d1e';
+    node.style.borderColor  = isActive ? accent          : isPast ? accent + '66' : 'rgba(255,255,255,0.2)';
+    node.style.color        = isActive ? '#000'          : isPast ? accent + 'aa' : 'rgba(255,255,255,0.3)';
+    node.style.boxShadow    = isActive ? `0 0 10px ${accent}88` : 'none';
+    node.style.transform    = `translateY(-50%) scale(${isActive ? 1.25 : 1})`;
   });
 }
 
@@ -317,27 +340,15 @@ function showTab(tab) {
       </div>
     `;
 
-    // Build group timeline nodes (A–L in order of first appearance)
     const groups = [...new Set(MATCHES.map(m => m.group))];
-    const timelineNodes = groups.map(g => {
-      const firstMatch = MATCHES.find(m => m.group === g);
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const d = new Date(firstMatch.date);
-      const label = `${d.getDate()} ${months[d.getMonth()]}`;
-      return { g, label };
-    });
 
     content.innerHTML = `
       <style>
-        @keyframes timelineFlow {
-          0%   { background-position: 0% 0%; }
-          100% { background-position: 0% 100%; }
+        @keyframes bloomPulse {
+          0%,100% { opacity:0.7; transform:translateX(-50%) scaleX(1); }
+          50%      { opacity:1;   transform:translateX(-50%) scaleX(1.15); }
         }
-        @keyframes nodePulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(240,165,0,0); }
-          50%      { box-shadow: 0 0 0 4px rgba(240,165,0,0.25); }
-        }
-        .tl-node-active { animation: nodePulse 2s ease-in-out infinite; }
+        @keyframes tlFadeIn { from{opacity:0} to{opacity:1} }
       </style>
 
       <div style="display:flex;gap:0.5rem;align-items:flex-start">
@@ -355,38 +366,49 @@ function showTab(tab) {
           ${otherMatches.map(m => renderMatch(m, false)).join('')}
         </div>
 
-        <!-- Animated timeline strip — sticky so it stays on screen while matches scroll -->
-        <div style="width:36px;flex-shrink:0;position:sticky;top:1rem;align-self:flex-start;max-height:calc(100vh - 2rem);overflow:hidden" id="match-timeline">
-          <!-- Flowing gradient line -->
-          <div style="position:absolute;left:50%;transform:translateX(-50%);top:0;bottom:0;width:2px;
-            background:linear-gradient(180deg,
-              ${accentColor}00 0%,
-              ${accentColor}cc 15%,
-              #4cc9f0cc 50%,
-              ${accentColor}cc 85%,
-              ${accentColor}00 100%);
-            background-size:100% 300%;
-            animation:timelineFlow 3s linear infinite;
-            border-radius:2px"></div>
+        <!-- Ruler timeline — sticky -->
+        <div id="match-timeline" style="width:32px;flex-shrink:0;position:sticky;top:0.5rem;align-self:flex-start;height:calc(100vh - 5rem);overflow:hidden;animation:tlFadeIn 0.4s ease">
+          <div style="position:relative;width:100%;height:100%">
 
-          <!-- Group nodes -->
-          ${timelineNodes.map(({g, label}, i) => {
-            const isFirst = i === 0;
-            return `
-              <div onclick="jumpToGroup('${g}')" title="Group ${g}" style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;cursor:pointer;margin-bottom:${Math.floor(MATCHES.filter(m=>m.group===g).length * 13.2)}px">
-                <div class="${isFirst ? 'tl-node-active' : ''}" style="width:22px;height:22px;border-radius:50%;
-                  background:${isFirst ? accentColor : 'rgba(255,255,255,0.08)'};
-                  border:2px solid ${isFirst ? accentColor : 'rgba(255,255,255,0.2)'};
+            <!-- Dim background line (full height) -->
+            <div style="position:absolute;right:8px;top:0;bottom:0;width:1.5px;background:rgba(255,255,255,0.08);border-radius:2px"></div>
+
+            <!-- Bright filled line above active (updated by JS) -->
+            <div id="tl-fill" style="position:absolute;right:8px;top:0;width:2px;height:0%;background:linear-gradient(180deg,${accentColor}44,${accentColor});border-radius:2px;transition:height 0.4s cubic-bezier(0.4,0,0.2,1)"></div>
+
+            <!-- Horizontal glow bloom at active node -->
+            <div id="tl-bloom" style="position:absolute;right:-6px;width:46px;height:70px;
+              background:radial-gradient(ellipse 23px 35px at 75% 50%, ${accentColor}55 0%, ${accentColor}22 45%, transparent 70%);
+              top:0;transition:top 0.4s cubic-bezier(0.4,0,0.2,1);
+              animation:bloomPulse 2.5s ease-in-out infinite;pointer-events:none"></div>
+
+            <!-- Ruler tick marks + group nodes -->
+            ${groups.map((g, i) => {
+              const pct = groups.length === 1 ? 50 : (i / (groups.length - 1)) * 100;
+              // 4 minor ticks between each group
+              const minorTicks = i < groups.length - 1 ? [1,2,3,4].map(t => {
+                const mp = pct + (t / 5) * (100 / (groups.length - 1));
+                return `<div style="position:absolute;right:10px;top:${mp}%;width:5px;height:1px;background:rgba(255,255,255,0.15);transform:translateY(-50%)"></div>`;
+              }).join('') : '';
+
+              return `
+                ${minorTicks}
+                <!-- Major tick -->
+                <div style="position:absolute;right:10px;top:${pct}%;width:9px;height:1px;background:rgba(255,255,255,0.25);transform:translateY(-50%)"></div>
+                <!-- Group node knob -->
+                <div id="tl-node-${g}" onclick="jumpToGroup('${g}')"
+                  style="position:absolute;right:0;top:${pct}%;transform:translateY(-50%);
+                  width:18px;height:18px;border-radius:50%;cursor:pointer;
+                  background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.2);
                   display:flex;align-items:center;justify-content:center;
-                  font-size:0.55rem;font-weight:800;color:${isFirst ? '#000' : 'rgba(255,255,255,0.7)'};
-                  transition:all 0.3s;box-sizing:border-box"
-                  id="tl-node-${g}">
+                  font-size:0.46rem;font-weight:900;color:rgba(255,255,255,0.35);
+                  transition:all 0.3s;box-sizing:border-box;z-index:2">
                   ${g}
                 </div>
-                <div style="font-size:0.45rem;color:rgba(255,255,255,0.3);margin-top:2px;text-align:center;line-height:1.1">${label}</div>
-              </div>
-            `;
-          }).join('')}
+              `;
+            }).join('')}
+
+          </div>
         </div>
       </div>
     `;
