@@ -194,65 +194,53 @@ function showApp(startTab) {
   showTab(startTab || 'matches');
 }
 
-function jumpToGroup(group) {
-  // Find first match card for this group and scroll to it
-  const cards = document.querySelectorAll('[data-group]');
-  for (const card of cards) {
-    if (card.dataset.group === group) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-  }
+function jumpToDate(date) {
+  const header = document.querySelector(`[data-date-header="${date}"]`);
+  if (header) header.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Highlight the timeline node whose group is most visible in the viewport
 function updateTimelineActive() {
-  const cards = document.querySelectorAll('[data-group]');
-  let activeGroup = null;
-  const mid = window.innerHeight * 0.45;
-  cards.forEach(card => {
-    const rect = card.getBoundingClientRect();
-    if (rect.top <= mid && rect.bottom > 0) activeGroup = card.dataset.group;
+  const headers = document.querySelectorAll('[data-date-header]');
+  let activeDate = null;
+  const mid = window.innerHeight * 0.4;
+  headers.forEach(h => {
+    const rect = h.getBoundingClientRect();
+    if (rect.top <= mid) activeDate = h.dataset.dateHeader;
   });
-  if (!activeGroup) return;
+  if (!activeDate) return;
 
   const accent = APP.teamColor || '#f0a500';
-  const groups = [...new Set(MATCHES.map(m => m.group))];
-  const activeIdx = groups.indexOf(activeGroup);
+  const tlDates = [...new Set([...MATCHES].sort((a,b) => a.date.localeCompare(b.date)).map(m => m.date))];
+  const activeIdx = tlDates.indexOf(activeDate);
   if (activeIdx < 0) return;
 
-  const pct = groups.length === 1 ? 50 : (activeIdx / (groups.length - 1)) * 100;
+  const pct = tlDates.length === 1 ? 50 : (activeIdx / (tlDates.length - 1)) * 100;
 
-  // Move glow bloom
   const bloom = document.getElementById('tl-bloom');
   const fill  = document.getElementById('tl-fill');
   const tl    = document.getElementById('match-timeline');
-  if (bloom && tl) {
-    const tlH = tl.offsetHeight;
-    const nodePx = (pct / 100) * tlH;
-    bloom.style.top = (nodePx - 35) + 'px';
-    if (fill) fill.style.height = pct + '%';
+  if (tl) {
+    const nodePx = (pct / 100) * tl.offsetHeight;
+    if (bloom) bloom.style.top = (nodePx - 35) + 'px';
+    if (fill)  fill.style.height = pct + '%';
   }
 
-  // Update knob + date label styles
-  groups.forEach((g, i) => {
-    const node = document.getElementById('tl-node-' + g);
-    const dayEl = document.getElementById('tl-day-' + g);
-    const monEl = document.getElementById('tl-mon-' + g);
+  tlDates.forEach((date, i) => {
+    const node  = document.getElementById('tl-node-' + date);
+    const dayEl = document.getElementById('tl-day-' + date);
     if (!node) return;
-    const isActive = g === activeGroup;
+    const isActive = date === activeDate;
     const isPast   = i < activeIdx;
     node.style.background  = isActive ? accent : '#0d0d1e';
-    node.style.borderColor = isActive ? accent : isPast ? accent + '55' : 'rgba(255,255,255,0.18)';
+    node.style.borderColor = isActive ? accent : isPast ? accent + '55' : 'rgba(255,255,255,0.15)';
     node.style.boxShadow   = isActive ? `0 0 8px ${accent}99` : 'none';
-    node.style.transform   = `translateY(-50%) scale(${isActive ? 1.3 : 1})`;
+    node.style.transform   = `translateY(-50%) scale(${isActive ? 1.35 : 1})`;
     if (dayEl) {
-      dayEl.style.color      = isActive ? accent : isPast ? accent + '99' : 'rgba(255,255,255,0.3)';
-      dayEl.style.fontWeight = isActive ? '800' : '700';
-      dayEl.style.fontSize   = isActive ? '0.65rem' : '0.55rem';
-    }
-    if (monEl) {
-      monEl.style.color = isActive ? accent + 'cc' : 'rgba(255,255,255,0.18)';
+      const dayNum = dayEl.firstElementChild;
+      const monNum = dayEl.lastElementChild;
+      if (dayNum) { dayNum.style.color = isActive ? accent : isPast ? accent+'88' : 'rgba(255,255,255,0.3)'; dayNum.style.fontSize = isActive ? '0.68rem' : '0.58rem'; }
+      if (monNum) { monNum.style.color = isActive ? accent+'cc' : 'rgba(255,255,255,0.18)'; }
     }
   });
 }
@@ -297,11 +285,16 @@ function showTab(tab) {
 
   if (tab === 'matches') {
     const accentColor = APP.teamColor || '#f0a500';
-    const myMatches = APP.teamName ? getTeamMatches(APP.teamName) : [];
-    const otherMatches = MATCHES.filter(m => m.home !== APP.teamName && m.away !== APP.teamName);
 
-    const renderMatch = (m, highlight) => `
-      <div data-group="${m.group}" style="${glass};margin-bottom:0.75rem;overflow:hidden;${highlight ? 'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22' : ''}">
+    // Sort ALL matches chronologically by date+time
+    const sortedMatches = [...MATCHES].sort((a, b) =>
+      (a.date + a.time).localeCompare(b.date + b.time)
+    );
+
+    const renderMatch = (m) => {
+      const isMyMatch = APP.teamName && (m.home === APP.teamName || m.away === APP.teamName);
+      return `
+      <div data-date="${m.date}" data-group="${m.group}" style="${glass};margin-bottom:0.75rem;overflow:hidden;${isMyMatch ? 'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22' : ''}">
 
         <!-- Date badge — centered, attractive -->
         <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
@@ -347,32 +340,44 @@ function showTab(tab) {
           <div id="counts-${m.id}" style="font-size:0.7rem;color:rgba(255,255,255,0.25);text-align:center;min-height:1rem"></div>
         </div>
       </div>
-    `;
+    `; };
 
-    const groups = [...new Set(MATCHES.map(m => m.group))];
+    // Unique match dates sorted chronologically for the timeline
+    const tlDates = [...new Set(sortedMatches.map(m => m.date))].sort();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    // Group matches by date for rendering with date headers
+    const byDate = {};
+    sortedMatches.forEach(m => {
+      if (!byDate[m.date]) byDate[m.date] = [];
+      byDate[m.date].push(m);
+    });
 
     content.innerHTML = `
       <style>
         @keyframes bloomPulse {
-          0%,100% { opacity:0.7; transform:translateX(-50%) scaleX(1); }
-          50%      { opacity:1;   transform:translateX(-50%) scaleX(1.15); }
+          0%,100% { opacity:0.7; }
+          50%      { opacity:1; }
         }
         @keyframes tlFadeIn { from{opacity:0} to{opacity:1} }
       </style>
 
       <div style="display:flex;gap:0.5rem;align-items:flex-start">
 
-        <!-- Match cards column -->
+        <!-- Match cards column — sorted by date -->
         <div style="flex:1;min-width:0">
-          ${myMatches.length > 0 ? `
-            <div style="color:${accentColor};font-weight:700;margin-bottom:0.75rem;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem">
-              <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:3px" onerror="this.style.display='none'">
-              ${APP.teamName} matches
-            </div>
-            ${myMatches.map(m => renderMatch(m, true)).join('')}
-            <div style="color:rgba(255,255,255,0.4);font-weight:600;margin:1.5rem 0 0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px">All matches</div>
-          ` : ''}
-          ${otherMatches.map(m => renderMatch(m, false)).join('')}
+          ${tlDates.map(date => {
+            const d = new Date(date);
+            const dateLabel = `${d.getDate()} ${months[d.getMonth()]}`;
+            const dayMatches = byDate[date] || [];
+            return `
+              <div data-date-header="${date}" style="display:flex;align-items:center;gap:0.5rem;margin:1rem 0 0.5rem">
+                <div style="font-size:0.78rem;font-weight:700;color:${accentColor};white-space:nowrap">${dateLabel}</div>
+                <div style="flex:1;height:1px;background:linear-gradient(90deg,${accentColor}44,transparent)"></div>
+              </div>
+              ${dayMatches.map(m => renderMatch(m)).join('')}
+            `;
+          }).join('')}
         </div>
 
         <!-- Ruler timeline — sticky -->
@@ -391,36 +396,28 @@ function showTab(tab) {
               top:0;transition:top 0.4s cubic-bezier(0.4,0,0.2,1);
               animation:bloomPulse 2.5s ease-in-out infinite;pointer-events:none"></div>
 
-            <!-- Ruler tick marks + group nodes -->
-            ${groups.map((g, i) => {
-              const pct = groups.length === 1 ? 50 : (i / (groups.length - 1)) * 100;
-              const firstMatch = MATCHES.find(m => m.group === g);
-              const d = new Date(firstMatch.date);
+            <!-- Ruler tick marks + date nodes -->
+            ${tlDates.map((date, i) => {
+              const pct = tlDates.length === 1 ? 50 : (i / (tlDates.length - 1)) * 100;
+              const d = new Date(date);
               const day = d.getDate();
-              const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
-
-              const minorTicks = i < groups.length - 1 ? [1,2,3,4].map(t => {
-                const mp = pct + (t / 5) * (100 / (groups.length - 1));
-                return `<div style="position:absolute;right:10px;top:${mp}%;width:5px;height:1px;background:rgba(255,255,255,0.12);transform:translateY(-50%)"></div>`;
+              const mon = months[d.getMonth()];
+              const minorTicks = i < tlDates.length - 1 ? [1,2].map(t => {
+                const mp = pct + (t / 3) * (100 / (tlDates.length - 1));
+                return `<div style="position:absolute;right:10px;top:${mp}%;width:4px;height:1px;background:rgba(255,255,255,0.1);transform:translateY(-50%)"></div>`;
               }).join('') : '';
-
               return `
                 ${minorTicks}
-                <!-- Major tick -->
-                <div style="position:absolute;right:10px;top:${pct}%;width:8px;height:1px;background:rgba(255,255,255,0.3);transform:translateY(-50%)"></div>
-                <!-- Date label to the left of tick -->
-                <div id="tl-label-${g}" style="position:absolute;right:20px;top:${pct}%;transform:translateY(-50%);
-                  text-align:right;line-height:1.1;pointer-events:none">
-                  <div style="font-size:0.55rem;font-weight:700;color:rgba(255,255,255,0.3)" id="tl-day-${g}">${day}</div>
-                  <div style="font-size:0.42rem;color:rgba(255,255,255,0.18)" id="tl-mon-${g}">${mon}</div>
+                <div style="position:absolute;right:10px;top:${pct}%;width:8px;height:1px;background:rgba(255,255,255,0.25);transform:translateY(-50%)"></div>
+                <div id="tl-day-${date}" style="position:absolute;right:20px;top:${pct}%;transform:translateY(-50%);text-align:right;line-height:1.1;pointer-events:none">
+                  <div style="font-size:0.58rem;font-weight:700;color:rgba(255,255,255,0.3);transition:all 0.3s">${day}</div>
+                  <div style="font-size:0.42rem;color:rgba(255,255,255,0.18);transition:all 0.3s">${mon}</div>
                 </div>
-                <!-- Knob -->
-                <div id="tl-node-${g}" onclick="jumpToGroup('${g}')"
+                <div id="tl-node-${date}" onclick="jumpToDate('${date}')"
                   style="position:absolute;right:0;top:${pct}%;transform:translateY(-50%);
-                  width:16px;height:16px;border-radius:50%;cursor:pointer;
-                  background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.18);
-                  transition:all 0.3s;box-sizing:border-box;z-index:2">
-                </div>
+                  width:14px;height:14px;border-radius:50%;cursor:pointer;
+                  background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.15);
+                  transition:all 0.3s;box-sizing:border-box;z-index:2"></div>
               `;
             }).join('')}
 
@@ -461,6 +458,7 @@ function showTab(tab) {
     _tlScrollHandler = updateTimelineActive;
     window.addEventListener('scroll', _tlScrollHandler, { passive: true });
     updateTimelineActive();
+    if (typeof refreshMatchScores === 'function') refreshMatchScores();
 
   } else if (tab === 'groups') {
     buildStandingsTab(content, glass);
