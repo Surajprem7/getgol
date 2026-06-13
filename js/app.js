@@ -23,11 +23,8 @@ const APP = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!APP.team) {
-    showTeamPicker();
-  } else {
-    showApp();
-  }
+  showApp();
+  if (!APP.team) showTeamPickerModal();
   registerSW();
 });
 
@@ -37,7 +34,7 @@ function registerSW() {
   }
 }
 
-function showTeamPicker() {
+function showTeamPickerModal() {
   const teams = [
     {name:'Mexico',color:'#006847'},
     {name:'South Africa',color:'#007A4D'},
@@ -89,42 +86,56 @@ function showTeamPicker() {
     {name:'Panama',color:'#005293'},
   ];
 
-  document.getElementById('app').innerHTML = `
-    <div style="min-height:100vh;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 40%,#0a1a2e 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden">
-      
-      <!-- Background glow effects -->
-      <div style="position:fixed;top:-20%;left:-20%;width:60%;height:60%;background:radial-gradient(circle,#f0a50015 0%,transparent 70%);pointer-events:none;z-index:0"></div>
-      <div style="position:fixed;bottom:-20%;right:-20%;width:60%;height:60%;background:radial-gradient(circle,#4cc9f015 0%,transparent 70%);pointer-events:none;z-index:0"></div>
-      
-      <div style="position:relative;z-index:1;width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center">
-        <div style="font-size:4rem;filter:drop-shadow(0 0 30px #f0a500);margin-bottom:0.5rem">⚽</div>
-        <h1 style="font-size:3.5rem;font-weight:900;color:#fff;margin-bottom:0.1rem;text-shadow:0 0 40px #f0a50066;letter-spacing:-1px">Gol!</h1>
-        <p style="color:rgba(255,255,255,0.6);margin-bottom:0.1rem;font-size:0.9rem">FIFA World Cup 2026</p>
-        <p style="color:#f0a500;font-size:1rem;font-style:italic;margin-bottom:0.5rem;text-shadow:0 0 15px #f0a50088">¡Pasion por el Gol!</p>
-        <p style="color:rgba(255,255,255,0.3);font-size:0.8rem;margin-bottom:0.75rem">48 teams • 12 groups • 104 matches</p>
-        <button onclick="browseRankings()" style="background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:20px;color:rgba(255,255,255,0.45);font-size:0.8rem;padding:0.35rem 1rem;cursor:pointer;margin-bottom:1.75rem;transition:all 0.2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.4)'" onmouseout="this.style.color='rgba(255,255,255,0.45)';this.style.borderColor='rgba(255,255,255,0.15)'">📊 Skip — just show me the Standings →</button>
+  const overlay = document.createElement('div');
+  overlay.id = 'team-picker-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;justify-content:flex-end';
 
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;width:100%">
-          ${teams.map(t => `
-            <button onclick="selectTeam('${t.name}','${t.color}')"
-              style="background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:0.75rem 0.5rem;cursor:pointer;color:#fff;font-size:0.65rem;text-align:center;transition:all 0.3s"
-              onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.borderColor='${t.color}';this.style.boxShadow='0 0 20px ${t.color}44'"
-              onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'">
-              <img src="https://flagcdn.com/40x30/${getCountryCode(t.name)}.png" width="40" height="30" style="border-radius:4px;display:block;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.3)" onerror="this.style.display='none'">
-              <div style="margin-top:0.4rem;line-height:1.2;color:rgba(255,255,255,0.9)">${t.name}</div>
-            </button>
-          `).join('')}
+  overlay.innerHTML = `
+    <!-- Dim backdrop -->
+    <div onclick="closeTeamPicker()" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)"></div>
+
+    <!-- Slide-up sheet -->
+    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#12122a 0%,#0d0d1e 100%);border-radius:24px 24px 0 0;padding:1.25rem 1.25rem 2rem;max-height:85vh;overflow-y:auto;border-top:1px solid rgba(255,255,255,0.1);box-shadow:0 -20px 60px rgba(0,0,0,0.6)">
+
+      <!-- Handle bar -->
+      <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 1rem"></div>
+
+      <!-- Header row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
+        <div>
+          <div style="font-size:1.1rem;font-weight:800;color:#fff">Pick your team</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.35)">Personalises your experience — optional</div>
         </div>
+        <button onclick="closeTeamPicker()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:36px;height:36px;color:rgba(255,255,255,0.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+      </div>
+
+      <p style="color:rgba(255,255,255,0.25);font-size:0.72rem;margin-bottom:1rem">48 teams • 12 groups • FIFA World Cup 2026</p>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem">
+        ${teams.map(t => `
+          <button onclick="selectTeam('${t.name}','${t.color}')"
+            style="background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:0.65rem 0.4rem;cursor:pointer;color:#fff;font-size:0.62rem;text-align:center;transition:all 0.2s"
+            onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.borderColor='${t.color}';this.style.boxShadow='0 0 16px ${t.color}44'"
+            onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'">
+            <img src="https://flagcdn.com/40x30/${getCountryCode(t.name)}.png" width="40" height="30" style="border-radius:4px;display:block;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.3)" onerror="this.style.display='none'">
+            <div style="margin-top:0.35rem;line-height:1.2;color:rgba(255,255,255,0.9)">${t.name}</div>
+          </button>
+        `).join('')}
       </div>
     </div>
   `;
+
+  document.body.appendChild(overlay);
+}
+
+function closeTeamPicker() {
+  const el = document.getElementById('team-picker-overlay');
+  if (el) el.remove();
 }
 
 function browseRankings() {
-  APP.team = null;
-  APP.teamName = null;
-  APP.teamColor = '#f0a500';
-  showApp('standings');
+  closeTeamPicker();
+  showApp('groups');
 }
 
 function selectTeam(name, color) {
@@ -134,6 +145,7 @@ function selectTeam(name, color) {
   localStorage.setItem('gol_team', name);
   localStorage.setItem('gol_team_name', name);
   localStorage.setItem('gol_team_color', color);
+  closeTeamPicker();
   showApp();
 }
 
@@ -144,7 +156,7 @@ function showApp(startTab) {
          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
          ${APP.teamName} ✕
        </div>`
-    : `<button onclick="resetTeam()" style="background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.4);border-radius:20px;color:#f0a500;font-size:0.8rem;font-weight:600;padding:0.4rem 0.9rem;cursor:pointer">⚽ Pick your team</button>`;
+    : `<button onclick="showTeamPickerModal()" style="background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.4);border-radius:20px;color:#f0a500;font-size:0.8rem;font-weight:600;padding:0.4rem 0.9rem;cursor:pointer">⚽ Pick your team</button>`;
 
   document.getElementById('app').innerHTML = `
     <div style="min-height:100vh;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 40%,#0a1a2e 100%);position:relative">
@@ -165,7 +177,7 @@ function showApp(startTab) {
         <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto;background:rgba(255,255,255,0.05);padding:0.4rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08)">
           <button onclick="showTab('matches')" id="nav-matches" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Matches</button>
           <button onclick="showTab('predict')" id="nav-predict" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Predict</button>
-          <button onclick="showTab('standings')" id="nav-standings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Standings</button>
+          <button onclick="showTab('groups')" id="nav-groups" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Groups</button>
           <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Rankings</button>
           <button onclick="showTab('watch')" id="nav-watch" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Watch</button>
         </nav>
@@ -181,7 +193,7 @@ function showTab(tab) {
   const content = document.getElementById('tab-content');
 
   // Update nav buttons
-  ['matches','predict','standings','rankings','watch'].forEach(t => {
+  ['matches','predict','groups','rankings','watch'].forEach(t => {
     const btn = document.getElementById('nav-'+t);
     if (!btn) return;
     if (t === tab) {
@@ -294,7 +306,7 @@ function showTab(tab) {
       });
     });
 
-  } else if (tab === 'standings') {
+  } else if (tab === 'groups') {
     buildStandingsTab(content, glass);
 
   } else if (tab === 'rankings') {
@@ -375,9 +387,7 @@ function showTab(tab) {
 
     content.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;gap:0.75rem">
-        ${userRank
-          ? `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem"><span style="color:${accentColor};font-weight:700;font-size:1rem">#${userRank}</span> ${APP.teamName}</div>`
-          : `<div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">FIFA Rankings • June 2026</div>`}
+        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">FIFA Rankings • June 2026</div>
         <div style="position:relative">
           <input id="rank-search" type="text" placeholder="🔍 Search team…" oninput="filterRankings(this.value)"
             style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:0.4rem 0.75rem 0.4rem 0.75rem;color:#fff;font-size:0.8rem;outline:none;width:160px;transition:all 0.2s"
@@ -477,8 +487,12 @@ function shareApp() {
 }
 
 function resetTeam() {
-  localStorage.clear();
-  location.reload();
+  localStorage.removeItem('gol_team');
+  localStorage.removeItem('gol_team_name');
+  localStorage.removeItem('gol_team_color');
+  APP.team = null; APP.teamName = null; APP.teamColor = '#f0a500';
+  showApp();
+  showTeamPickerModal();
 }
 
 function buildStandingsTab(content, glass) {
