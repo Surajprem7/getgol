@@ -29,7 +29,10 @@ const FIFA_NAME_MAP = {
   'Bosnia and Herzegovina': 'Bosnia',
   'Cabo Verde': 'Cape Verde',
   'Curaçao': 'Curacao',
-  'Congo DR': 'DR Congo', 'Congo': 'DR Congo',
+  // FIFA "Congo DR" = Democratic Republic of Congo (a WC team).
+  // FIFA "Congo" = Republic of Congo — a DIFFERENT country, not in the WC,
+  // so it must NOT be mapped here (doing so created a duplicate DR Congo).
+  'Congo DR': 'DR Congo',
   'Czech Republic': 'Czechia',
 };
 const norm = n => FIFA_NAME_MAP[n] || n;
@@ -67,10 +70,21 @@ async function getFifaRankings() {
 
 function toWcTable(all) {
   // Keep only the 48 WC teams, order by global FIFA rank, renumber 1..48
-  return all
+  const sorted = all
     .filter(r => r.name && WC_TEAMS.has(r.name) && Number.isFinite(r.rank))
-    .sort((a, b) => a.rank - b.rank)
-    .map((r, i) => ({ rank: i + 1, name: r.name, points: r.points ?? null }));
+    .sort((a, b) => a.rank - b.rank);
+
+  // Dedup by team name (keep the best-ranked) so an alias collision can never
+  // produce the same team twice.
+  const seen = new Set();
+  const unique = [];
+  for (const r of sorted) {
+    if (seen.has(r.name)) continue;
+    seen.add(r.name);
+    unique.push(r);
+  }
+
+  return unique.map((r, i) => ({ rank: i + 1, name: r.name, points: r.points ?? null }));
 }
 
 async function main() {
