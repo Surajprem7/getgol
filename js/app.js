@@ -188,7 +188,19 @@ function showApp(startTab) {
   showTab(startTab || 'matches');
 }
 
+function renderVS(matchId) {
+  const sc = window.LIVE && window.LIVE.score(matchId);
+  if (sc && (sc.status === 'STATUS_FINAL' || sc.status === 'STATUS_IN_PROGRESS')) {
+    const live = sc.status === 'STATUS_IN_PROGRESS';
+    return `${live ? `<div style="font-size:0.52rem;color:#4ade80;font-weight:700;letter-spacing:1px">● LIVE</div>` : ''}
+      <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.1">${sc.home}–${sc.away}</div>
+      ${!live ? `<div style="font-size:0.58rem;color:rgba(255,255,255,0.3);margin-top:1px">FT</div>` : `<div style="font-size:0.58rem;color:#4ade80">${sc.clock||''}</div>`}`;
+  }
+  return `<div style="font-size:1rem;font-weight:900;color:rgba(255,255,255,0.2);letter-spacing:2px">VS</div>`;
+}
+
 function showTab(tab) {
+  window._activeTab = tab;
   const content = document.getElementById('tab-content');
 
   // Update nav buttons
@@ -231,7 +243,7 @@ function showTab(tab) {
             <img src="https://flagcdn.com/48x36/${getCountryCode(m.home)}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">
             <div style="font-size:0.85rem;color:#fff;margin-top:0.4rem;font-weight:600">${m.home}</div>
           </div>
-          <div style="font-size:1rem;font-weight:900;color:rgba(255,255,255,0.2);padding:0 0.75rem;letter-spacing:2px">VS</div>
+          <div id="vs-${m.id}" style="text-align:center;padding:0 0.5rem;min-width:56px">${renderVS(m.id)}</div>
           <div style="text-align:center;flex:1">
             <img src="https://flagcdn.com/48x36/${getCountryCode(m.away)}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">
             <div style="font-size:0.85rem;color:#fff;margin-top:0.4rem;font-weight:600">${m.away}</div>
@@ -491,40 +503,52 @@ function resetTeam() {
 }
 
 function buildStandingsTab(content, glass) {
-  // Derive groups and their teams from MATCHES
+  // Use live ESPN data if available, else compute from cached local results
+  const liveData = window.LIVE ? window.LIVE.getStandings() : null;
+
+  // Derive group order from MATCHES
   const groupTeams = {};
   MATCHES.forEach(m => {
     if (!groupTeams[m.group]) groupTeams[m.group] = new Set();
     groupTeams[m.group].add(m.home);
     groupTeams[m.group].add(m.away);
   });
-
-  // Build empty standings table per team
-  function makeTable(group) {
-    const teams = [...groupTeams[group]];
-    return teams.map(t => ({name:t, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0}));
-  }
-
-  // Load saved results and compute standings
   const groups = Object.keys(groupTeams).sort();
+
+  // Build standings: prefer live data, fill missing teams with 0s
   const standings = {};
   groups.forEach(g => {
-    const table = {};
-    [...groupTeams[g]].forEach(t => { table[t] = {name:t, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0}; });
-    MATCHES.filter(m => m.group === g).forEach(m => {
-      const res = localStorage.getItem('result_'+m.id);
-      if (!res) return;
-      const [hg, ag] = res.split('-').map(Number);
-      const h = table[m.home], a = table[m.away];
-      h.p++; a.p++; h.gf += hg; h.ga += ag; a.gf += ag; a.ga += hg;
-      if (hg > ag)      { h.w++; h.pts+=3; a.l++; }
-      else if (hg < ag) { a.w++; a.pts+=3; h.l++; }
-      else              { h.d++; h.pts++; a.d++; a.pts++; }
-    });
-    standings[g] = Object.values(table).sort((a,b) =>
-      b.pts - a.pts || (b.gf-b.ga) - (a.gf-a.ga) || b.gf - a.gf
-    );
+    if (liveData && liveData[g] && liveData[g].length) {
+      // Fill any missing teams (ESPN might omit teams with 0 played)
+      const liveNames = liveData[g].map(r => r.name);
+      const allTeams = [...groupTeams[g]];
+      const missing = allTeams.filter(t => !liveNames.includes(t))
+        .map(t => ({name:t, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0}));
+      standings[g] = [...liveData[g], ...missing];
+    } else {
+      // Fall back to computing from cached local results
+      const table = {};
+      [...groupTeams[g]].forEach(t => { table[t] = {name:t, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0}; });
+      MATCHES.filter(m => m.group === g).forEach(m => {
+        const res = localStorage.getItem('result_' + m.id);
+        if (!res) return;
+        const [hg, ag] = res.split('-').map(Number);
+        const h = table[m.home], a = table[m.away];
+        h.p++; a.p++; h.gf += hg; h.ga += ag; a.gf += ag; a.ga += hg;
+        if (hg > ag)      { h.w++; h.pts += 3; a.l++; }
+        else if (hg < ag) { a.w++; a.pts += 3; h.l++; }
+        else              { h.d++; h.pts++; a.d++; a.pts++; }
+      });
+      standings[g] = Object.values(table).sort((a,b) =>
+        b.pts - a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf
+      );
+    }
   });
+
+  const updatedAt = window.LIVE?.updatedAt;
+  const updatedStr = updatedAt
+    ? 'Updated ' + new Date(updatedAt).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'})
+    : 'Fetching live data…';
 
   // Map every team to its group for search
   const teamToGroup = {};
@@ -594,7 +618,10 @@ function buildStandingsTab(content, glass) {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:0.75rem">
       <div>
         <div style="color:#fff;font-weight:700;font-size:1rem">Group Stage</div>
-        <div style="color:rgba(255,255,255,0.35);font-size:0.72rem">FIFA World Cup 2026</div>
+        <div style="color:rgba(255,255,255,0.35);font-size:0.72rem;display:flex;align-items:center;gap:0.35rem">
+          <span style="display:inline-block;width:6px;height:6px;background:#4ade80;border-radius:50%"></span>
+          ${updatedStr}
+        </div>
       </div>
       <div style="position:relative">
         <input id="standings-search" type="text" placeholder="🔍 Find team…" oninput="jumpToTeamGroup(this.value)"
@@ -615,9 +642,6 @@ function buildStandingsTab(content, glass) {
       `).join('')}
     </div>
 
-    <div style="font-size:0.7rem;color:rgba(255,255,255,0.25);margin-bottom:0.75rem;padding:0.5rem 0.75rem;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)">
-      ⏱ Standings update as match results come in. Matches in progress will reflect live scores.
-    </div>
 
     ${groups.map(g => renderGroup(g)).join('')}
   `;
