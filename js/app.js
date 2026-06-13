@@ -152,6 +152,7 @@ function showApp() {
         <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto;background:rgba(255,255,255,0.05);padding:0.4rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08)">
           <button onclick="showTab('matches')" id="nav-matches" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:${APP.teamColor};color:#000;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.3s">Matches</button>
           <button onclick="showTab('predict')" id="nav-predict" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Predict</button>
+          <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Rankings</button>
           <button onclick="showTab('watch')" id="nav-watch" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Watch</button>
         </nav>
         
@@ -166,7 +167,7 @@ function showTab(tab) {
   const content = document.getElementById('tab-content');
 
   // Update nav buttons
-  ['matches','predict','watch'].forEach(t => {
+  ['matches','predict','rankings','watch'].forEach(t => {
     const btn = document.getElementById('nav-'+t);
     if (!btn) return;
     if (t === tab) {
@@ -278,6 +279,91 @@ function showTab(tab) {
         `;
       });
     });
+
+  } else if (tab === 'rankings') {
+    const FIFA_RANKINGS = [
+      {rank:1,  name:'Argentina'},
+      {rank:2,  name:'France'},
+      {rank:3,  name:'Spain'},
+      {rank:4,  name:'England'},
+      {rank:5,  name:'Brazil'},
+      {rank:6,  name:'Portugal'},
+      {rank:7,  name:'Netherlands'},
+      {rank:8,  name:'Belgium'},
+      {rank:9,  name:'Germany'},
+      {rank:10, name:'Uruguay'},
+      {rank:11, name:'Colombia'},
+      {rank:12, name:'Japan'},
+      {rank:13, name:'Morocco'},
+      {rank:14, name:'USA'},
+      {rank:15, name:'Switzerland'},
+      {rank:16, name:'Mexico'},
+      {rank:17, name:'Croatia'},
+      {rank:18, name:'Iran'},
+      {rank:19, name:'Senegal'},
+      {rank:20, name:'Ecuador'},
+      {rank:21, name:'South Korea'},
+      {rank:22, name:'Australia'},
+      {rank:23, name:'Sweden'},
+      {rank:24, name:'Turkey'},
+      {rank:25, name:'Austria'},
+      {rank:26, name:'Norway'},
+      {rank:27, name:'Canada'},
+      {rank:28, name:'Egypt'},
+      {rank:29, name:'Tunisia'},
+      {rank:30, name:'Algeria'},
+      {rank:31, name:'Scotland'},
+      {rank:32, name:'Ghana'},
+      {rank:33, name:'Saudi Arabia'},
+      {rank:34, name:'Ivory Coast'},
+      {rank:35, name:'New Zealand'},
+      {rank:36, name:'Paraguay'},
+      {rank:37, name:'South Africa'},
+      {rank:38, name:'Czechia'},
+      {rank:39, name:'Bosnia'},
+      {rank:40, name:'Qatar'},
+      {rank:41, name:'Panama'},
+      {rank:42, name:'Jordan'},
+      {rank:43, name:'DR Congo'},
+      {rank:44, name:'Iraq'},
+      {rank:45, name:'Cape Verde'},
+      {rank:46, name:'Haiti'},
+      {rank:47, name:'Uzbekistan'},
+      {rank:48, name:'Curacao'},
+    ];
+
+    const userEntry = FIFA_RANKINGS.find(r => r.name === APP.teamName);
+    const userRank = userEntry ? userEntry.rank : null;
+
+    const medal = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : '';
+
+    content.innerHTML = `
+      ${userRank ? `
+        <div style="${glass};padding:1.25rem;margin-bottom:1rem;border-color:${APP.teamColor}66;box-shadow:0 0 30px ${APP.teamColor}22;text-align:center">
+          <img src="https://flagcdn.com/48x36/${getCountryCode(APP.teamName)}.png" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);margin-bottom:0.5rem" onerror="this.style.display='none'">
+          <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-bottom:0.25rem">Your team is ranked</div>
+          <div style="font-size:2.8rem;font-weight:900;color:${APP.teamColor};text-shadow:0 0 30px ${APP.teamColor}88;line-height:1">#${userRank}</div>
+          <div style="color:#fff;font-weight:700;font-size:1rem;margin-top:0.25rem">${APP.teamName}</div>
+          <div style="color:rgba(255,255,255,0.3);font-size:0.75rem;margin-top:0.25rem">FIFA World Ranking • June 2026</div>
+        </div>
+      ` : ''}
+      <div style="color:rgba(255,255,255,0.4);font-weight:600;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.75rem">All 48 WC 2026 Teams</div>
+      ${FIFA_RANKINGS.map(r => {
+        const isUser = r.name === APP.teamName;
+        const m = medal(r.rank);
+        return `
+          <div style="${glass};padding:0.75rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem;${isUser ? 'border-color:'+APP.teamColor+'88;box-shadow:0 0 20px '+APP.teamColor+'22;background:'+APP.teamColor+'12' : ''}">
+            <div style="width:2rem;text-align:center;font-size:${m ? '1.2rem' : '0.9rem'};font-weight:700;color:${m ? 'inherit' : isUser ? APP.teamColor : 'rgba(255,255,255,0.3)'}">
+              ${m || '#'+r.rank}
+            </div>
+            <img src="https://flagcdn.com/32x24/${getCountryCode(r.name)}.png" style="border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,0.3)" onerror="this.style.display='none'">
+            <div style="flex:1;font-size:0.9rem;font-weight:${isUser ? '700' : '500'};color:${isUser ? APP.teamColor : '#fff'}">
+              ${r.name}${isUser ? ' ← You' : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
 
   } else if (tab === 'watch') {
     const watchItems = [
