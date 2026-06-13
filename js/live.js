@@ -104,8 +104,14 @@ async function fetchESPNScores() {
       const espnAway = normName(aComp.team?.displayName);
       const hScore   = parseInt(hComp.score ?? '-1');
       const aScore   = parseInt(aComp.score ?? '-1');
-      const status   = event.status?.type?.name || '';
-      const clock    = event.status?.displayClock || '';
+      // ESPN soccer uses many status.type.name values (STATUS_FULL_TIME,
+      // STATUS_FIRST_HALF, STATUS_HALFTIME, etc). The reliable cross-sport
+      // signal is status.type.state: 'pre' | 'in' | 'post'.
+      const type     = event.status?.type || {};
+      const state    = type.state || 'pre';                 // pre | in | post
+      const done     = type.completed === true || state === 'post';
+      const status   = done ? 'FT' : (state === 'in' ? 'LIVE' : 'SCHEDULED');
+      const clock    = type.shortDetail || event.status?.displayClock || '';
 
       const match = MATCHES.find(m =>
         (m.home === espnHome && m.away === espnAway) ||
@@ -119,7 +125,7 @@ async function fetchESPNScores() {
 
       out[match.id] = { home: finalHome, away: finalAway, status, clock };
 
-      if (status === 'STATUS_FINAL') {
+      if (status === 'FT') {
         localStorage.setItem('result_' + match.id, `${finalHome}-${finalAway}`);
       }
     });
@@ -220,8 +226,8 @@ function refreshMatchScores() {
   Object.entries(window.LIVE.scores).forEach(([id, sc]) => {
     const vsEl = document.getElementById('vs-' + id);
     if (!vsEl) return;
-    if (sc.status === 'STATUS_FINAL' || sc.status === 'STATUS_IN_PROGRESS') {
-      const live = sc.status === 'STATUS_IN_PROGRESS';
+    if (sc.status === 'FT' || sc.status === 'LIVE') {
+      const live = sc.status === 'LIVE';
       vsEl.innerHTML = `
         ${live ? `<div style="font-size:0.52rem;color:#4ade80;font-weight:700;letter-spacing:1px;animation:pulse 1.5s infinite">● LIVE ${sc.clock}</div>` : ''}
         <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.1">${sc.home >= 0 ? sc.home : '?'}–${sc.away >= 0 ? sc.away : '?'}</div>
@@ -246,7 +252,7 @@ async function liveRefreshCycle() {
 
   await syncLiveDataToFirebase(standings, scores);
 
-  const hasLive = Object.values(window.LIVE.scores).some(s => s.status === 'STATUS_IN_PROGRESS');
+  const hasLive = Object.values(window.LIVE.scores).some(s => s.status === 'LIVE');
   setTimeout(liveRefreshCycle, hasLive ? 45000 : 300000);
 }
 

@@ -249,8 +249,8 @@ let _tlScrollHandler = null;
 
 function renderVS(matchId) {
   const sc = window.LIVE && window.LIVE.score(matchId);
-  if (sc && (sc.status === 'STATUS_FINAL' || sc.status === 'STATUS_IN_PROGRESS')) {
-    const live = sc.status === 'STATUS_IN_PROGRESS';
+  if (sc && (sc.status === 'FT' || sc.status === 'LIVE')) {
+    const live = sc.status === 'LIVE';
     return `${live ? `<div style="font-size:0.52rem;color:#4ade80;font-weight:700;letter-spacing:1px">● LIVE</div>` : ''}
       <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.1">${sc.home}–${sc.away}</div>
       ${!live ? `<div style="font-size:0.58rem;color:rgba(255,255,255,0.3);margin-top:1px">FT</div>` : `<div style="font-size:0.58rem;color:#4ade80">${sc.clock||''}</div>`}`;
