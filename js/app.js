@@ -234,17 +234,26 @@ function updateTimelineActive() {
     if (fill) fill.style.height = pct + '%';
   }
 
-  // Update knob styles
+  // Update knob + date label styles
   groups.forEach((g, i) => {
     const node = document.getElementById('tl-node-' + g);
+    const dayEl = document.getElementById('tl-day-' + g);
+    const monEl = document.getElementById('tl-mon-' + g);
     if (!node) return;
     const isActive = g === activeGroup;
     const isPast   = i < activeIdx;
-    node.style.background   = isActive ? accent          : '#0d0d1e';
-    node.style.borderColor  = isActive ? accent          : isPast ? accent + '66' : 'rgba(255,255,255,0.2)';
-    node.style.color        = isActive ? '#000'          : isPast ? accent + 'aa' : 'rgba(255,255,255,0.3)';
-    node.style.boxShadow    = isActive ? `0 0 10px ${accent}88` : 'none';
-    node.style.transform    = `translateY(-50%) scale(${isActive ? 1.25 : 1})`;
+    node.style.background  = isActive ? accent : '#0d0d1e';
+    node.style.borderColor = isActive ? accent : isPast ? accent + '55' : 'rgba(255,255,255,0.18)';
+    node.style.boxShadow   = isActive ? `0 0 8px ${accent}99` : 'none';
+    node.style.transform   = `translateY(-50%) scale(${isActive ? 1.3 : 1})`;
+    if (dayEl) {
+      dayEl.style.color      = isActive ? accent : isPast ? accent + '99' : 'rgba(255,255,255,0.3)';
+      dayEl.style.fontWeight = isActive ? '800' : '700';
+      dayEl.style.fontSize   = isActive ? '0.65rem' : '0.55rem';
+    }
+    if (monEl) {
+      monEl.style.color = isActive ? accent + 'cc' : 'rgba(255,255,255,0.18)';
+    }
   });
 }
 
@@ -367,7 +376,7 @@ function showTab(tab) {
         </div>
 
         <!-- Ruler timeline — sticky -->
-        <div id="match-timeline" style="width:32px;flex-shrink:0;position:sticky;top:0.5rem;align-self:flex-start;height:calc(100vh - 5rem);overflow:hidden;animation:tlFadeIn 0.4s ease">
+        <div id="match-timeline" style="width:48px;flex-shrink:0;position:sticky;top:0.5rem;align-self:flex-start;height:calc(100vh - 5rem);overflow:hidden;animation:tlFadeIn 0.4s ease">
           <div style="position:relative;width:100%;height:100%">
 
             <!-- Dim background line (full height) -->
@@ -385,25 +394,32 @@ function showTab(tab) {
             <!-- Ruler tick marks + group nodes -->
             ${groups.map((g, i) => {
               const pct = groups.length === 1 ? 50 : (i / (groups.length - 1)) * 100;
-              // 4 minor ticks between each group
+              const firstMatch = MATCHES.find(m => m.group === g);
+              const d = new Date(firstMatch.date);
+              const day = d.getDate();
+              const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+
               const minorTicks = i < groups.length - 1 ? [1,2,3,4].map(t => {
                 const mp = pct + (t / 5) * (100 / (groups.length - 1));
-                return `<div style="position:absolute;right:10px;top:${mp}%;width:5px;height:1px;background:rgba(255,255,255,0.15);transform:translateY(-50%)"></div>`;
+                return `<div style="position:absolute;right:10px;top:${mp}%;width:5px;height:1px;background:rgba(255,255,255,0.12);transform:translateY(-50%)"></div>`;
               }).join('') : '';
 
               return `
                 ${minorTicks}
                 <!-- Major tick -->
-                <div style="position:absolute;right:10px;top:${pct}%;width:9px;height:1px;background:rgba(255,255,255,0.25);transform:translateY(-50%)"></div>
-                <!-- Group node knob -->
+                <div style="position:absolute;right:10px;top:${pct}%;width:8px;height:1px;background:rgba(255,255,255,0.3);transform:translateY(-50%)"></div>
+                <!-- Date label to the left of tick -->
+                <div id="tl-label-${g}" style="position:absolute;right:20px;top:${pct}%;transform:translateY(-50%);
+                  text-align:right;line-height:1.1;pointer-events:none">
+                  <div style="font-size:0.55rem;font-weight:700;color:rgba(255,255,255,0.3)" id="tl-day-${g}">${day}</div>
+                  <div style="font-size:0.42rem;color:rgba(255,255,255,0.18)" id="tl-mon-${g}">${mon}</div>
+                </div>
+                <!-- Knob -->
                 <div id="tl-node-${g}" onclick="jumpToGroup('${g}')"
                   style="position:absolute;right:0;top:${pct}%;transform:translateY(-50%);
-                  width:18px;height:18px;border-radius:50%;cursor:pointer;
-                  background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.2);
-                  display:flex;align-items:center;justify-content:center;
-                  font-size:0.46rem;font-weight:900;color:rgba(255,255,255,0.35);
+                  width:16px;height:16px;border-radius:50%;cursor:pointer;
+                  background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.18);
                   transition:all 0.3s;box-sizing:border-box;z-index:2">
-                  ${g}
                 </div>
               `;
             }).join('')}
