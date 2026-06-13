@@ -101,8 +101,9 @@ function showTeamPicker() {
         <h1 style="font-size:3.5rem;font-weight:900;color:#fff;margin-bottom:0.1rem;text-shadow:0 0 40px #f0a50066;letter-spacing:-1px">Gol!</h1>
         <p style="color:rgba(255,255,255,0.6);margin-bottom:0.1rem;font-size:0.9rem">FIFA World Cup 2026</p>
         <p style="color:#f0a500;font-size:1rem;font-style:italic;margin-bottom:0.5rem;text-shadow:0 0 15px #f0a50088">¡Pasion por el Gol!</p>
-        <p style="color:rgba(255,255,255,0.3);font-size:0.8rem;margin-bottom:2rem">48 teams • 12 groups • 104 matches</p>
-        
+        <p style="color:rgba(255,255,255,0.3);font-size:0.8rem;margin-bottom:0.75rem">48 teams • 12 groups • 104 matches</p>
+        <button onclick="browseRankings()" style="background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:20px;color:rgba(255,255,255,0.45);font-size:0.8rem;padding:0.35rem 1rem;cursor:pointer;margin-bottom:1.75rem;transition:all 0.2s" onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.4)'" onmouseout="this.style.color='rgba(255,255,255,0.45)';this.style.borderColor='rgba(255,255,255,0.15)'">🏅 Skip — just show me FIFA Rankings →</button>
+
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;width:100%">
           ${teams.map(t => `
             <button onclick="selectTeam('${t.name}','${t.color}')"
@@ -119,6 +120,13 @@ function showTeamPicker() {
   `;
 }
 
+function browseRankings() {
+  APP.team = null;
+  APP.teamName = null;
+  APP.teamColor = '#f0a500';
+  showApp('rankings');
+}
+
 function selectTeam(name, color) {
   APP.team = name;
   APP.teamName = name;
@@ -129,38 +137,43 @@ function selectTeam(name, color) {
   showApp();
 }
 
-function showApp() {
+function showApp(startTab) {
+  const accentColor = APP.teamColor || '#f0a500';
+  const headerRight = APP.teamName
+    ? `<div style="display:flex;align-items:center;gap:0.5rem;color:rgba(255,255,255,0.6);font-size:0.8rem;cursor:pointer;background:rgba(255,255,255,0.05);padding:0.4rem 0.75rem;border-radius:20px;border:1px solid rgba(255,255,255,0.1)" onclick="resetTeam()">
+         <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
+         ${APP.teamName} ✕
+       </div>`
+    : `<button onclick="resetTeam()" style="background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.4);border-radius:20px;color:#f0a500;font-size:0.8rem;font-weight:600;padding:0.4rem 0.9rem;cursor:pointer">⚽ Pick your team</button>`;
+
   document.getElementById('app').innerHTML = `
     <div style="min-height:100vh;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 40%,#0a1a2e 100%);position:relative">
-      
+
       <!-- Background glow effects -->
-      <div style="position:fixed;top:-20%;left:-20%;width:60%;height:60%;background:radial-gradient(circle,${APP.teamColor}10 0%,transparent 70%);pointer-events:none;z-index:0"></div>
+      <div style="position:fixed;top:-20%;left:-20%;width:60%;height:60%;background:radial-gradient(circle,${accentColor}10 0%,transparent 70%);pointer-events:none;z-index:0"></div>
       <div style="position:fixed;bottom:-20%;right:-20%;width:60%;height:60%;background:radial-gradient(circle,#4cc9f010 0%,transparent 70%);pointer-events:none;z-index:0"></div>
-      
+
       <div style="max-width:600px;margin:0 auto;padding:1rem;position:relative;z-index:1">
         <header style="display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:0.5rem;backdrop-filter:blur(10px)">
           <div>
-            <span style="font-size:1.8rem;font-weight:900;color:${APP.teamColor};text-shadow:0 0 20px ${APP.teamColor}88">Gol!</span>
+            <span style="font-size:1.8rem;font-weight:900;color:${accentColor};text-shadow:0 0 20px ${accentColor}88">Gol!</span>
             <span style="color:#f0a500;font-size:0.7rem;font-style:italic;margin-left:0.4rem;opacity:0.8">¡Pasion por el Gol!</span>
           </div>
-          <div style="display:flex;align-items:center;gap:0.5rem;color:rgba(255,255,255,0.6);font-size:0.8rem;cursor:pointer;background:rgba(255,255,255,0.05);padding:0.4rem 0.75rem;border-radius:20px;border:1px solid rgba(255,255,255,0.1)" onclick="resetTeam()">
-            <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
-            ${APP.teamName} ✕
-          </div>
+          ${headerRight}
         </header>
         
         <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto;background:rgba(255,255,255,0.05);padding:0.4rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08)">
-          <button onclick="showTab('matches')" id="nav-matches" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:${APP.teamColor};color:#000;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.3s">Matches</button>
+          <button onclick="showTab('matches')" id="nav-matches" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Matches</button>
           <button onclick="showTab('predict')" id="nav-predict" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Predict</button>
           <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Rankings</button>
           <button onclick="showTab('watch')" id="nav-watch" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Watch</button>
         </nav>
-        
+
         <div id="tab-content"></div>
       </div>
     </div>
   `;
-  showTab('matches');
+  showTab(startTab || 'matches');
 }
 
 function showTab(tab) {
@@ -334,36 +347,64 @@ function showTab(tab) {
 
     const userEntry = FIFA_RANKINGS.find(r => r.name === APP.teamName);
     const userRank = userEntry ? userEntry.rank : null;
+    const accentColor = APP.teamColor || '#f0a500';
 
     const medal = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : '';
 
+    const renderRankingRow = (r, query) => {
+      const isUser = r.name === APP.teamName;
+      const m = medal(r.rank);
+      const highlight = query && r.name.toLowerCase().includes(query.toLowerCase());
+      return `
+        <div class="rank-row" data-name="${r.name.toLowerCase()}" style="${glass};padding:0.75rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem;transition:all 0.2s;${isUser ? 'border-color:'+accentColor+'88;box-shadow:0 0 20px '+accentColor+'22;background:'+accentColor+'12' : highlight ? 'border-color:rgba(240,165,0,0.5);background:rgba(240,165,0,0.08)' : ''}">
+          <div style="width:2rem;text-align:center;font-size:${m ? '1.2rem' : '0.9rem'};font-weight:700;color:${m ? 'inherit' : isUser ? accentColor : 'rgba(255,255,255,0.3)'}">
+            ${m || '#'+r.rank}
+          </div>
+          <img src="https://flagcdn.com/32x24/${getCountryCode(r.name)}.png" style="border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,0.3)" onerror="this.style.display='none'">
+          <div style="flex:1;font-size:0.9rem;font-weight:${isUser ? '700' : '500'};color:${isUser ? accentColor : '#fff'}">
+            ${r.name}${isUser ? ' ← You' : ''}
+          </div>
+          ${!APP.teamName ? `<button onclick="selectTeam('${r.name}','${getTeamColor(r.name)}')" style="background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.35);border-radius:12px;color:#f0a500;font-size:0.7rem;padding:0.25rem 0.6rem;cursor:pointer;white-space:nowrap">Pick ⚽</button>` : ''}
+        </div>
+      `;
+    };
+
     content.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;gap:0.75rem">
+        ${userRank
+          ? `<div style="color:rgba(255,255,255,0.5);font-size:0.8rem"><span style="color:${accentColor};font-weight:700;font-size:1rem">#${userRank}</span> ${APP.teamName}</div>`
+          : `<div style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">FIFA Rankings • June 2026</div>`}
+        <div style="position:relative">
+          <input id="rank-search" type="text" placeholder="🔍 Search team…" oninput="filterRankings(this.value)"
+            style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:0.4rem 0.75rem 0.4rem 0.75rem;color:#fff;font-size:0.8rem;outline:none;width:160px;transition:all 0.2s"
+            onfocus="this.style.borderColor='rgba(240,165,0,0.6)';this.style.background='rgba(255,255,255,0.1)'"
+            onblur="this.style.borderColor='rgba(255,255,255,0.15)';this.style.background='rgba(255,255,255,0.07)'">
+        </div>
+      </div>
+
       ${userRank ? `
-        <div style="${glass};padding:1.25rem;margin-bottom:1rem;border-color:${APP.teamColor}66;box-shadow:0 0 30px ${APP.teamColor}22;text-align:center">
+        <div style="${glass};padding:1.25rem;margin-bottom:1rem;border-color:${accentColor}66;box-shadow:0 0 30px ${accentColor}22;text-align:center">
           <img src="https://flagcdn.com/48x36/${getCountryCode(APP.teamName)}.png" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);margin-bottom:0.5rem" onerror="this.style.display='none'">
           <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-bottom:0.25rem">Your team is ranked</div>
-          <div style="font-size:2.8rem;font-weight:900;color:${APP.teamColor};text-shadow:0 0 30px ${APP.teamColor}88;line-height:1">#${userRank}</div>
+          <div style="font-size:2.8rem;font-weight:900;color:${accentColor};text-shadow:0 0 30px ${accentColor}88;line-height:1">#${userRank}</div>
           <div style="color:#fff;font-weight:700;font-size:1rem;margin-top:0.25rem">${APP.teamName}</div>
           <div style="color:rgba(255,255,255,0.3);font-size:0.75rem;margin-top:0.25rem">FIFA World Ranking • June 2026</div>
         </div>
-      ` : ''}
-      <div style="color:rgba(255,255,255,0.4);font-weight:600;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.75rem">All 48 WC 2026 Teams</div>
-      ${FIFA_RANKINGS.map(r => {
-        const isUser = r.name === APP.teamName;
-        const m = medal(r.rank);
-        return `
-          <div style="${glass};padding:0.75rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem;${isUser ? 'border-color:'+APP.teamColor+'88;box-shadow:0 0 20px '+APP.teamColor+'22;background:'+APP.teamColor+'12' : ''}">
-            <div style="width:2rem;text-align:center;font-size:${m ? '1.2rem' : '0.9rem'};font-weight:700;color:${m ? 'inherit' : isUser ? APP.teamColor : 'rgba(255,255,255,0.3)'}">
-              ${m || '#'+r.rank}
-            </div>
-            <img src="https://flagcdn.com/32x24/${getCountryCode(r.name)}.png" style="border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,0.3)" onerror="this.style.display='none'">
-            <div style="flex:1;font-size:0.9rem;font-weight:${isUser ? '700' : '500'};color:${isUser ? APP.teamColor : '#fff'}">
-              ${r.name}${isUser ? ' ← You' : ''}
-            </div>
-          </div>
-        `;
-      }).join('')}
+      ` : `
+        <div style="${glass};padding:1rem;margin-bottom:1rem;text-align:center;border-color:rgba(240,165,0,0.2)">
+          <div style="font-size:1.5rem;margin-bottom:0.25rem">🏅</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:0.85rem">Pick a team to see your ranking highlighted</div>
+        </div>
+      `}
+
+      <div id="rank-list">
+        ${FIFA_RANKINGS.map(r => renderRankingRow(r, '')).join('')}
+      </div>
     `;
+
+    window._rankData = FIFA_RANKINGS;
+    window._rankGlass = glass;
+    window._renderRankingRow = renderRankingRow;
 
   } else if (tab === 'watch') {
     const watchItems = [
@@ -434,4 +475,32 @@ function shareApp() {
 function resetTeam() {
   localStorage.clear();
   location.reload();
+}
+
+function filterRankings(query) {
+  const list = document.getElementById('rank-list');
+  if (!list || !window._rankData) return;
+  const q = query.trim().toLowerCase();
+  list.innerHTML = window._rankData
+    .filter(r => !q || r.name.toLowerCase().includes(q))
+    .map(r => window._renderRankingRow(r, q))
+    .join('');
+}
+
+function getTeamColor(name) {
+  const colorMap = {
+    'Mexico':'#006847','South Africa':'#007A4D','South Korea':'#003478','Czechia':'#D7141A',
+    'Canada':'#FF0000','Bosnia':'#002395','Qatar':'#8D1B3D','Switzerland':'#FF0000',
+    'Brazil':'#009C3B','Morocco':'#C1272D','Haiti':'#00209F','Scotland':'#003F87',
+    'USA':'#B22234','Paraguay':'#D52B1E','Australia':'#FFCD00','Turkey':'#E30A17',
+    'Germany':'#FFD700','Curacao':'#002B7F','Ivory Coast':'#F77F00','Ecuador':'#FFD100',
+    'Netherlands':'#FF6600','Japan':'#BC002D','Tunisia':'#E70013','Sweden':'#006AA7',
+    'Belgium':'#EF3340','Egypt':'#CE1126','Iran':'#239F40','New Zealand':'#00247D',
+    'Spain':'#AA151B','Cape Verde':'#003893','Saudi Arabia':'#006C35','Uruguay':'#5EB6E4',
+    'France':'#002395','Senegal':'#00853F','Norway':'#EF2B2D','Iraq':'#007A3D',
+    'Argentina':'#74ACDF','Algeria':'#006233','Austria':'#ED2939','Jordan':'#007A3D',
+    'Portugal':'#006600','Uzbekistan':'#1EB53A','Colombia':'#FCD116','DR Congo':'#007FFF',
+    'England':'#CF111B','Croatia':'#FF0000','Ghana':'#006B3F','Panama':'#005293',
+  };
+  return colorMap[name] || '#f0a500';
 }
