@@ -177,7 +177,11 @@ function showApp(startTab) {
             <span style="font-size:1.8rem;font-weight:900;color:${accentColor};text-shadow:0 0 20px ${accentColor}88">Gol!</span>
             <span style="color:#f0a500;font-size:0.7rem;font-style:italic;margin-left:0.4rem;opacity:0.8">¡Pasion por el Gol!</span>
           </div>
-          ${headerRight}
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <button id="notif-bell" onclick="toggleNotifications()" title="Tap to enable match alerts"
+              style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:2.2rem;height:2.2rem;font-size:1rem;cursor:pointer;opacity:0.5;display:flex;align-items:center;justify-content:center;flex-shrink:0">🔕</button>
+            ${headerRight}
+          </div>
         </header>
         
         <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto;background:rgba(255,255,255,0.05);padding:0.4rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08)">
@@ -192,6 +196,7 @@ function showApp(startTab) {
     </div>
   `;
   showTab(startTab || 'matches');
+  if (typeof updateNotifBell === 'function') updateNotifBell();
 }
 
 function jumpToDate(date) {

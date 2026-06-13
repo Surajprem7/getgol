@@ -1,5 +1,5 @@
-const CACHE = 'gol-v8';
-const FILES = ['/', '/index.html', '/manifest.json', '/js/matches.js', '/js/live.js', '/js/app.js', '/js/firebase.js'];
+const CACHE = 'gol-v9';
+const FILES = ['/', '/index.html', '/manifest.json', '/js/matches.js', '/js/notifications.js', '/js/live.js', '/js/app.js', '/js/firebase.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
@@ -37,6 +37,19 @@ self.addEventListener('push', e => {
     self.registration.showNotification(data.title || 'Gol!', {
       body: data.body || 'Match starting soon!',
       icon: '/icons/icon-192.png'
+    })
+  );
+});
+
+// Tapping a notification focuses an open tab, or opens the app.
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      for (const c of clients) {
+        if (c.url.includes(self.location.origin) && 'focus' in c) return c.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow('/');
     })
   );
 });

@@ -208,7 +208,11 @@ function subscribeFirebaseLive() {
 
     if (val.standings) window.LIVE.standings = val.standings;
     // Merge, never replace — so a partial push doesn't wipe older results
-    if (val.scores)    window.LIVE.scores    = { ...window.LIVE.scores, ...val.scores };
+    if (val.scores) {
+      window.LIVE.scores = { ...window.LIVE.scores, ...val.scores };
+      // Detect kickoff/goal/full-time and fire local notifications (Tier 1)
+      if (typeof notifyScoreChanges === 'function') notifyScoreChanges(window.LIVE.scores);
+    }
     if (val.rankings)     window.LIVE.rankings     = val.rankings;
     if (val.rankingsMeta) window.LIVE.rankingsMeta = val.rankingsMeta;
     if (val._updated)  window.LIVE.updatedAt = val._updated;
