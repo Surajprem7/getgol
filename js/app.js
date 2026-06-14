@@ -375,18 +375,22 @@ function showTab(tab) {
       const d = new Date(m.date);
       const dl = `${d.getDate()} ${months[d.getMonth()]}`;
       return `
-        <div onclick="jumpToDate('${m.date}')" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.35rem;cursor:pointer;transition:background 0.2s"
+        <div onclick="jumpToDate('${m.date}')" style="padding:0.55rem 0.6rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.4rem;cursor:pointer;transition:background 0.2s"
           onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-          <div style="width:52px;flex-shrink:0;line-height:1.15">
-            <div style="font-size:0.74rem;font-weight:700;color:rgba(255,255,255,0.9)">${dl}</div>
-            <div style="font-size:0.58rem;color:rgba(255,255,255,0.4)">${m.time} IST</div>
+          <!-- Meta line: date · time · group -->
+          <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem">
+            <span style="font-size:0.64rem;font-weight:700;color:rgba(255,255,255,0.75)">${dl}</span>
+            <span style="font-size:0.58rem;color:rgba(255,255,255,0.35)">${m.time} IST</span>
+            <span style="margin-left:auto;font-size:0.55rem;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:0.12rem 0.45rem;white-space:nowrap">Grp ${m.group}</span>
           </div>
-          <span style="flex:1;text-align:right;font-size:0.72rem;color:#fff;font-weight:${m.home === APP.teamName ? '700' : '500'}">${m.home}</span>
-          <img src="https://flagcdn.com/20x15/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
-          <span data-vs="${m.id}" data-vs-style="mini" style="min-width:38px;text-align:center;font-size:0.82rem">${shortScoreHTML(m.id)}</span>
-          <img src="https://flagcdn.com/20x15/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
-          <span style="flex:1;font-size:0.72rem;color:#fff;font-weight:${m.away === APP.teamName ? '700' : '500'}">${m.away}</span>
-          <span style="flex-shrink:0;font-size:0.55rem;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.15rem 0.4rem;white-space:nowrap">Grp ${m.group}</span>
+          <!-- Matchup line: full width -->
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <span style="flex:1;text-align:right;font-size:0.8rem;color:#fff;font-weight:${m.home === APP.teamName ? '700' : '500'}">${m.home}</span>
+            <img src="https://flagcdn.com/24x18/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
+            <span data-vs="${m.id}" data-vs-style="mini" style="min-width:42px;text-align:center;font-size:0.85rem">${shortScoreHTML(m.id)}</span>
+            <img src="https://flagcdn.com/24x18/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
+            <span style="flex:1;text-align:left;font-size:0.8rem;color:#fff;font-weight:${m.away === APP.teamName ? '700' : '500'}">${m.away}</span>
+          </div>
         </div>`;
     };
 
