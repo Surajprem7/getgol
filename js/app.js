@@ -95,7 +95,7 @@ function showTeamPickerModal() {
     <div onclick="closeTeamPicker()" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)"></div>
 
     <!-- Slide-up sheet -->
-    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#12122a 0%,#0d0d1e 100%);border-radius:24px 24px 0 0;padding:1.25rem 1.25rem 2rem;max-height:85vh;overflow-y:auto;border-top:1px solid rgba(255,255,255,0.1);box-shadow:0 -20px 60px rgba(0,0,0,0.6)">
+    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#12122a 0%,#0d0d1e 100%);border-radius:24px 24px 0 0;padding:1.25rem 1.25rem 2rem;max-height:88vh;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid rgba(255,255,255,0.1);box-shadow:0 -20px 60px rgba(0,0,0,0.6)">
 
       <!-- Handle bar -->
       <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 1rem"></div>
@@ -120,7 +120,7 @@ function showTeamPickerModal() {
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem">
         ${teams.map(t => `
           <button onclick="selectTeam('${t.name}','${t.color}')"
-            style="background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:0.65rem 0.4rem;cursor:pointer;color:#fff;font-size:0.62rem;text-align:center;transition:all 0.2s"
+            style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:0.65rem 0.4rem;cursor:pointer;color:#fff;font-size:0.62rem;text-align:center;transition:all 0.2s"
             onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.borderColor='${t.color}';this.style.boxShadow='0 0 16px ${t.color}44'"
             onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'">
             <img src="https://flagcdn.com/40x30/${getCountryCode(t.name)}.png" width="40" height="30" style="border-radius:4px;display:block;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.3)" onerror="this.style.display='none'">
