@@ -263,6 +263,17 @@ function renderVS(matchId) {
   return `<div style="font-size:1rem;font-weight:900;color:rgba(255,255,255,0.2);letter-spacing:2px">VS</div>`;
 }
 
+// Compact score for the "your fixtures" rows (smaller than the full card VS)
+function shortScoreHTML(matchId) {
+  const sc = window.LIVE && window.LIVE.score(matchId);
+  if (sc && (sc.status === 'FT' || sc.status === 'LIVE')) {
+    const live = sc.status === 'LIVE';
+    const color = live ? '#4ade80' : '#fff';
+    return `<span style="font-weight:900;color:${color}">${sc.home >= 0 ? sc.home : 0}–${sc.away >= 0 ? sc.away : 0}</span>${live ? ' <span style="font-size:0.5rem;color:#4ade80">●</span>' : ''}`;
+  }
+  return `<span style="color:rgba(255,255,255,0.3);font-weight:700;font-size:0.7rem">vs</span>`;
+}
+
 function showTab(tab) {
   window._activeTab = tab;
   if (tab !== 'matches' && _tlScrollHandler) {
@@ -316,7 +327,7 @@ function showTab(tab) {
             <img src="https://flagcdn.com/48x36/${getCountryCode(m.home)}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">
             <div style="font-size:0.85rem;color:#fff;margin-top:0.4rem;font-weight:600">${m.home}</div>
           </div>
-          <div id="vs-${m.id}" style="text-align:center;padding:0 0.5rem;min-width:56px">${renderVS(m.id)}</div>
+          <div data-vs="${m.id}" data-vs-style="full" style="text-align:center;padding:0 0.5rem;min-width:56px">${renderVS(m.id)}</div>
           <div style="text-align:center;flex:1">
             <img src="https://flagcdn.com/48x36/${getCountryCode(m.away)}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">
             <div style="font-size:0.85rem;color:#fff;margin-top:0.4rem;font-weight:600">${m.away}</div>
@@ -358,6 +369,35 @@ function showTab(tab) {
       byDate[m.date].push(m);
     });
 
+    // ── "Your fixtures" section: the selected team's matches, pinned at top ──
+    const renderMyRow = (m) => {
+      const d = new Date(m.date);
+      const dl = `${d.getDate()} ${months[d.getMonth()]}`;
+      return `
+        <div onclick="jumpToDate('${m.date}')" style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.35rem;cursor:pointer;transition:background 0.2s"
+          onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+          <span style="font-size:0.6rem;color:rgba(255,255,255,0.35);width:42px;flex-shrink:0">${dl}</span>
+          <span style="flex:1;text-align:right;font-size:0.72rem;color:#fff;font-weight:${m.home === APP.teamName ? '700' : '500'}">${m.home}</span>
+          <img src="https://flagcdn.com/20x15/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
+          <span data-vs="${m.id}" data-vs-style="mini" style="min-width:38px;text-align:center;font-size:0.82rem">${shortScoreHTML(m.id)}</span>
+          <img src="https://flagcdn.com/20x15/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
+          <span style="flex:1;font-size:0.72rem;color:#fff;font-weight:${m.away === APP.teamName ? '700' : '500'}">${m.away}</span>
+        </div>`;
+    };
+
+    const myMatches = APP.teamName
+      ? sortedMatches.filter(m => m.home === APP.teamName || m.away === APP.teamName)
+      : [];
+    const mySection = myMatches.length ? `
+      <div style="${glass};padding:0.75rem;margin-bottom:0.75rem;border-color:${accentColor}55;background:linear-gradient(180deg,${accentColor}14,transparent)">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
+          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
+          <span style="font-size:0.82rem;font-weight:800;color:${accentColor}">${APP.teamName} — your fixtures</span>
+          <span style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-left:auto">${myMatches.length} group games</span>
+        </div>
+        ${myMatches.map(renderMyRow).join('')}
+      </div>` : '';
+
     content.innerHTML = `
       <style>
         @keyframes bloomPulse {
@@ -371,6 +411,7 @@ function showTab(tab) {
 
         <!-- Match cards column — sorted by date -->
         <div style="flex:1;min-width:0">
+          ${mySection}
           ${tlDates.map(date => {
             const d = new Date(date);
             const dateLabel = `${d.getDate()} ${months[d.getMonth()]}`;

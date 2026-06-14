@@ -232,16 +232,16 @@ function renderGroupsFromLive() {
 }
 
 function refreshMatchScores() {
-  Object.entries(window.LIVE.scores).forEach(([id, sc]) => {
-    const vsEl = document.getElementById('vs-' + id);
-    if (!vsEl) return;
-    if (sc.status === 'FT' || sc.status === 'LIVE') {
-      const live = sc.status === 'LIVE';
-      vsEl.innerHTML = `
-        ${live ? `<div style="font-size:0.52rem;color:#4ade80;font-weight:700;letter-spacing:1px;animation:pulse 1.5s infinite">● LIVE ${sc.clock}</div>` : ''}
-        <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.1">${sc.home >= 0 ? sc.home : '?'}–${sc.away >= 0 ? sc.away : '?'}</div>
-        ${!live ? `<div style="font-size:0.58rem;color:rgba(255,255,255,0.35);margin-top:1px;letter-spacing:1px">FT</div>` : `<div style="font-size:0.55rem;color:#4ade80">${sc.clock||''}</div>`}
-      `;
+  // Updates every score element — full match cards and the compact "your
+  // fixtures" rows — from window.LIVE. data-vs holds the match id; data-vs-style
+  // picks the layout. Using attributes (not unique ids) lets the same match
+  // appear in both places without id collisions.
+  document.querySelectorAll('[data-vs]').forEach(el => {
+    const id = el.dataset.vs;
+    if (el.dataset.vsStyle === 'mini') {
+      if (typeof shortScoreHTML === 'function') el.innerHTML = shortScoreHTML(id);
+    } else {
+      if (typeof renderVS === 'function') el.innerHTML = renderVS(id);
     }
   });
 }
