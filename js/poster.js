@@ -21,122 +21,176 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-async function buildMatchPoster(m, sc) {
-  const W = 1080, H = 1080;
+function drawCircleFlag(ctx, img, cx, cy, r, color) {
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath();
+  ctx.clip();
+  if (img) {
+    const size = r * 2;
+    const scale = Math.max(size / img.width, size / img.height);
+    const dw = img.width * scale, dh = img.height * scale;
+    ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+  } else { ctx.fillStyle = color; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = color; ctx.lineWidth = 8; ctx.stroke();
+}
+
+function extractScorers(summary) {
+  if (!summary || !summary.keyEvents) return [];
+  const homeId = summary.rosters?.find(r => r.homeAway === 'home')?.team?.id;
+  return summary.keyEvents
+    .filter(e => /goal/i.test(e.type?.text || '') && !/disallow|cancel/i.test(e.type?.text || ''))
+    .map(e => ({
+      name: e.participants?.[0]?.athlete?.displayName || '',
+      id: e.participants?.[0]?.athlete?.id,
+      min: e.clock?.displayValue || '',
+      home: String(e.team?.id) === String(homeId),
+      own: /own/i.test(e.type?.text || ''),
+    }))
+    .filter(s => s.name);
+}
+
+async function buildMatchPoster(m, sc, summary) {
+  const W = 1080, H = 1920;                       // 9:16 story format
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
 
   const homeColor = (typeof getTeamColor === 'function' && getTeamColor(m.home)) || '#f0a500';
   const awayColor = (typeof getTeamColor === 'function' && getTeamColor(m.away)) || '#4cc9f0';
-
-  // Background
-  const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, '#0a0a1a');
-  bg.addColorStop(0.5, '#1a0a2e');
-  bg.addColorStop(1, '#0a1a2e');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  // Soft team-colour glows behind each side
-  const glow = (x, color) => {
-    const g = ctx.createRadialGradient(x, 470, 0, x, 470, 360);
-    g.addColorStop(0, color + '33');
-    g.addColorStop(1, color + '00');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-  };
-  glow(280, homeColor);
-  glow(800, awayColor);
-
-  // Outer border
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, 24, 24, W - 48, H - 48, 32);
-  ctx.stroke();
-
+  const code = (typeof getCountryCode === 'function') ? getCountryCode : (() => 'un');
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
 
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0a0a1a');
+  bg.addColorStop(0.5, '#160a28');
+  bg.addColorStop(1, '#0a1422');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  const glow = (x, y, color) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 420);
+    g.addColorStop(0, color + '2e'); g.addColorStop(1, color + '00');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  };
+  glow(250, 760, homeColor); glow(830, 760, awayColor);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2;
+  roundRect(ctx, 28, 28, W - 56, H - 56, 36); ctx.stroke();
+
   // Brand
   ctx.fillStyle = '#f0a500';
-  ctx.font = '900 italic 96px system-ui, sans-serif';
-  ctx.fillText('Gol!', W / 2, 150);
+  ctx.font = '900 italic 120px system-ui, sans-serif';
+  ctx.fillText('Gol!', W / 2, 220);
   ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.font = '600 30px system-ui, sans-serif';
-  ctx.fillText('FIFA WORLD CUP 2026', W / 2, 200);
+  ctx.font = '600 38px system-ui, sans-serif';
+  ctx.fillText('FIFA WORLD CUP 2026', W / 2, 280);
 
-  // FULL TIME pill
+  // Status pill
   const live = sc.status === 'LIVE';
-  const pillText = live ? 'LIVE' : 'FULL TIME';
-  ctx.font = '800 30px system-ui, sans-serif';
-  const pw = ctx.measureText(pillText).width + 70;
-  ctx.fillStyle = live ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.08)';
-  roundRect(ctx, W / 2 - pw / 2, 240, pw, 60, 30);
-  ctx.fill();
-  ctx.fillStyle = live ? '#4ade80' : 'rgba(255,255,255,0.7)';
-  ctx.fillText(pillText, W / 2, 280);
+  const pillText = live ? ('● LIVE ' + (sc.clock || '')).trim() : 'FULL TIME';
+  ctx.font = '800 36px system-ui, sans-serif';
+  const pw = ctx.measureText(pillText).width + 80;
+  ctx.fillStyle = live ? 'rgba(74,222,128,0.20)' : 'rgba(255,255,255,0.08)';
+  roundRect(ctx, W / 2 - pw / 2, 330, pw, 72, 36); ctx.fill();
+  ctx.fillStyle = live ? '#4ade80' : 'rgba(255,255,255,0.75)';
+  ctx.fillText(pillText, W / 2, 378);
 
-  // Flags
-  const code = (typeof getCountryCode === 'function') ? getCountryCode : (() => 'un');
+  // ── Pitch card ──
+  const cardX = 70, cardY = 450, cardW = W - 140, cardH = 720;
+  ctx.save();
+  roundRect(ctx, cardX, cardY, cardW, cardH, 28); ctx.clip();
+  const pitch = ctx.createLinearGradient(0, cardY, 0, cardY + cardH);
+  pitch.addColorStop(0, '#0f3d22'); pitch.addColorStop(1, '#08251a');
+  ctx.fillStyle = pitch; ctx.fillRect(cardX, cardY, cardW, cardH);
+  // pitch markings
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(W / 2, cardY); ctx.lineTo(W / 2, cardY + cardH); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W / 2, cardY + cardH / 2, 130, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+  roundRect(ctx, cardX, cardY, cardW, cardH, 28);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Group badge on the card
+  ctx.font = '800 34px system-ui, sans-serif';
+  const gp = 'GROUP ' + m.group;
+  const gpw = ctx.measureText(gp).width + 60;
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  roundRect(ctx, W / 2 - gpw / 2, cardY + 36, gpw, 60, 30); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText(gp, W / 2, cardY + 77);
+
+  // Circular flags
   const [hImg, aImg] = await Promise.all([
     mdLoadImg('https://flagcdn.com/w320/' + code(m.home) + '.png'),
     mdLoadImg('https://flagcdn.com/w320/' + code(m.away) + '.png'),
   ]);
-  const fw = 260, fh = 195, fy = 380;
-  const hx = 150, ax = W - 150 - fw;
-  const drawFlag = (img, x, color) => {
-    ctx.save();
-    roundRect(ctx, x, fy, fw, fh, 16);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 4;
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 24;
-    ctx.shadowOffsetY = 8;
-    ctx.clip();
-    if (img) ctx.drawImage(img, x, fy, fw, fh);
-    else { ctx.fillStyle = color; ctx.fillRect(x, fy, fw, fh); }
-    ctx.restore();
-    ctx.save();
-    roundRect(ctx, x, fy, fw, fh, 16);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    ctx.restore();
-  };
-  drawFlag(hImg, hx, homeColor);
-  drawFlag(aImg, ax, awayColor);
+  const flagCY = cardY + cardH / 2 - 10, fr = 150;
+  drawCircleFlag(ctx, hImg, cardX + 200, flagCY, fr, homeColor);
+  drawCircleFlag(ctx, aImg, cardX + cardW - 200, flagCY, fr, awayColor);
 
-  // Score (or VS) in the centre
-  const h = sc.home >= 0 ? sc.home : 0;
-  const a = sc.away >= 0 ? sc.away : 0;
-  ctx.fillStyle = '#fff';
-  ctx.font = '900 150px system-ui, sans-serif';
-  ctx.fillText(`${h}–${a}`, W / 2, 510);
+  // Score in the centre
+  const h = sc.home >= 0 ? sc.home : 0, a = sc.away >= 0 ? sc.away : 0;
+  ctx.fillStyle = '#fff'; ctx.font = '900 150px system-ui, sans-serif';
+  ctx.fillText(`${h}–${a}`, W / 2, flagCY + 50);
 
   // Team names under flags
-  ctx.fillStyle = '#fff';
-  ctx.font = '700 42px system-ui, sans-serif';
-  ctx.fillText(m.home, hx + fw / 2, 650);
-  ctx.fillText(m.away, ax + fw / 2, 650);
+  ctx.fillStyle = '#fff'; ctx.font = '700 44px system-ui, sans-serif';
+  ctx.fillText(m.home, cardX + 200, cardY + cardH - 70);
+  ctx.fillText(m.away, cardX + cardW - 200, cardY + cardH - 70);
 
-  // Meta: group · date
+  // ── Scorers ──
+  const scorers = extractScorers(summary).slice(0, 6);
+  let y = cardY + cardH + 80;
+  if (scorers.length) {
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '700 30px system-ui, sans-serif';
+    ctx.fillText('⚽  GOALS', W / 2, y);
+    y += 60;
+    // opportunistically load headshots
+    const photos = await Promise.all(scorers.map(s => s.id
+      ? mdLoadImg('https://a.espncdn.com/i/headshots/soccer/players/full/' + s.id + '.png') : Promise.resolve(null)));
+    ctx.font = '600 36px system-ui, sans-serif';
+    scorers.forEach((s, i) => {
+      const dotColor = s.home ? homeColor : awayColor;
+      const label = `${s.min}  ${s.name}${s.own ? ' (OG)' : ''}`;
+      const tw = ctx.measureText(label).width;
+      const photo = photos[i];
+      const ph = photo ? 56 : 0;
+      const total = ph + (photo ? 18 : 0) + tw;
+      let x = W / 2 - total / 2;
+      if (photo) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(x + 28, y - 12, 28, 0, Math.PI * 2); ctx.clip();
+        ctx.drawImage(photo, x, y - 40, 56, 56);
+        ctx.restore();
+        ctx.beginPath(); ctx.arc(x + 28, y - 12, 28, 0, Math.PI * 2);
+        ctx.strokeStyle = dotColor; ctx.lineWidth = 3; ctx.stroke();
+        x += ph + 18;
+      } else {
+        ctx.fillStyle = dotColor;
+        ctx.beginPath(); ctx.arc(x - 18, y - 12, 9, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+      ctx.fillText(label, x, y);
+      ctx.textAlign = 'center';
+      y += 64;
+    });
+  }
+
+  // Meta + footer (anchored to bottom)
   const d = new Date(m.date);
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  ctx.fillStyle = 'rgba(255,255,255,0.6)';
-  ctx.font = '600 36px system-ui, sans-serif';
-  ctx.fillText(`Group ${m.group}  ·  ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`, W / 2, 770);
-  ctx.fillStyle = 'rgba(255,255,255,0.38)';
-  ctx.font = '400 28px system-ui, sans-serif';
-  ctx.fillText(m.venue, W / 2, 820);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '500 32px system-ui, sans-serif';
+  ctx.fillText(`${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}  ·  ${m.venue}`, W / 2, H - 200);
 
-  // Footer
   ctx.fillStyle = '#f0a500';
-  ctx.font = '800 44px system-ui, sans-serif';
-  ctx.fillText('getgol.in', W / 2, 985);
+  ctx.font = '800 54px system-ui, sans-serif';
+  ctx.fillText('getgol.in', W / 2, H - 120);
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.font = '500 28px system-ui, sans-serif';
-  ctx.fillText('Track every World Cup 2026 match', W / 2, 1030);
+  ctx.font = '500 32px system-ui, sans-serif';
+  ctx.fillText('Track every World Cup 2026 match', W / 2, H - 72);
 
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }
@@ -154,7 +208,9 @@ async function shareMatchPoster(matchId) {
   if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
 
   try {
-    const blob = await buildMatchPoster(m, sc);
+    // Reuse the summary already loaded by the match detail view (for scorers)
+    const summary = (typeof MD !== 'undefined' && MD.match && String(MD.match.id) === String(matchId)) ? MD.data : null;
+    const blob = await buildMatchPoster(m, sc, summary);
     const file = new File([blob], `gol-${m.home}-vs-${m.away}.png`, { type: 'image/png' });
     const shareText = `${m.home} ${sc.home}–${sc.away} ${m.away} · FIFA World Cup 2026 — follow every match at getgol.in`;
 
