@@ -70,8 +70,8 @@ function notifPromptHTML() {
     <div style="display:flex;align-items:center;gap:0.75rem;background:linear-gradient(90deg,rgba(240,165,0,0.16),rgba(240,165,0,0.04));border:1px solid rgba(240,165,0,0.3);border-radius:14px;padding:0.7rem 0.85rem;margin-bottom:0.75rem">
       <div style="font-size:1.5rem;filter:drop-shadow(0 0 8px rgba(240,165,0,0.5))">🔔</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:0.84rem;font-weight:800;color:#fff">Never miss a goal!</div>
-        <div style="font-size:0.68rem;color:rgba(255,255,255,0.6);margin-top:0.1rem">Turn on alerts for kick-offs, goals &amp; full-time</div>
+        <div style="font-size:0.84rem;font-weight:800;color:#fff">Don't miss a moment!</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.6);margin-top:0.1rem">Get instant alerts for every kick-off, goal &amp; final whistle</div>
       </div>
       <button onclick="requestNotifPermission()" style="background:#f0a500;border:none;border-radius:18px;color:#000;font-weight:800;font-size:0.75rem;padding:0.45rem 1rem;cursor:pointer;white-space:nowrap;box-shadow:0 2px 12px rgba(240,165,0,0.35)">Turn on</button>
       <button onclick="dismissNotifPrompt()" title="Dismiss" style="background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:1.1rem;cursor:pointer;padding:0 0.2rem;line-height:1">✕</button>
