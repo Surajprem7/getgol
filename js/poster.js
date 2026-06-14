@@ -36,6 +36,22 @@ function drawCircleFlag(ctx, img, cx, cy, r, color) {
   ctx.strokeStyle = color; ctx.lineWidth = 8; ctx.stroke();
 }
 
+// Look up a free Creative-Commons player photo from Wikimedia (via Wikipedia
+// pageimages). Wikimedia serves CORS headers, so the result is canvas-safe.
+async function fetchWikiThumb(name, size) {
+  try {
+    const url = 'https://en.wikipedia.org/w/api.php?action=query&titles='
+      + encodeURIComponent(name) + '&prop=pageimages&format=json&pithumbsize='
+      + (size || 200) + '&redirects=1&origin=*';
+    const r = await fetch(url);
+    const d = await r.json();
+    const pages = d.query && d.query.pages;
+    if (!pages) return null;
+    const p = Object.values(pages)[0];
+    return (p && p.thumbnail && p.thumbnail.source) || null;
+  } catch (e) { return null; }
+}
+
 function extractScorers(summary) {
   if (!summary || !summary.keyEvents) return [];
   const homeId = summary.rosters?.find(r => r.homeAway === 'home')?.team?.id;
@@ -147,9 +163,12 @@ async function buildMatchPoster(m, sc, summary) {
     ctx.font = '700 30px system-ui, sans-serif';
     ctx.fillText('⚽  GOALS', W / 2, y);
     y += 60;
-    // opportunistically load headshots
-    const photos = await Promise.all(scorers.map(s => s.id
-      ? mdLoadImg('https://a.espncdn.com/i/headshots/soccer/players/full/' + s.id + '.png') : Promise.resolve(null)));
+    // Load free Wikimedia photos for each scorer (canvas-safe via CORS)
+    const photos = await Promise.all(scorers.map(async s => {
+      const url = await fetchWikiThumb(s.name, 200);
+      return url ? mdLoadImg(url) : null;
+    }));
+    const usedPhoto = photos.some(p => p);
     ctx.font = '600 36px system-ui, sans-serif';
     scorers.forEach((s, i) => {
       const dotColor = s.home ? homeColor : awayColor;
@@ -176,6 +195,11 @@ async function buildMatchPoster(m, sc, summary) {
       ctx.textAlign = 'center';
       y += 64;
     });
+    if (usedPhoto) {
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = '400 22px system-ui, sans-serif';
+      ctx.fillText('Player photos: Wikimedia Commons (CC)', W / 2, H - 232);
+    }
   }
 
   // Meta + footer (anchored to bottom)
