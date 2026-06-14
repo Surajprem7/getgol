@@ -6,6 +6,74 @@ const ESPN_SB      = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.
 
 const MD = { match: null, data: null, tab: 'lineups', team: 'home' };
 
+// TheSportsDB photo cache (display-only — cutouts/thumbs don't need CORS here)
+const TSDB = { teamDone: {}, photo: {} };   // photo: lowercased name -> url | null
+
+async function tsdbTeamId(name) {
+  try {
+    const r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(name));
+    const d = await r.json();
+    const t = (d.teams || []).find(x => x.strSport === 'Soccer');
+    return t ? t.idTeam : null;
+  } catch (e) { return null; }
+}
+
+async function tsdbLoadSquad(teamName) {
+  if (!teamName || TSDB.teamDone[teamName]) return;
+  TSDB.teamDone[teamName] = true;
+  const id = await tsdbTeamId(teamName);
+  if (!id) return;
+  try {
+    const r = await fetch('https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=' + id);
+    const d = await r.json();
+    (d.player || d.players || []).forEach(p => {
+      const key = (p.strPlayer || '').toLowerCase();
+      if (key && !(key in TSDB.photo)) TSDB.photo[key] = p.strCutout || p.strThumb || null;
+    });
+  } catch (e) { /* ignore */ }
+}
+
+async function tsdbPlayer(name) {
+  const key = name.toLowerCase();
+  if (key in TSDB.photo) return TSDB.photo[key];
+  try {
+    const r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(name));
+    const d = await r.json();
+    const p = (d.player || []).find(x => x.strSport === 'Soccer');
+    TSDB.photo[key] = p ? (p.strCutout || p.strThumb || null) : null;
+  } catch (e) { TSDB.photo[key] = null; }
+  return TSDB.photo[key];
+}
+
+function mdApplyPhoto(el) {
+  const name = decodeURIComponent(el.dataset.pname || '');
+  const url = TSDB.photo[name.toLowerCase()];
+  if (url && !el.querySelector('img')) {
+    el.insertAdjacentHTML('beforeend',
+      `<img src="${url}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center" onerror="this.remove()">`);
+  }
+}
+
+// Lazy-load player cutouts onto the pitch after the line-up renders.
+async function mdHydratePhotos() {
+  if (!MD.data || MD.tab !== 'lineups') return;
+  const rosters = MD.data.rosters || [];
+  const sideRoster = rosters.find(r => r.homeAway === MD.team) || rosters[0];
+  if (!sideRoster) return;
+  const norm = (typeof normName === 'function') ? normName : (x => x);
+
+  await tsdbLoadSquad(sideRoster.team && sideRoster.team.displayName);
+  const els = () => document.querySelectorAll('#md-body .md-pl');
+  els().forEach(mdApplyPhoto);                      // fill from squad/cache first
+
+  // Per-player fallback for the 11 pitch players still missing a photo
+  const missing = [...els()].filter(el => !el.querySelector('img'));
+  await Promise.all(missing.map(async el => {
+    await tsdbPlayer(decodeURIComponent(el.dataset.pname || ''));
+    mdApplyPhoto(el);
+  }));
+}
+
 function mdGlass() {
   return 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px';
 }
@@ -133,6 +201,8 @@ function renderMatchDetail(data) {
   else                           content = mdRenderSummary(data, norm);
 
   body.innerHTML = header + tabs + content;
+
+  if (MD.tab === 'lineups') mdHydratePhotos();
 }
 
 // ── Line-ups: formation pitch + subs ──────────────────────────────────────────────
@@ -179,18 +249,13 @@ function mdRenderLineups(data, norm) {
   }
 
   const token = (p) => {
-    const id = p.athlete?.id;
     const name = p.athlete?.shortName || p.athlete?.displayName || '';
+    const full = p.athlete?.displayName || name;
     const num = p.jersey || '';
-    const photo = id ? `https://a.espncdn.com/i/headshots/soccer/players/full/${id}.png` : '';
     return `
-      <div style="display:flex;flex-direction:column;align-items:center;width:62px;flex-shrink:0">
-        <div style="position:relative;width:38px;height:38px">
-          ${photo ? `<img src="${photo}" width="38" height="38" style="border-radius:50%;object-fit:cover;background:#1a1a2e;border:1.5px solid ${accent}88"
-            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
-          <div style="display:${photo ? 'none' : 'flex'};position:absolute;inset:0;border-radius:50%;background:${accent}22;border:1.5px solid ${accent}88;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff">${num}</div>
-        </div>
-        <div style="font-size:0.55rem;color:#fff;margin-top:0.2rem;text-align:center;line-height:1.05;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+      <div style="display:flex;flex-direction:column;align-items:center;width:64px;flex-shrink:0">
+        <div class="md-pl" data-pname="${encodeURIComponent(full)}" style="position:relative;width:44px;height:44px;border-radius:50%;background:${accent}22;border:1.5px solid ${accent}88;display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:800;color:#fff;overflow:hidden">${num}</div>
+        <div style="font-size:0.55rem;color:#fff;margin-top:0.2rem;text-align:center;line-height:1.05;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
       </div>`;
   };
 
