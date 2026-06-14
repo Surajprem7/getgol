@@ -374,14 +374,18 @@ function showTab(tab) {
       const d = new Date(m.date);
       const dl = `${d.getDate()} ${months[d.getMonth()]}`;
       return `
-        <div onclick="jumpToDate('${m.date}')" style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.35rem;cursor:pointer;transition:background 0.2s"
+        <div onclick="jumpToDate('${m.date}')" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.35rem;cursor:pointer;transition:background 0.2s"
           onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-          <span style="font-size:0.6rem;color:rgba(255,255,255,0.35);width:42px;flex-shrink:0">${dl}</span>
+          <div style="width:52px;flex-shrink:0;line-height:1.15">
+            <div style="font-size:0.74rem;font-weight:700;color:rgba(255,255,255,0.9)">${dl}</div>
+            <div style="font-size:0.58rem;color:rgba(255,255,255,0.4)">${m.time} IST</div>
+          </div>
           <span style="flex:1;text-align:right;font-size:0.72rem;color:#fff;font-weight:${m.home === APP.teamName ? '700' : '500'}">${m.home}</span>
           <img src="https://flagcdn.com/20x15/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
           <span data-vs="${m.id}" data-vs-style="mini" style="min-width:38px;text-align:center;font-size:0.82rem">${shortScoreHTML(m.id)}</span>
           <img src="https://flagcdn.com/20x15/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
           <span style="flex:1;font-size:0.72rem;color:#fff;font-weight:${m.away === APP.teamName ? '700' : '500'}">${m.away}</span>
+          <span style="flex-shrink:0;font-size:0.55rem;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.15rem 0.4rem;white-space:nowrap">Grp ${m.group}</span>
         </div>`;
     };
 
