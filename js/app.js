@@ -179,7 +179,7 @@ function showApp(startTab) {
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem">
             <button id="notif-bell" onclick="toggleNotifications()" title="Tap to enable match alerts"
-              style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:2.2rem;height:2.2rem;font-size:1rem;cursor:pointer;opacity:0.5;display:flex;align-items:center;justify-content:center;flex-shrink:0">🔕</button>
+              style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0.4rem 0.75rem;display:flex;align-items:center;gap:0.3rem;flex-shrink:0;white-space:nowrap;color:rgba(255,255,255,0.6)">🔕 Alerts</button>
             ${headerRight}
           </div>
         </header>
@@ -191,6 +191,7 @@ function showApp(startTab) {
           <button onclick="showTab('watch')" id="nav-watch" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Watch</button>
         </nav>
 
+        <div id="notif-prompt"></div>
         <div id="tab-content"></div>
       </div>
     </div>

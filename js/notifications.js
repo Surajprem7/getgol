@@ -45,11 +45,47 @@ function toggleNotifications() {
 
 function updateNotifBell() {
   const bell = document.getElementById('notif-bell');
-  if (!bell) return;
-  const on = notifEnabled();
-  bell.textContent = on ? '🔔' : '🔕';
-  bell.title = on ? 'Match alerts on — tap to mute' : 'Tap to enable match alerts';
-  bell.style.opacity = on ? '1' : '0.5';
+  if (bell) {
+    if (typeof Notification === 'undefined') {
+      bell.style.display = 'none';
+    } else {
+      const on = notifEnabled();
+      bell.innerHTML = on ? '🔔 Alerts on' : '🔕 Alerts';
+      bell.title = on ? 'Match alerts on — tap to mute' : 'Tap to enable match alerts';
+      bell.style.color       = on ? '#4ade80' : 'rgba(255,255,255,0.6)';
+      bell.style.background   = on ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.05)';
+      bell.style.borderColor  = on ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.1)';
+    }
+  }
+  updateNotifPrompt();
+}
+
+// A friendly, dismissible banner shown when alerts are off and not yet dismissed.
+function notifPromptHTML() {
+  if (typeof Notification === 'undefined') return '';      // unsupported browser
+  if (notifEnabled()) return '';                            // already on
+  if (Notification.permission === 'denied') return '';      // blocked at browser level
+  if (localStorage.getItem('gol_notif_dismissed') === '1') return '';
+  return `
+    <div style="display:flex;align-items:center;gap:0.75rem;background:linear-gradient(90deg,rgba(240,165,0,0.16),rgba(240,165,0,0.04));border:1px solid rgba(240,165,0,0.3);border-radius:14px;padding:0.7rem 0.85rem;margin-bottom:0.75rem">
+      <div style="font-size:1.5rem;filter:drop-shadow(0 0 8px rgba(240,165,0,0.5))">🔔</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.84rem;font-weight:800;color:#fff">Never miss a goal!</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.6);margin-top:0.1rem">Turn on alerts for kick-offs, goals &amp; full-time</div>
+      </div>
+      <button onclick="requestNotifPermission()" style="background:#f0a500;border:none;border-radius:18px;color:#000;font-weight:800;font-size:0.75rem;padding:0.45rem 1rem;cursor:pointer;white-space:nowrap;box-shadow:0 2px 12px rgba(240,165,0,0.35)">Turn on</button>
+      <button onclick="dismissNotifPrompt()" title="Dismiss" style="background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:1.1rem;cursor:pointer;padding:0 0.2rem;line-height:1">✕</button>
+    </div>`;
+}
+
+function updateNotifPrompt() {
+  const el = document.getElementById('notif-prompt');
+  if (el) el.innerHTML = notifPromptHTML();
+}
+
+function dismissNotifPrompt() {
+  localStorage.setItem('gol_notif_dismissed', '1');
+  updateNotifPrompt();
 }
 
 // Show a notification via the service worker if available (more reliable on
