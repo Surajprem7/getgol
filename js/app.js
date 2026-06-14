@@ -111,7 +111,7 @@ function showTeamPickerModal() {
         <!-- SKIP button top-right -->
         <button onclick="closeTeamPicker()" style="position:absolute;top:0;right:0;background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:rgba(255,255,255,0.5);font-size:0.75rem;font-weight:600;letter-spacing:0.5px;padding:0.3rem 0.85rem;cursor:pointer;transition:all 0.2s"
           onmouseover="this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.5)'"
-          onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.borderColor='rgba(255,255,255,0.2)'">SKIP</button>
+          onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.borderColor='rgba(255,255,255,0.2)'">Maybe later</button>
       </div>
 
       <!-- Pick your team label -->
