@@ -313,6 +313,7 @@ function showTab(tab) {
       return `
       <div data-date="${m.date}" data-group="${m.group}" style="${glass};margin-bottom:0.75rem;overflow:hidden;${isMyMatch ? 'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22' : ''}">
 
+       <div onclick="openMatchDetail(${m.id})" style="cursor:pointer">
         <!-- Date badge — centered, attractive -->
         <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
           <span style="background:linear-gradient(90deg,rgba(240,165,0,0.18),rgba(76,201,240,0.12));border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:0.3rem 0.9rem;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.85)">
@@ -336,7 +337,9 @@ function showTab(tab) {
         </div>
 
         <!-- Venue -->
-        <div style="font-size:0.62rem;color:rgba(255,255,255,0.25);text-align:center;padding:0 1rem 0.75rem">${m.venue}</div>
+        <div style="font-size:0.62rem;color:rgba(255,255,255,0.25);text-align:center;padding:0 1rem 0.35rem">${m.venue}</div>
+        <div style="font-size:0.6rem;color:${accentColor};opacity:0.7;text-align:center;padding:0 1rem 0.6rem">Tap for line-ups, stats &amp; summary ›</div>
+       </div>
 
         <!-- Inline prediction -->
         <div style="border-top:1px solid rgba(255,255,255,0.06);padding:0.65rem 0.75rem 0.5rem">

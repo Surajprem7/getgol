@@ -123,7 +123,7 @@ async function fetchESPNScores() {
       const finalHome = swapped ? aScore : hScore;
       const finalAway = swapped ? hScore : aScore;
 
-      out[match.id] = { home: finalHome, away: finalAway, status, clock };
+      out[match.id] = { home: finalHome, away: finalAway, status, clock, espnId: event.id };
 
       if (status === 'FT') {
         localStorage.setItem('result_' + match.id, `${finalHome}-${finalAway}`);

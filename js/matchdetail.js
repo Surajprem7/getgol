@@ -1,0 +1,300 @@
+// matchdetail.js — expandable match detail: line-ups (formation pitch), stats,
+// and a goals/cards timeline. Data from ESPN's free summary endpoint.
+
+const ESPN_SUMMARY = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=';
+const ESPN_SB      = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=';
+
+const MD = { match: null, data: null, tab: 'lineups', team: 'home' };
+
+function mdGlass() {
+  return 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px';
+}
+
+// Resolve the ESPN event id for one of our matches.
+async function mdResolveEventId(m) {
+  const cached = window.LIVE && window.LIVE.scores[m.id] && window.LIVE.scores[m.id].espnId;
+  if (cached) return cached;
+  // Fall back to the scoreboard, matching by team names. Query a ±1 day range
+  // because our IST match dates can sit on a different US calendar day than ESPN.
+  try {
+    const base = new Date(m.date);
+    const fmt = d => d.toISOString().slice(0, 10).replace(/-/g, '');
+    const from = new Date(base); from.setDate(from.getDate() - 1);
+    const to = new Date(base);   to.setDate(to.getDate() + 1);
+    const res = await fetch(`${ESPN_SB}${fmt(from)}-${fmt(to)}`, { cache: 'no-store' });
+    const data = await res.json();
+    const norm = (typeof normName === 'function') ? normName : (x => x);
+    for (const ev of (data.events || [])) {
+      const comp = ev.competitions?.[0];
+      const names = (comp?.competitors || []).map(c => norm(c.team?.displayName));
+      if (names.includes(m.home) && names.includes(m.away)) return ev.id;
+    }
+  } catch (e) { /* ignore */ }
+  return null;
+}
+
+async function openMatchDetail(matchId) {
+  const m = MATCHES.find(x => String(x.id) === String(matchId));
+  if (!m) return;
+  MD.match = m; MD.data = null; MD.tab = 'lineups'; MD.team = 'home';
+
+  // Build shell with loading state
+  const overlay = document.createElement('div');
+  overlay.id = 'md-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;display:flex;flex-direction:column;justify-content:flex-end';
+  overlay.innerHTML = `
+    <div onclick="closeMatchDetail()" style="position:absolute;inset:0;background:rgba(0,0,0,0.65)"></div>
+    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#12122a 0%,#0d0d1e 100%);border-radius:24px 24px 0 0;max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid rgba(255,255,255,0.1)">
+      <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0.75rem auto 0"></div>
+      <div id="md-body" style="padding:1rem 1rem 2rem">
+        <div style="text-align:center;padding:3rem 1rem;color:rgba(255,255,255,0.5)">Loading match details…</div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const eventId = await mdResolveEventId(m);
+  if (!eventId) { renderMatchDetail(null); return; }
+  try {
+    const res = await fetch(ESPN_SUMMARY + eventId, { cache: 'no-store' });
+    MD.data = await res.json();
+  } catch (e) { MD.data = null; }
+  renderMatchDetail(MD.data);
+}
+
+function closeMatchDetail() {
+  const el = document.getElementById('md-overlay');
+  if (el) el.remove();
+}
+
+function mdTab(tab) { MD.tab = tab; renderMatchDetail(MD.data); }
+function mdTeam(side) { MD.team = side; renderMatchDetail(MD.data); }
+
+function renderMatchDetail(data) {
+  const body = document.getElementById('md-body');
+  if (!body) return;
+  const m = MD.match;
+  const accent = APP.teamColor || '#f0a500';
+  const sc = window.LIVE && window.LIVE.score(m.id);
+  const norm = (typeof normName === 'function') ? normName : (x => x);
+
+  // ── Header (always shown) ──
+  const scoreMid = (sc && (sc.status === 'FT' || sc.status === 'LIVE'))
+    ? `<div style="font-size:2rem;font-weight:900;color:#fff;line-height:1">${sc.home >= 0 ? sc.home : 0}–${sc.away >= 0 ? sc.away : 0}</div>
+       <div style="font-size:0.6rem;font-weight:700;letter-spacing:1px;margin-top:2px;color:${sc.status === 'LIVE' ? '#4ade80' : 'rgba(255,255,255,0.4)'}">${sc.status === 'LIVE' ? '● LIVE ' + (sc.clock || '') : 'FULL TIME'}</div>`
+    : `<div style="font-size:1.4rem;font-weight:900;color:rgba(255,255,255,0.25);letter-spacing:2px">VS</div>
+       <div style="font-size:0.62rem;color:#f0a500;margin-top:4px">${formatIST(m.date, m.time)}</div>`;
+
+  const header = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.25rem">
+      <span style="font-size:0.62rem;font-weight:700;color:rgba(255,255,255,0.45);background:rgba(255,255,255,0.06);border-radius:10px;padding:0.2rem 0.6rem">Group ${m.group}</span>
+      <button onclick="closeMatchDetail()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:1.9rem;height:1.9rem;color:rgba(255,255,255,0.6);font-size:0.9rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding:0.5rem 0 0.75rem">
+      <div style="flex:1;text-align:center">
+        <img src="https://flagcdn.com/56x42/${getCountryCode(m.home)}.png" width="56" height="42" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">
+        <div style="font-size:0.82rem;color:#fff;font-weight:700;margin-top:0.4rem">${m.home}</div>
+      </div>
+      <div style="text-align:center;min-width:80px">${scoreMid}</div>
+      <div style="flex:1;text-align:center">
+        <img src="https://flagcdn.com/56x42/${getCountryCode(m.away)}.png" width="56" height="42" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">
+        <div style="font-size:0.82rem;color:#fff;font-weight:700;margin-top:0.4rem">${m.away}</div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:0.62rem;color:rgba(255,255,255,0.3);margin-bottom:1rem">📍 ${m.venue}</div>
+  `;
+
+  // No data available (future match / not posted yet)
+  if (!data || !data.rosters || !data.rosters.length) {
+    body.innerHTML = header + `
+      <div style="${mdGlass()};padding:2rem 1rem;text-align:center">
+        <div style="font-size:2rem;margin-bottom:0.5rem">⏳</div>
+        <div style="color:#fff;font-weight:700;font-size:0.9rem">Line-ups & stats not out yet</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-top:0.35rem">Team sheets are usually published about an hour before kick-off. Check back closer to the match.</div>
+      </div>`;
+    return;
+  }
+
+  // ── Tab bar ──
+  const tabBtn = (id, label) => `
+    <button onclick="mdTab('${id}')" style="flex:1;padding:0.5rem;border:none;border-radius:12px;cursor:pointer;font-size:0.78rem;font-weight:700;transition:all 0.2s;
+      background:${MD.tab === id ? accent : 'transparent'};color:${MD.tab === id ? '#000' : 'rgba(255,255,255,0.6)'}">${label}</button>`;
+  const tabs = `
+    <div style="display:flex;gap:0.4rem;background:rgba(255,255,255,0.05);padding:0.3rem;border-radius:16px;margin-bottom:1rem">
+      ${tabBtn('lineups', 'Line-ups')}${tabBtn('stats', 'Stats')}${tabBtn('summary', 'Summary')}
+    </div>`;
+
+  let content = '';
+  if (MD.tab === 'lineups')      content = mdRenderLineups(data, norm);
+  else if (MD.tab === 'stats')   content = mdRenderStats(data, norm);
+  else                           content = mdRenderSummary(data, norm);
+
+  body.innerHTML = header + tabs + content;
+}
+
+// ── Line-ups: formation pitch + subs ──────────────────────────────────────────────
+function mdRenderLineups(data, norm) {
+  const accent = APP.teamColor || '#f0a500';
+  const rosters = data.rosters;
+  const sideRoster = rosters.find(r => r.homeAway === MD.team) || rosters[0];
+  if (!sideRoster || !(sideRoster.roster || []).length) {
+    return `<div style="${mdGlass()};padding:1.5rem;text-align:center;color:rgba(255,255,255,0.4);font-size:0.8rem">No line-up available for this side.</div>`;
+  }
+
+  const toggle = `
+    <div style="display:flex;gap:0.4rem;margin-bottom:1rem">
+      ${rosters.map(r => `
+        <button onclick="mdTeam('${r.homeAway}')" style="flex:1;padding:0.45rem;border-radius:10px;cursor:pointer;font-size:0.74rem;font-weight:700;border:1px solid ${MD.team === r.homeAway ? accent : 'rgba(255,255,255,0.1)'};background:${MD.team === r.homeAway ? accent + '22' : 'transparent'};color:${MD.team === r.homeAway ? accent : 'rgba(255,255,255,0.6)'}">
+          ${norm(r.team?.displayName || '')}
+        </button>`).join('')}
+    </div>`;
+
+  const all = sideRoster.roster;
+  const starters = all.filter(p => p.starter);
+  const subs = all.filter(p => !p.starter);
+  const formation = sideRoster.formation || '';
+
+  // Build rows from the formation string + formationPlace ordering
+  const ordered = [...starters].sort((a, b) => (parseInt(a.formationPlace) || 99) - (parseInt(b.formationPlace) || 99));
+  let rows = [];
+  const sizes = formation.split('-').map(n => parseInt(n)).filter(n => n > 0);
+  if (ordered.length && sizes.length && sizes.reduce((a, b) => a + b, 0) === ordered.length - 1) {
+    rows.push([ordered[0]]);           // GK
+    let idx = 1;
+    sizes.forEach(sz => { rows.push(ordered.slice(idx, idx + sz)); idx += sz; });
+  } else {
+    // Fallback: categorize by position abbreviation
+    const cat = { G: [], D: [], M: [], F: [] };
+    ordered.forEach(p => {
+      const a = (p.position?.abbreviation || '').toUpperCase();
+      if (a === 'G') cat.G.push(p);
+      else if (/D|B/.test(a)) cat.D.push(p);
+      else if (/M/.test(a)) cat.M.push(p);
+      else cat.F.push(p);
+    });
+    rows = [cat.G, cat.D, cat.M, cat.F].filter(r => r.length);
+  }
+
+  const token = (p) => {
+    const id = p.athlete?.id;
+    const name = p.athlete?.shortName || p.athlete?.displayName || '';
+    const num = p.jersey || '';
+    const photo = id ? `https://a.espncdn.com/i/headshots/soccer/players/full/${id}.png` : '';
+    return `
+      <div style="display:flex;flex-direction:column;align-items:center;width:62px;flex-shrink:0">
+        <div style="position:relative;width:38px;height:38px">
+          ${photo ? `<img src="${photo}" width="38" height="38" style="border-radius:50%;object-fit:cover;background:#1a1a2e;border:1.5px solid ${accent}88"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+          <div style="display:${photo ? 'none' : 'flex'};position:absolute;inset:0;border-radius:50%;background:${accent}22;border:1.5px solid ${accent}88;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff">${num}</div>
+        </div>
+        <div style="font-size:0.55rem;color:#fff;margin-top:0.2rem;text-align:center;line-height:1.05;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+      </div>`;
+  };
+
+  // Pitch: attacking rows at top → GK at bottom
+  const pitchRows = [...rows].reverse().map(r => `
+    <div style="display:flex;justify-content:space-around;align-items:center;width:100%">${r.map(token).join('')}</div>
+  `).join('');
+
+  const pitch = `
+    <div style="${mdGlass()};background:linear-gradient(180deg,#0f3d1e,#0a2e16);padding:1rem 0.5rem;margin-bottom:1rem;position:relative;overflow:hidden">
+      <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(255,255,255,0.12)"></div>
+      <div style="position:absolute;top:50%;left:50%;width:60px;height:60px;border:1px solid rgba(255,255,255,0.12);border-radius:50%;transform:translate(-50%,-50%)"></div>
+      <div style="position:relative;display:flex;flex-direction:column;gap:1.1rem;min-height:300px;justify-content:space-between">
+        ${pitchRows}
+      </div>
+    </div>
+    ${formation ? `<div style="text-align:center;font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:1rem">Formation <b style="color:${accent}">${formation}</b></div>` : ''}`;
+
+  const subsList = subs.length ? `
+    <div style="${mdGlass()};padding:0.85rem">
+      <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4);margin-bottom:0.6rem">Substitutes</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.35rem 0.75rem">
+        ${subs.map(p => `
+          <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;color:rgba(255,255,255,0.75)">
+            <span style="width:18px;color:rgba(255,255,255,0.35);font-weight:700;text-align:right">${p.jersey || ''}</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.athlete?.shortName || p.athlete?.displayName || ''}</span>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  return toggle + pitch + subsList;
+}
+
+// ── Stats: comparison bars ────────────────────────────────────────────────────────
+function mdRenderStats(data, norm) {
+  const teams = data.boxscore?.teams || [];
+  const home = teams.find(t => t.homeAway === 'home') || teams[0];
+  const away = teams.find(t => t.homeAway === 'away') || teams[1];
+  if (!home || !away) return `<div style="${mdGlass()};padding:1.5rem;text-align:center;color:rgba(255,255,255,0.4);font-size:0.8rem">Stats not available yet.</div>`;
+
+  const val = (team, name) => {
+    const s = (team.statistics || []).find(x => x.name === name);
+    return s ? s.displayValue : null;
+  };
+  const wanted = [
+    ['possessionPct', 'Possession %', true],
+    ['totalShots', 'Shots'],
+    ['shotsOnTarget', 'Shots on Target'],
+    ['wonCorners', 'Corners'],
+    ['foulsCommitted', 'Fouls'],
+    ['yellowCards', 'Yellow Cards'],
+    ['offsides', 'Offsides'],
+    ['saves', 'Saves'],
+  ];
+  const accent = APP.teamColor || '#f0a500';
+
+  const rows = wanted.map(([name, label]) => {
+    const hRaw = val(home, name), aRaw = val(away, name);
+    if (hRaw == null && aRaw == null) return '';
+    const h = parseFloat(hRaw) || 0, a = parseFloat(aRaw) || 0;
+    const tot = h + a;
+    const hPct = tot > 0 ? (h / tot) * 100 : 50;
+    return `
+      <div style="margin-bottom:0.9rem">
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:700;color:#fff;margin-bottom:0.25rem">
+          <span>${hRaw ?? '0'}</span>
+          <span style="color:rgba(255,255,255,0.45);font-weight:600;font-size:0.7rem">${label}</span>
+          <span>${aRaw ?? '0'}</span>
+        </div>
+        <div style="display:flex;height:6px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,0.06)">
+          <div style="width:${hPct}%;background:${accent}"></div>
+          <div style="width:${100 - hPct}%;background:#4cc9f0"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `<div style="${mdGlass()};padding:1rem">${rows || '<div style="text-align:center;color:rgba(255,255,255,0.4);font-size:0.8rem">No stats yet.</div>'}</div>`;
+}
+
+// ── Summary: goals, cards & subs timeline ────────────────────────────────────
+function mdRenderSummary(data, norm) {
+  const events = data.keyEvents || [];
+  const rosters = data.rosters || [];
+  const homeId = rosters.find(r => r.homeAway === 'home')?.team?.id;
+
+  const icon = (t) => {
+    if (/own goal/i.test(t)) return '⚽';
+    if (/goal/i.test(t)) return '⚽';
+    if (/yellow/i.test(t)) return '🟨';
+    if (/red/i.test(t)) return '🟥';
+    if (/substitution/i.test(t)) return '🔁';
+    return '•';
+  };
+  const keep = events.filter(e => /goal|card|substitution/i.test(e.type?.text || ''));
+  if (!keep.length) return `<div style="${mdGlass()};padding:1.5rem;text-align:center;color:rgba(255,255,255,0.4);font-size:0.8rem">No goals or cards recorded yet.</div>`;
+
+  const rows = keep.map(e => {
+    const t = e.type?.text || '';
+    const isHome = e.team?.id && String(e.team.id) === String(homeId);
+    const who = e.participants?.[0]?.athlete?.displayName || '';
+    const min = e.clock?.displayValue || '';
+    const ic = icon(t);
+    const line = `<span style="font-size:0.62rem;color:rgba(255,255,255,0.35)">${min}</span> <span style="font-size:0.75rem;color:#fff;font-weight:600">${ic} ${who}</span> <span style="font-size:0.6rem;color:rgba(255,255,255,0.3)">${t}</span>`;
+    return `
+      <div style="display:flex;${isHome ? '' : 'flex-direction:row-reverse;text-align:right'};padding:0.45rem 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div style="flex:1;${isHome ? '' : 'text-align:right'}">${line}</div>
+      </div>`;
+  }).join('');
+
+  return `<div style="${mdGlass()};padding:0.5rem 1rem">${rows}</div>`;
+}
