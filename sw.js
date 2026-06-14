@@ -1,5 +1,5 @@
-const CACHE = 'gol-v10';
-const FILES = ['/', '/index.html', '/manifest.json', '/js/matches.js', '/js/notifications.js', '/js/live.js', '/js/matchdetail.js', '/js/app.js', '/js/firebase.js'];
+const CACHE = 'gol-v11';
+const FILES = ['/', '/index.html', '/manifest.json', '/js/matches.js', '/js/notifications.js', '/js/live.js', '/js/poster.js', '/js/matchdetail.js', '/js/app.js', '/js/firebase.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));

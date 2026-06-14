@@ -100,7 +100,11 @@ function renderMatchDetail(data) {
         <div style="font-size:0.82rem;color:#fff;font-weight:700;margin-top:0.4rem">${m.away}</div>
       </div>
     </div>
-    <div style="text-align:center;font-size:0.62rem;color:rgba(255,255,255,0.3);margin-bottom:1rem">📍 ${m.venue}</div>
+    <div style="text-align:center;font-size:0.62rem;color:rgba(255,255,255,0.3);margin-bottom:0.75rem">📍 ${m.venue}</div>
+    ${(sc && (sc.status === 'FT' || sc.status === 'LIVE')) ? `
+      <div style="text-align:center;margin-bottom:1rem">
+        <button id="md-share-btn" onclick="shareMatchPoster(${m.id})" style="background:${accent};border:none;border-radius:22px;color:#000;font-weight:800;font-size:0.82rem;padding:0.55rem 1.4rem;cursor:pointer;box-shadow:0 4px 16px ${accent}55">📤 Share result</button>
+      </div>` : ''}
   `;
 
   // No data available (future match / not posted yet)
