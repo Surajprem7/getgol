@@ -1,0 +1,55 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "predictions": {
+      ".read": true,
+      "$matchId": {
+        "$pick": {
+          ".write": "auth != null",
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 100000000"
+        }
+      }
+    },
+
+    "userPredictions": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$matchId": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        }
+      }
+    },
+
+    "wc2026": {
+      ".read": true,
+
+      "_updated": {
+        ".write": "auth != null",
+        ".validate": "newData.isNumber()"
+      },
+
+      "scores": {
+        ".write": "auth != null",
+        "$matchId": {
+          ".validate": "newData.hasChildren(['home','away','status'])",
+          "home":   { ".validate": "newData.isNumber()" },
+          "away":   { ".validate": "newData.isNumber()" },
+          "status": { ".validate": "newData.isString() && newData.val().length <= 16" },
+          "clock":  { ".validate": "newData.isString() && newData.val().length <= 24" },
+          "espnId": { ".validate": "newData.isString() || newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      },
+
+      "standings": {
+        ".write": "auth != null"
+      },
+
+      "rankings":     { ".write": false },
+      "rankingsMeta": { ".write": false }
+    }
+  }
+}
