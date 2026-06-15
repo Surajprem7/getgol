@@ -277,12 +277,17 @@ function mdRenderLineups(data, norm) {
   const subsList = subs.length ? `
     <div style="${mdGlass()};padding:0.85rem">
       <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4);margin-bottom:0.6rem">Substitutes</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.35rem 0.75rem">
-        ${subs.map(p => `
-          <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;color:rgba(255,255,255,0.75)">
-            <span style="width:18px;color:rgba(255,255,255,0.35);font-weight:700;text-align:right">${p.jersey || ''}</span>
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.athlete?.shortName || p.athlete?.displayName || ''}</span>
-          </div>`).join('')}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 0.75rem">
+        ${subs.map(p => {
+          const name = p.athlete?.shortName || p.athlete?.displayName || '';
+          const full = p.athlete?.displayName || name;
+          const num = p.jersey || '';
+          return `
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.72rem;color:rgba(255,255,255,0.8)">
+            <div class="md-pl" data-pname="${encodeURIComponent(full)}" style="position:relative;width:30px;height:30px;flex-shrink:0;border-radius:50%;background:${accent}22;border:1px solid ${accent}66;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:800;color:#fff;overflow:hidden">${num}</div>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+          </div>`;
+        }).join('')}
       </div>
     </div>` : '';
 
