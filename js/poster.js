@@ -11,6 +11,53 @@ function mdLoadImg(url) {
   });
 }
 
+// Original, generated stadium atmosphere — no photos, no copyright.
+function drawAtmosphere(ctx, W, H, homeColor, awayColor) {
+  // Diagonal light shafts from the top (floodlights)
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  const beam = (x0, x1, color, alpha) => {
+    const g = ctx.createLinearGradient(0, 0, 0, H * 0.62);
+    g.addColorStop(0, color + alpha);
+    g.addColorStop(1, color + '00');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(x0, 0); ctx.lineTo(x1, 0);
+    ctx.lineTo(x1 + 140, H * 0.62); ctx.lineTo(x0 - 140, H * 0.62);
+    ctx.closePath(); ctx.fill();
+  };
+  beam(W * 0.16, W * 0.30, '#ffffff', '16');
+  beam(W * 0.70, W * 0.84, '#ffffff', '12');
+  beam(W * 0.44, W * 0.56, '#f0a500', '14');
+  ctx.restore();
+
+  // Bokeh stadium lights / distant crowd sparkle (upper area)
+  for (let i = 0; i < 46; i++) {
+    const x = Math.random() * W, y = Math.random() * H * 0.46, r = Math.random() * 4 + 1;
+    ctx.fillStyle = 'rgba(255,255,255,' + (Math.random() * 0.12 + 0.02).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Confetti in the two team colours + gold
+  const colors = [homeColor, awayColor, '#f0a500', '#ffffff'];
+  for (let i = 0; i < 64; i++) {
+    const x = Math.random() * W, y = Math.random() * H;
+    const w = Math.random() * 8 + 3, h = Math.random() * 14 + 5;
+    ctx.save();
+    ctx.globalAlpha = Math.random() * 0.18 + 0.04;
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.translate(x, y); ctx.rotate(Math.random() * Math.PI);
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+
+  // Vignette to focus the centre
+  const vg = ctx.createRadialGradient(W / 2, H * 0.46, H * 0.22, W / 2, H * 0.5, H * 0.72);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -91,6 +138,7 @@ async function buildMatchPoster(m, sc, summary) {
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   };
   glow(250, 760, homeColor); glow(830, 760, awayColor);
+  drawAtmosphere(ctx, W, H, homeColor, awayColor);
 
   ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2;
   roundRect(ctx, 28, 28, W - 56, H - 56, 36); ctx.stroke();
