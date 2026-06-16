@@ -1,0 +1,48 @@
+name: Bump service worker cache
+
+# When a cached asset changes, bump the cache version in sw.js so users
+# reliably get the "New update available" refresh banner.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'manifest.json'
+      - 'js/**'
+
+permissions:
+  contents: write
+
+# Avoid overlapping bump runs racing to push.
+concurrency:
+  group: bump-sw-cache
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bump cache version in sw.js
+        run: |
+          cur=$(grep -oE "gol-v[0-9]+" sw.js | head -n1 | grep -oE "[0-9]+")
+          if [ -z "$cur" ]; then
+            echo "Could not find gol-v<n> in sw.js; skipping."
+            exit 0
+          fi
+          next=$((cur + 1))
+          sed -i "s/gol-v$cur/gol-v$next/" sw.js
+          echo "Bumped service worker cache gol-v$cur -> gol-v$next"
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- sw.js; then
+            echo "No change to sw.js; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sw.js
+          git commit -m "chore: bump service worker cache [skip ci]"
+          git push
