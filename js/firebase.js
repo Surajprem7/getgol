@@ -18,17 +18,36 @@ auth.signInAnonymously().then(result => {
   currentUser = result.user;
 }).catch(err => console.log('Auth error:', err));
 
-// Save prediction to Firebase
+// Save prediction to Firebase — one vote per user per match.
+// The user's per-uid record is the source of truth (localStorage can be cleared,
+// but the anonymous Firebase uid persists), so a user can't inflate the counts by
+// clicking repeatedly. Changing the pick moves the vote instead of adding one.
 function savePrediction(matchId, pick) {
   localStorage.setItem('pred_' + matchId, pick);
-  
-  // Save user's personal prediction
+
+  const applyVote = (uid) => {
+    const userRef = db.ref('userPredictions/' + uid + '/' + matchId);
+    userRef.once('value').then(snap => {
+      const prev = snap.val();
+      if (prev === pick) return;            // already voted this way → no recount
+      userRef.set(pick);
+      if (prev) {                           // switching pick → remove the old vote
+        db.ref('predictions/' + matchId + '/' + prev)
+          .transaction(count => Math.max((count || 0) - 1, 0));
+      }
+      db.ref('predictions/' + matchId + '/' + pick)
+        .transaction(count => (count || 0) + 1);
+    });
+  };
+
   if (currentUser) {
-    db.ref('userPredictions/' + currentUser.uid + '/' + matchId).set(pick);
+    applyVote(currentUser.uid);
+  } else {
+    // Auth may not have resolved yet on a fast first click — sign in, then apply.
+    auth.signInAnonymously()
+      .then(result => { currentUser = result.user; applyVote(currentUser.uid); })
+      .catch(err => console.log('Auth error:', err));
   }
-  
-  // Save to community count
-  db.ref('predictions/' + matchId + '/' + pick).transaction(count => (count || 0) + 1);
 }
 
 // Get community prediction counts for a match
