@@ -337,8 +337,10 @@ function showTab(tab) {
         </div>
 
         <!-- Venue -->
-        <div style="font-size:0.66rem;color:rgba(255,255,255,0.5);text-align:center;padding:0 1rem 0.4rem">${m.venue}</div>
-        <div style="font-size:0.66rem;font-weight:600;color:${accentColor};text-align:center;padding:0 1rem 0.6rem">Tap for line-ups, stats &amp; summary ›</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.72);text-align:center;padding:0 1rem 0.5rem">${m.venue}</div>
+        <div style="text-align:center;padding:0 1rem 0.7rem">
+          <span style="display:inline-block;font-size:0.68rem;font-weight:700;color:#fff;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:0.32rem 0.85rem">👆 Tap for line-ups, stats &amp; summary</span>
+        </div>
        </div>
 
         <!-- Inline prediction -->
@@ -492,7 +494,7 @@ function showTab(tab) {
         const countsEl = document.getElementById('counts-'+m.id);
         if (!countsEl) return;
         const total = Object.values(counts).reduce((a,b) => a+b, 0);
-        if (total === 0) { countsEl.innerHTML = '<span style="color:rgba(255,255,255,0.45)">Be the first to predict!</span>'; return; }
+        if (total === 0) { countsEl.innerHTML = '<span style="color:rgba(255,255,255,0.6)">Be the first to predict!</span>'; return; }
         const homeP = Math.round((counts[m.home]||0)/total*100);
         const drawP = Math.round((counts['draw']||0)/total*100);
         const awayP = Math.round((counts[m.away]||0)/total*100);
@@ -504,7 +506,7 @@ function showTab(tab) {
           </div>
           <div style="display:flex;justify-content:space-between;padding:0 2px;font-size:0.65rem">
             <span style="color:${accentColor};font-weight:700">${homeP}%</span>
-            <span style="color:rgba(255,255,255,0.55)">${total} vote${total>1?'s':''}</span>
+            <span style="color:rgba(255,255,255,0.75);font-weight:600">${total} vote${total>1?'s':''}</span>
             <span style="color:#4cc9f0;font-weight:700">${awayP}%</span>
           </div>
         `;
