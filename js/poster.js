@@ -31,6 +31,26 @@ function drawAtmosphere(ctx, W, H, homeColor, awayColor) {
   beam(W * 0.44, W * 0.56, '#f0a500', '14');
   ctx.restore();
 
+  // God-ray burst from the focal centre
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  const cx = W / 2, cy = H * 0.46, len = Math.max(W, H) * 1.1;
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2 + 0.2;
+    ctx.fillStyle = 'rgba(255,206,110,0.05)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a - 0.045) * len, cy + Math.sin(a - 0.045) * len);
+    ctx.lineTo(cx + Math.cos(a + 0.045) * len, cy + Math.sin(a + 0.045) * len);
+    ctx.closePath(); ctx.fill();
+  }
+  // warm core glow
+  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, 360);
+  core.addColorStop(0, 'rgba(255,200,90,0.18)');
+  core.addColorStop(1, 'rgba(255,200,90,0)');
+  ctx.fillStyle = core; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
   // Bokeh stadium lights / distant crowd sparkle (upper area)
   for (let i = 0; i < 46; i++) {
     const x = Math.random() * W, y = Math.random() * H * 0.46, r = Math.random() * 4 + 1;
@@ -40,22 +60,43 @@ function drawAtmosphere(ctx, W, H, homeColor, awayColor) {
 
   // Confetti in the two team colours + gold
   const colors = [homeColor, awayColor, '#f0a500', '#ffffff'];
-  for (let i = 0; i < 64; i++) {
+  for (let i = 0; i < 52; i++) {
     const x = Math.random() * W, y = Math.random() * H;
     const w = Math.random() * 8 + 3, h = Math.random() * 14 + 5;
     ctx.save();
-    ctx.globalAlpha = Math.random() * 0.18 + 0.04;
+    ctx.globalAlpha = Math.random() * 0.16 + 0.04;
     ctx.fillStyle = colors[i % colors.length];
     ctx.translate(x, y); ctx.rotate(Math.random() * Math.PI);
     ctx.fillRect(0, 0, w, h);
     ctx.restore();
   }
 
+  // Glowing gold dust
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,200,90,0.9)';
+  for (let i = 0; i < 34; i++) {
+    const x = Math.random() * W, y = Math.random() * H * 0.85, r = Math.random() * 2.5 + 1;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = 'rgba(255,225,150,' + (Math.random() * 0.5 + 0.3).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
   // Vignette to focus the centre
   const vg = ctx.createRadialGradient(W / 2, H * 0.46, H * 0.22, W / 2, H * 0.5, H * 0.72);
   vg.addColorStop(0, 'rgba(0,0,0,0)');
-  vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.58)');
   ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+// Metallic gold gradient for headline text
+function goldGrad(ctx, baselineY, size) {
+  const g = ctx.createLinearGradient(0, baselineY - size, 0, baselineY + size * 0.1);
+  g.addColorStop(0, '#fff3c4');
+  g.addColorStop(0.45, '#f7c948');
+  g.addColorStop(0.55, '#e0950e');
+  g.addColorStop(1, '#ffd97a');
+  return g;
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -143,13 +184,17 @@ async function buildMatchPoster(m, sc, summary) {
   ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2;
   roundRect(ctx, 28, 28, W - 56, H - 56, 36); ctx.stroke();
 
-  // Brand
-  ctx.fillStyle = '#f0a500';
+  // Brand — metallic gold with glow
+  ctx.save();
   ctx.font = '900 italic 120px system-ui, sans-serif';
+  ctx.shadowColor = 'rgba(240,165,0,0.7)';
+  ctx.shadowBlur = 36;
+  ctx.fillStyle = goldGrad(ctx, 220, 120);
   ctx.fillText('Gol!', W / 2, 220);
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
   ctx.font = '600 38px system-ui, sans-serif';
-  ctx.fillText('FIFA WORLD CUP 2026', W / 2, 280);
+  ctx.fillText('WORLD CUP 2026', W / 2, 280);
 
   // Status pill
   const live = sc.status === 'LIVE';
@@ -193,10 +238,15 @@ async function buildMatchPoster(m, sc, summary) {
   drawCircleFlag(ctx, hImg, cardX + 200, flagCY, fr, homeColor);
   drawCircleFlag(ctx, aImg, cardX + cardW - 200, flagCY, fr, awayColor);
 
-  // Score in the centre
+  // Score in the centre — bright with a soft glow
   const h = sc.home >= 0 ? sc.home : 0, a = sc.away >= 0 ? sc.away : 0;
-  ctx.fillStyle = '#fff'; ctx.font = '900 150px system-ui, sans-serif';
+  ctx.save();
+  ctx.font = '900 152px system-ui, sans-serif';
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = 24; ctx.shadowOffsetY = 4;
+  ctx.fillStyle = '#fff';
   ctx.fillText(`${h}–${a}`, W / 2, flagCY + 50);
+  ctx.restore();
 
   // Team names under flags
   ctx.fillStyle = '#fff'; ctx.font = '700 44px system-ui, sans-serif';
