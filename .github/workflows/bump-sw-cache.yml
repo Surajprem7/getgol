@@ -44,5 +44,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add sw.js
-          git commit -m "chore: bump service worker cache [skip ci]"
+          # NOTE: do NOT put [skip ci] here — the host (Cloudflare Pages) honors it
+          # and would skip deploying the bump. Recursion is already prevented because
+          # this commit only changes sw.js, which is excluded from the trigger paths.
+          git commit -m "chore: bump service worker cache"
           git push
