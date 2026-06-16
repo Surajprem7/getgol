@@ -112,7 +112,7 @@ async function openMatchDetail(matchId) {
   overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;display:flex;flex-direction:column;justify-content:flex-end';
   overlay.innerHTML = `
     <div onclick="closeMatchDetail()" style="position:absolute;inset:0;background:rgba(0,0,0,0.65)"></div>
-    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#12122a 0%,#0d0d1e 100%);border-radius:24px 24px 0 0;max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid rgba(255,255,255,0.1)">
+    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#0c0c1c 0%,#080812 100%);border-radius:24px 24px 0 0;max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid rgba(255,255,255,0.1)">
       <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0.75rem auto 0"></div>
       <div id="md-body" style="padding:1rem 1rem 2rem">
         <div style="text-align:center;padding:3rem 1rem;color:rgba(255,255,255,0.5)">Loading match details…</div>

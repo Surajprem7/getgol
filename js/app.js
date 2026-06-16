@@ -95,7 +95,7 @@ function showTeamPickerModal() {
     <div onclick="closeTeamPicker()" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)"></div>
 
     <!-- Slide-up sheet -->
-    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#12122a 0%,#0d0d1e 100%);border-radius:24px 24px 0 0;padding:1.25rem 1.25rem 2rem;max-height:88vh;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid rgba(255,255,255,0.1);box-shadow:0 -20px 60px rgba(0,0,0,0.6)">
+    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#0c0c1c 0%,#080812 100%);border-radius:24px 24px 0 0;padding:1.25rem 1.25rem 2rem;max-height:88vh;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid rgba(255,255,255,0.1);box-shadow:0 -20px 60px rgba(0,0,0,0.6)">
 
       <!-- Handle bar -->
       <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 1rem"></div>
@@ -165,7 +165,7 @@ function showApp(startTab) {
     : `<button onclick="showTeamPickerModal()" style="background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.4);border-radius:20px;color:#f0a500;font-size:0.8rem;font-weight:600;padding:0.4rem 0.9rem;cursor:pointer">⚽ Pick your team</button>`;
 
   document.getElementById('app').innerHTML = `
-    <div style="min-height:100vh;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 40%,#0a1a2e 100%);position:relative">
+    <div style="min-height:100vh;background:linear-gradient(135deg,#050510 0%,#100620 40%,#050d18 100%);position:relative">
 
       <!-- Background glow effects -->
       <div style="position:fixed;top:-20%;left:-20%;width:60%;height:60%;background:radial-gradient(circle,${accentColor}10 0%,transparent 70%);pointer-events:none;z-index:0"></div>
@@ -316,10 +316,6 @@ function showTab(tab) {
        <div onclick="openMatchDetail(${m.id})" style="cursor:pointer">
         <!-- Date badge — centered, attractive -->
         <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
-          <span style="background:linear-gradient(90deg,rgba(240,165,0,0.18),rgba(76,201,240,0.12));border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:0.3rem 0.9rem;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.85)">
-            Group ${m.group}
-          </span>
-          <span style="color:rgba(255,255,255,0.25);font-size:0.65rem">•</span>
           <span style="font-size:0.72rem;font-weight:600;color:#f0a500;letter-spacing:0.3px">${formatIST(m.date, m.time)}</span>
         </div>
 
