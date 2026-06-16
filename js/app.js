@@ -316,6 +316,8 @@ function showTab(tab) {
        <div onclick="openMatchDetail(${m.id})" style="cursor:pointer">
         <!-- Date badge — centered, attractive -->
         <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+          <span style="font-size:0.72rem;font-weight:600;color:#f0a500;letter-spacing:0.3px">Group ${m.group}</span>
+          <span style="color:rgba(255,255,255,0.25);font-size:0.65rem">•</span>
           <span style="font-size:0.72rem;font-weight:600;color:#f0a500;letter-spacing:0.3px">${formatIST(m.date, m.time)}</span>
         </div>
 
