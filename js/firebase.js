@@ -16,7 +16,54 @@ const auth = firebase.auth();
 let currentUser = null;
 auth.signInAnonymously().then(result => {
   currentUser = result.user;
+  initPresence(currentUser.uid);
+  countUserOnce(currentUser.uid);
 }).catch(err => console.log('Auth error:', err));
+
+// ── Live presence: mark this user "online" while a tab is open ──
+// Firebase removes the node automatically when the connection drops (onDisconnect),
+// so counting the children of /presence gives a live "online now" number.
+function initPresence(uid) {
+  const myPresence = db.ref('presence/' + uid);
+  db.ref('.info/connected').on('value', snap => {
+    if (snap.val() === true) {
+      myPresence.onDisconnect().remove();
+      myPresence.set(true);
+    }
+  });
+}
+
+// Count each device once toward the total-fans stat (localStorage guard keeps it
+// from re-counting the same device on every visit).
+function countUserOnce() {
+  if (localStorage.getItem('gol_counted')) return;
+  localStorage.setItem('gol_counted', '1');
+  db.ref('stats/totalUsers').transaction(count => (count || 0) + 1);
+}
+
+// Live "online now" count.
+function getOnlineCount(callback) {
+  db.ref('presence').on('value', snap => callback(snap.numChildren()));
+}
+
+// Total registered fans (public counter).
+function getTotalUsers(callback) {
+  db.ref('stats/totalUsers').on('value', snap => callback(snap.val() || 0));
+}
+
+// Aggregate prediction stats: total votes + the most-predicted match.
+function getOverallStats(callback) {
+  db.ref('predictions').on('value', snap => {
+    const data = snap.val() || {};
+    let totalVotes = 0, topMatchId = null, topVotes = 0;
+    Object.entries(data).forEach(([matchId, picks]) => {
+      const sum = Object.values(picks).reduce((a, b) => a + (b || 0), 0);
+      totalVotes += sum;
+      if (sum > topVotes) { topVotes = sum; topMatchId = Number(matchId); }
+    });
+    callback({ totalVotes, topMatchId, topVotes });
+  });
+}
 
 // Save prediction to Firebase — one vote per user per match.
 // The user's per-uid record is the source of truth (localStorage can be cleared,

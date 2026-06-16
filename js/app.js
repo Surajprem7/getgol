@@ -189,6 +189,7 @@ function showApp(startTab) {
           <button onclick="showTab('groups')" id="nav-groups" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Groups</button>
           <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Rankings</button>
           <button onclick="showTab('watch')" id="nav-watch" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Watch</button>
+          <button onclick="showTab('stats')" id="nav-stats" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Stats</button>
         </nav>
 
         <div id="notif-prompt"></div>
@@ -284,7 +285,7 @@ function showTab(tab) {
   const content = document.getElementById('tab-content');
 
   // Update nav buttons
-  ['matches','groups','rankings','watch'].forEach(t => {
+  ['matches','groups','rankings','watch','stats'].forEach(t => {
     const btn = document.getElementById('nav-'+t);
     if (!btn) return;
     if (t === tab) {
@@ -701,6 +702,50 @@ function showTab(tab) {
         </div>
       </div>
     `;
+
+  } else if (tab === 'stats') {
+    const accent = APP.teamColor || '#f0a500';
+    const card = (label, id, icon, color) => `
+      <div style="${glass};padding:1.1rem 1.25rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:1rem">
+        <div style="font-size:1.8rem;filter:drop-shadow(0 0 8px ${color}66)">${icon}</div>
+        <div style="flex:1">
+          <div id="${id}" style="font-size:1.6rem;font-weight:900;color:${color};line-height:1.1">—</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.1rem">${label}</div>
+        </div>
+      </div>`;
+
+    content.innerHTML = `
+      <div style="margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:#fff">📊 Live Stats</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:0.25rem">Real-time numbers across all Gol! fans</div>
+      </div>
+      ${card('Online now', 'stat-online', '🟢', '#4ade80')}
+      ${card('Total fans', 'stat-users', '👥', accent)}
+      ${card('Predictions made', 'stat-votes', '⚽', '#4cc9f0')}
+      <div style="${glass};padding:1.1rem 1.25rem;margin-bottom:0.75rem">
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-bottom:0.4rem">🔥 Most-predicted match</div>
+        <div id="stat-topmatch" style="font-size:0.95rem;font-weight:700;color:#fff">—</div>
+      </div>
+      <div style="font-size:0.65rem;color:rgba(255,255,255,0.25);text-align:center;margin-top:0.5rem">Updates live as fans use the app</div>
+    `;
+
+    // Wire up live data (helpers attach their own Firebase listeners).
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    if (typeof getOnlineCount === 'function')
+      getOnlineCount(n => setText('stat-online', n.toLocaleString()));
+
+    if (typeof getTotalUsers === 'function')
+      getTotalUsers(n => setText('stat-users', n.toLocaleString()));
+
+    if (typeof getOverallStats === 'function')
+      getOverallStats(({ totalVotes, topMatchId }) => {
+        setText('stat-votes', totalVotes.toLocaleString());
+        const el = document.getElementById('stat-topmatch');
+        if (!el) return;
+        const m = MATCHES.find(x => x.id === topMatchId);
+        el.textContent = m ? `${m.home} vs ${m.away}` : 'No predictions yet';
+      });
   }
 }
 
