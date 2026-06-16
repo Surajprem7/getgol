@@ -150,11 +150,11 @@ function renderMatchDetail(data) {
     ? `<div style="font-size:2rem;font-weight:900;color:#fff;line-height:1">${sc.home >= 0 ? sc.home : 0}–${sc.away >= 0 ? sc.away : 0}</div>
        <div style="font-size:0.6rem;font-weight:700;letter-spacing:1px;margin-top:2px;color:${sc.status === 'LIVE' ? '#4ade80' : 'rgba(255,255,255,0.4)'}">${sc.status === 'LIVE' ? '● LIVE ' + (sc.clock || '') : 'FULL TIME'}</div>`
     : `<div style="font-size:1.4rem;font-weight:900;color:rgba(255,255,255,0.25);letter-spacing:2px">VS</div>
-       <div style="font-size:0.62rem;color:#f0a500;margin-top:4px">${formatIST(m.date, m.time)}</div>`;
+       <div style="font-size:0.62rem;font-weight:700;color:#f0a500;margin-top:4px">${formatIST(m.date, m.time)}</div>`;
 
   const header = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.25rem">
-      <span style="font-size:0.62rem;font-weight:700;color:rgba(255,255,255,0.45);background:rgba(255,255,255,0.06);border-radius:10px;padding:0.2rem 0.6rem">Group ${m.group}</span>
+      <span style="font-size:0.62rem;font-weight:700;color:#f0a500">Group ${m.group}</span>
       <button onclick="closeMatchDetail()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:1.9rem;height:1.9rem;color:rgba(255,255,255,0.6);font-size:0.9rem;cursor:pointer">✕</button>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding:0.5rem 0 0.75rem">
