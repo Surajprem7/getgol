@@ -807,6 +807,10 @@ function buildStandingsTab(content, glass) {
   });
   const groups = Object.keys(groupTeams).sort();
 
+  // Standard group-stage ranking: points, then goal difference, then goals scored.
+  const byRank = (a, b) =>
+    b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf;
+
   // Build standings: prefer live data, fill missing teams with 0s
   const standings = {};
   groups.forEach(g => {
@@ -816,7 +820,7 @@ function buildStandingsTab(content, glass) {
       const allTeams = [...groupTeams[g]];
       const missing = allTeams.filter(t => !liveNames.includes(t))
         .map(t => ({name:t, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0}));
-      standings[g] = [...liveData[g], ...missing];
+      standings[g] = [...liveData[g], ...missing].sort(byRank);
     } else {
       // Fall back to computing from cached local results
       const table = {};
@@ -831,9 +835,7 @@ function buildStandingsTab(content, glass) {
         else if (hg < ag) { a.w++; a.pts += 3; h.l++; }
         else              { h.d++; h.pts++; a.d++; a.pts++; }
       });
-      standings[g] = Object.values(table).sort((a,b) =>
-        b.pts - a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf
-      );
+      standings[g] = Object.values(table).sort(byRank);
     }
   });
 
