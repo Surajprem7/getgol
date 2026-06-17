@@ -6,72 +6,14 @@ const ESPN_SB      = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.
 
 const MD = { match: null, data: null, tab: 'lineups', team: 'home' };
 
-// TheSportsDB photo cache (display-only — cutouts/thumbs don't need CORS here)
-const TSDB = { teamDone: {}, photo: {} };   // photo: lowercased name -> url | null
-
-async function tsdbTeamId(name) {
-  try {
-    const r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=' + encodeURIComponent(name));
-    const d = await r.json();
-    const t = (d.teams || []).find(x => x.strSport === 'Soccer');
-    return t ? t.idTeam : null;
-  } catch (e) { return null; }
-}
-
-async function tsdbLoadSquad(teamName) {
-  if (!teamName || TSDB.teamDone[teamName]) return;
-  TSDB.teamDone[teamName] = true;
-  const id = await tsdbTeamId(teamName);
-  if (!id) return;
-  try {
-    const r = await fetch('https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=' + id);
-    const d = await r.json();
-    (d.player || d.players || []).forEach(p => {
-      const key = (p.strPlayer || '').toLowerCase();
-      if (key && !(key in TSDB.photo)) TSDB.photo[key] = p.strCutout || p.strThumb || null;
-    });
-  } catch (e) { /* ignore */ }
-}
-
-async function tsdbPlayer(name) {
-  const key = name.toLowerCase();
-  if (key in TSDB.photo) return TSDB.photo[key];
-  try {
-    const r = await fetch('https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=' + encodeURIComponent(name));
-    const d = await r.json();
-    const p = (d.player || []).find(x => x.strSport === 'Soccer');
-    TSDB.photo[key] = p ? (p.strCutout || p.strThumb || null) : null;
-  } catch (e) { TSDB.photo[key] = null; }
-  return TSDB.photo[key];
-}
-
-function mdApplyPhoto(el) {
-  const name = decodeURIComponent(el.dataset.pname || '');
-  const url = TSDB.photo[name.toLowerCase()];
-  if (url && !el.querySelector('img')) {
-    el.insertAdjacentHTML('beforeend',
-      `<img src="${url}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center" onerror="this.remove()">`);
-  }
-}
-
-// Lazy-load player cutouts onto the pitch after the line-up renders.
-async function mdHydratePhotos() {
-  if (!MD.data || MD.tab !== 'lineups') return;
-  const rosters = MD.data.rosters || [];
-  const sideRoster = rosters.find(r => r.homeAway === MD.team) || rosters[0];
-  if (!sideRoster) return;
-  const norm = (typeof normName === 'function') ? normName : (x => x);
-
-  await tsdbLoadSquad(sideRoster.team && sideRoster.team.displayName);
-  const els = () => document.querySelectorAll('#md-body .md-pl');
-  els().forEach(mdApplyPhoto);                      // fill from squad/cache first
-
-  // Per-player fallback for the 11 pitch players still missing a photo
-  const missing = [...els()].filter(el => !el.querySelector('img'));
-  await Promise.all(missing.map(async el => {
-    await tsdbPlayer(decodeURIComponent(el.dataset.pname || ''));
-    mdApplyPhoto(el);
-  }));
+// National-kit shirt image for a player. Works whether the data came from the
+// pre-fetched Firebase payload (athlete.kit) or a live ESPN summary (jerseyImages).
+function mdKitImg(p) {
+  const a = p.athlete || {};
+  if (a.kit) return a.kit;
+  const ji = a.jerseyImages || [];
+  const dark = ji.find(x => (x.rel || []).includes('dark')) || ji[0];
+  return dark ? dark.href : '';
 }
 
 function mdGlass() {
@@ -225,8 +167,6 @@ function renderMatchDetail(data) {
   else                           content = mdRenderSummary(data, norm);
 
   body.innerHTML = header + tabs + content;
-
-  if (MD.tab === 'lineups') mdHydratePhotos();
 }
 
 // ── Line-ups: formation pitch + subs ──────────────────────────────────────────────
@@ -296,11 +236,16 @@ function mdRenderLineups(data, norm) {
 
   const token = (p) => {
     const name = p.athlete?.shortName || p.athlete?.displayName || '';
-    const full = p.athlete?.displayName || name;
     const num = p.jersey || '';
+    const kit = mdKitImg(p);
+    // National-kit shirt (the image already carries the number); the number text
+    // sits behind it as a fallback if the image is missing or fails to load.
     return `
       <div style="display:flex;flex-direction:column;align-items:center;width:64px;flex-shrink:0">
-        <div class="md-pl" data-pname="${encodeURIComponent(full)}" style="position:relative;width:44px;height:44px;border-radius:50%;background:${accent}22;border:1.5px solid ${accent}88;display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:800;color:#fff;overflow:hidden">${num}</div>
+        <div style="position:relative;width:48px;height:48px;display:flex;align-items:center;justify-content:center">
+          <span style="font-size:0.82rem;font-weight:800;color:#fff">${num}</span>
+          ${kit ? `<img src="${kit}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onerror="this.remove()">` : ''}
+        </div>
         <div style="font-size:0.55rem;color:#fff;margin-top:0.2rem;text-align:center;line-height:1.05;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
       </div>`;
   };
@@ -326,11 +271,14 @@ function mdRenderLineups(data, norm) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 0.75rem">
         ${subs.map(p => {
           const name = p.athlete?.shortName || p.athlete?.displayName || '';
-          const full = p.athlete?.displayName || name;
           const num = p.jersey || '';
+          const kit = mdKitImg(p);
           return `
           <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.72rem;color:rgba(255,255,255,0.8)">
-            <div class="md-pl" data-pname="${encodeURIComponent(full)}" style="position:relative;width:30px;height:30px;flex-shrink:0;border-radius:50%;background:${accent}22;border:1px solid ${accent}66;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:800;color:#fff;overflow:hidden">${num}</div>
+            <div style="position:relative;width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+              <span style="font-size:0.6rem;font-weight:800;color:#fff">${num}</span>
+              ${kit ? `<img src="${kit}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onerror="this.remove()">` : ''}
+            </div>
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
           </div>`;
         }).join('')}

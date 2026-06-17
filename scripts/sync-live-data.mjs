@@ -148,6 +148,13 @@ function parseScores(mapped) {
 
 // Trim an ESPN summary down to exactly what js/matchdetail.js reads, so the
 // stored payload is small and the client code works unchanged.
+// Pick the national-kit shirt image (prefer the dark-mode variant for our UI).
+function pickKit(jerseyImages) {
+  const ji = jerseyImages || [];
+  const dark = ji.find(x => (x.rel || []).includes('dark')) || ji[0];
+  return dark ? dark.href : '';
+}
+
 function slimSummary(d) {
   if (!d) return null;
   const rosters = (d.rosters || []).map(r => ({
@@ -163,6 +170,8 @@ function slimSummary(d) {
         id: p.athlete?.id ?? null,
         shortName: p.athlete?.shortName || '',
         displayName: p.athlete?.displayName || '',
+        // National-kit shirt image (dark-mode variant suits the dark UI).
+        kit: pickKit(p.athlete?.jerseyImages),
       },
     })),
   })).filter(r => r.roster.length);
