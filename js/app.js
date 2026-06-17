@@ -443,17 +443,17 @@ function showTab(tab) {
         <div style="flex:1;min-width:0">
           ${localStorage.getItem('gol_cal_hint') ? '' : `
             <div id="cal-hint" style="position:relative;display:flex;align-items:center;gap:0.7rem;margin:0.4rem 0.3rem 1.1rem;padding:0.75rem 0.9rem;
-              background:linear-gradient(135deg,#ffd54a,#ffb300);border:3px solid #1a1a2e;border-radius:18px;
-              box-shadow:5px 5px 0 rgba(0,0,0,0.45);font-family:'Comic Sans MS','Comic Sans','Chalkboard SE',cursive">
-              <!-- speech-bubble tail pointing up toward the 🗓️ chip -->
-              <div style="position:absolute;top:-13px;right:26px;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:13px solid #1a1a2e"></div>
-              <div style="position:absolute;top:-9px;right:29px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:9px solid #ffd54a"></div>
-              <span style="font-size:1.7rem;line-height:1;filter:drop-shadow(1px 1px 0 rgba(0,0,0,0.3))">🗓️</span>
+              background:rgba(240,165,0,0.10);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+              border:2.5px solid #f0a500;border-radius:18px;box-shadow:4px 4px 0 rgba(240,165,0,0.22);
+              font-family:'Comic Sans MS','Comic Sans','Chalkboard SE',cursive">
+              <!-- glassy speech-bubble tail (rotated square continuing the outline) pointing up -->
+              <div style="position:absolute;top:-9px;right:28px;width:15px;height:15px;background:rgba(240,165,0,0.10);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-left:2.5px solid #f0a500;border-top:2.5px solid #f0a500;transform:rotate(45deg)"></div>
+              <span style="font-size:1.7rem;line-height:1;filter:drop-shadow(1px 1px 1px rgba(0,0,0,0.4))">🗓️</span>
               <div style="flex:1;line-height:1.15">
-                <div style="font-size:0.92rem;font-weight:800;color:#1a1a2e;text-transform:uppercase;letter-spacing:0.3px;transform:rotate(-1deg)">Never miss your match!</div>
-                <div style="font-size:0.74rem;font-weight:700;color:#3a2a00;margin-top:1px">👆 Tap the 🗓️ to add it to your Cal!</div>
+                <div style="font-size:0.92rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:0.3px;transform:rotate(-1deg);text-shadow:0 1px 3px rgba(0,0,0,0.5)">Never miss your match!</div>
+                <div style="font-size:0.74rem;font-weight:700;color:#f0a500;margin-top:1px;text-shadow:0 1px 2px rgba(0,0,0,0.4)">👆 Tap the 🗓️ to add it to your Cal!</div>
               </div>
-              <button onclick="dismissCalHint()" aria-label="Dismiss" style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#1a1a2e;border:none;color:#ffd54a;font-size:0.75rem;font-weight:800;cursor:pointer;line-height:1">✕</button>
+              <button onclick="dismissCalHint()" aria-label="Dismiss" style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:rgba(240,165,0,0.18);border:2px solid #f0a500;color:#f0a500;font-size:0.7rem;font-weight:800;cursor:pointer;line-height:1">✕</button>
             </div>`}
           ${mySection}
           ${tlDates.map(date => {
