@@ -13,6 +13,11 @@
       }
     },
 
+    "lineups": {
+      ".read": true,
+      ".write": false
+    },
+
     "presence": {
       ".read": true,
       "$uid": {

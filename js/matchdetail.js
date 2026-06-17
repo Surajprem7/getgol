@@ -101,6 +101,15 @@ async function mdResolveEventId(m) {
   return null;
 }
 
+// Read a pre-fetched line-up from Firebase (/lineups/<id>), if present.
+async function mdStoredLineup(matchId) {
+  try {
+    if (typeof db === 'undefined') return null;
+    const snap = await db.ref('lineups/' + matchId).once('value');
+    return snap.val();
+  } catch (e) { return null; }
+}
+
 async function openMatchDetail(matchId) {
   const m = MATCHES.find(x => String(x.id) === String(matchId));
   if (!m) return;
@@ -124,6 +133,17 @@ async function openMatchDetail(matchId) {
     </div>`;
   document.body.appendChild(overlay);
 
+  // Firebase-first: the sync Action pre-fetches line-ups into /lineups/<id>, so
+  // most opens are instant with no ESPN call. Read per-match (.once) so we don't
+  // stream every match's line-up to every client.
+  const stored = await mdStoredLineup(m.id);
+  if (stored && stored.rosters && stored.rosters.length) {
+    MD.data = stored;
+    renderMatchDetail(MD.data);
+    return;
+  }
+
+  // Fallback: fetch directly from ESPN (e.g. line-up not synced yet).
   const eventId = await mdResolveEventId(m);
   if (!eventId) { renderMatchDetail(null); return; }
   try {
