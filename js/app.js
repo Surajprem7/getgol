@@ -376,7 +376,7 @@ function showTab(tab) {
 
     // ── "Your fixtures" section: the selected team's matches, pinned at top ──
     const renderMyRow = (m) => {
-      const d = new Date(m.date);
+      const d = new Date(m.date + 'T00:00:00');
       const dl = `${d.getDate()} ${months[d.getMonth()]}`;
       return `
         <div onclick="jumpToDate('${m.date}')" style="padding:0.55rem 0.6rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.4rem;cursor:pointer;transition:background 0.2s"
@@ -426,7 +426,7 @@ function showTab(tab) {
         <div style="flex:1;min-width:0">
           ${mySection}
           ${tlDates.map(date => {
-            const d = new Date(date);
+            const d = new Date(date + 'T00:00:00');
             const dateLabel = `${d.getDate()} ${months[d.getMonth()]}`;
             const dayMatches = byDate[date] || [];
             return `
@@ -458,7 +458,7 @@ function showTab(tab) {
             <!-- Ruler tick marks + date nodes -->
             ${tlDates.map((date, i) => {
               const pct = tlDates.length === 1 ? 50 : (i / (tlDates.length - 1)) * 100;
-              const d = new Date(date);
+              const d = new Date(date + 'T00:00:00');
               const day = d.getDate();
               const mon = months[d.getMonth()];
               const minorTicks = i < tlDates.length - 1 ? [1,2].map(t => {
@@ -877,7 +877,7 @@ function buildStandingsTab(content, glass) {
             ${rows.map((r,i) => {
               const isUser = r.name === APP.teamName;
               const advance = i < 2;
-              const maybe = i === 2;
+              const maybe = i === 2 && playedAny;
               const gd = r.gf - r.ga;
               const borderLeft = advance ? 'border-left:3px solid #4ade80' : maybe ? 'border-left:3px solid #f0a500' : 'border-left:3px solid transparent';
               const rowBg = isUser ? 'background:'+accentColor+'18' : advance && playedAny ? 'background:rgba(74,222,128,0.04)' : '';

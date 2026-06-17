@@ -91,6 +91,8 @@ function getTeamMatches(team) {
 
 function formatIST(date, time) {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const d = new Date(date);
+  // Append a time so the date string is parsed in local time, not UTC midnight
+  // (which would render a day earlier for users in timezones behind UTC).
+  const d = new Date(date + 'T00:00:00');
   return `${d.getDate()} ${months[d.getMonth()]} - ${time} IST`;
 }

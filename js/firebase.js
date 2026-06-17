@@ -45,18 +45,25 @@ function countUserOnce() {
 }
 
 // Live "online now" count.
+// off() first so re-opening the Stats tab doesn't stack duplicate listeners.
 function getOnlineCount(callback) {
-  db.ref('presence').on('value', snap => callback(snap.numChildren()));
+  const ref = db.ref('presence');
+  ref.off('value');
+  ref.on('value', snap => callback(snap.numChildren()));
 }
 
 // Total registered fans (public counter).
 function getTotalUsers(callback) {
-  db.ref('stats/totalUsers').on('value', snap => callback(snap.val() || 0));
+  const ref = db.ref('stats/totalUsers');
+  ref.off('value');
+  ref.on('value', snap => callback(snap.val() || 0));
 }
 
 // Aggregate prediction stats: total votes + the most-predicted match.
 function getOverallStats(callback) {
-  db.ref('predictions').on('value', snap => {
+  const ref = db.ref('predictions');
+  ref.off('value');
+  ref.on('value', snap => {
     const data = snap.val() || {};
     let totalVotes = 0, topMatchId = null, topVotes = 0;
     Object.entries(data).forEach(([matchId, picks]) => {
