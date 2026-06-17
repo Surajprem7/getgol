@@ -424,6 +424,17 @@ function showTab(tab) {
           50%      { opacity:1; }
         }
         @keyframes tlFadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes comicPop {
+          0%   { transform:scale(0.6) rotate(-6deg); opacity:0; }
+          60%  { transform:scale(1.06) rotate(2deg); opacity:1; }
+          100% { transform:scale(1) rotate(-1.5deg); opacity:1; }
+        }
+        @keyframes comicWiggle {
+          0%,100% { transform:rotate(-1.5deg); }
+          50%     { transform:rotate(1.5deg); }
+        }
+        #cal-hint { animation:comicPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both, comicWiggle 3.5s ease-in-out 0.6s infinite; }
+        #cal-hint:hover { animation-play-state:paused; }
       </style>
 
       <div style="display:flex;gap:0.5rem;align-items:flex-start">
@@ -431,10 +442,18 @@ function showTab(tab) {
         <!-- Match cards column — sorted by date -->
         <div style="flex:1;min-width:0">
           ${localStorage.getItem('gol_cal_hint') ? '' : `
-            <div id="cal-hint" style="display:flex;align-items:center;gap:0.6rem;background:linear-gradient(90deg,rgba(240,165,0,0.16),rgba(240,165,0,0.04));border:1px solid rgba(240,165,0,0.3);border-radius:14px;padding:0.6rem 0.75rem;margin-bottom:0.75rem">
-              <span style="font-size:1.1rem">🗓️</span>
-              <span style="flex:1;font-size:0.72rem;color:rgba(255,255,255,0.8);line-height:1.3">Tap the <b style="color:#f0a500">🗓️</b> on any match to add it to your calendar — never miss kick-off!</span>
-              <button onclick="dismissCalHint()" aria-label="Dismiss" style="background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:0.9rem;cursor:pointer;padding:0 0.2rem">✕</button>
+            <div id="cal-hint" style="position:relative;display:flex;align-items:center;gap:0.7rem;margin:0.4rem 0.3rem 1.1rem;padding:0.75rem 0.9rem;
+              background:linear-gradient(135deg,#ffd54a,#ffb300);border:3px solid #1a1a2e;border-radius:18px;
+              box-shadow:5px 5px 0 rgba(0,0,0,0.45);font-family:'Comic Sans MS','Comic Sans','Chalkboard SE',cursive">
+              <!-- speech-bubble tail pointing up toward the 🗓️ chip -->
+              <div style="position:absolute;top:-13px;right:26px;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:13px solid #1a1a2e"></div>
+              <div style="position:absolute;top:-9px;right:29px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:9px solid #ffd54a"></div>
+              <span style="font-size:1.7rem;line-height:1;filter:drop-shadow(1px 1px 0 rgba(0,0,0,0.3))">🗓️</span>
+              <div style="flex:1;line-height:1.15">
+                <div style="font-size:0.92rem;font-weight:800;color:#1a1a2e;text-transform:uppercase;letter-spacing:0.3px;transform:rotate(-1deg)">Never miss your match!</div>
+                <div style="font-size:0.74rem;font-weight:700;color:#3a2a00;margin-top:1px">👆 Tap the 🗓️ to add it to your Cal!</div>
+              </div>
+              <button onclick="dismissCalHint()" aria-label="Dismiss" style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#1a1a2e;border:none;color:#ffd54a;font-size:0.75rem;font-weight:800;cursor:pointer;line-height:1">✕</button>
             </div>`}
           ${mySection}
           ${tlDates.map(date => {
