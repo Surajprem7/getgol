@@ -106,6 +106,10 @@ async function openMatchDetail(matchId) {
   if (!m) return;
   MD.match = m; MD.data = null; MD.tab = 'lineups'; MD.team = 'home';
 
+  // Close any already-open detail first so overlays can't stack (duplicate ids
+  // would otherwise leak and each would keep firing its own ESPN fetches).
+  closeMatchDetail();
+
   // Build shell with loading state
   const overlay = document.createElement('div');
   overlay.id = 'md-overlay';
