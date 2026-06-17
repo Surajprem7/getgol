@@ -231,25 +231,47 @@ function mdRenderLineups(data, norm) {
   const subs = all.filter(p => !p.starter);
   const formation = sideRoster.formation || '';
 
-  // Build rows from the formation string + formationPlace ordering
-  const ordered = [...starters].sort((a, b) => (parseInt(a.formationPlace) || 99) - (parseInt(b.formationPlace) || 99));
-  let rows = [];
-  const sizes = formation.split('-').map(n => parseInt(n)).filter(n => n > 0);
-  if (ordered.length && sizes.length && sizes.reduce((a, b) => a + b, 0) === ordered.length - 1) {
-    rows.push([ordered[0]]);           // GK
-    let idx = 1;
-    sizes.forEach(sz => { rows.push(ordered.slice(idx, idx + sz)); idx += sz; });
-  } else {
-    // Fallback: categorize by position abbreviation
-    const cat = { G: [], D: [], M: [], F: [] };
-    ordered.forEach(p => {
-      const a = (p.position?.abbreviation || '').toUpperCase();
-      if (a === 'G') cat.G.push(p);
-      else if (/D|B/.test(a)) cat.D.push(p);
-      else if (/M/.test(a)) cat.M.push(p);
-      else cat.F.push(p);
-    });
-    rows = [cat.G, cat.D, cat.M, cat.F].filter(r => r.length);
+  // Place players by their real position codes (G / RB / CD / DM / CM / F …),
+  // NOT by ESPN's formationPlace index — that index isn't a back-to-front,
+  // row-major layout, so slicing it produced scrambled lines (a defensive mid
+  // in the back four, a winger alone up top, etc).
+  const bandOf = (abbr) => {
+    const a = (abbr || '').toUpperCase();
+    if (a === 'G' || a === 'GK') return 'GK';
+    if (/DM/.test(a))            return 'DM';   // defensive mid (before generic M)
+    if (/AM/.test(a))            return 'AM';   // attacking mid
+    if (a.endsWith('B') || /^C?[DB]/.test(a)) return 'DEF';  // RB/LB/WB/CB/CD…
+    if (/F$|^F|ST|CF|FW|W$/.test(a)) return 'FWD';
+    return 'MID';
+  };
+  // Left→right ordering inside a line: wide roles sit further out than central.
+  const horiz = (abbr) => {
+    const a = (abbr || '').toUpperCase();
+    const side = /(^L|-L$|L$)/.test(a) ? -1 : /(^R|-R$|R$)/.test(a) ? 1 : 0;
+    const wide = /^[LR](B|WB|M|W|F)/.test(a);
+    return side * (wide ? 2 : 1);
+  };
+
+  const bands = { GK: [], DEF: [], DM: [], MID: [], AM: [], FWD: [] };
+  starters.forEach(p => { (bands[bandOf(p.position?.abbreviation)] || bands.MID).push(p); });
+  Object.values(bands).forEach(b => b.sort((x, y) =>
+    horiz(x.position?.abbreviation) - horiz(y.position?.abbreviation)
+    || (parseInt(x.formationPlace) || 99) - (parseInt(y.formationPlace) || 99)
+  ));
+
+  let rows = [bands.GK, bands.DEF, bands.DM, bands.MID, bands.AM, bands.FWD].filter(r => r.length);
+
+  // If position data is too sparse to band (everyone landed in MID), fall back
+  // to slicing the formation string so we still show sensible rows.
+  const nonEmpty = rows.filter(r => r.length).length;
+  if (nonEmpty <= 1) {
+    const ordered = [...starters].sort((a, b) => (parseInt(a.formationPlace) || 99) - (parseInt(b.formationPlace) || 99));
+    const sizes = formation.split('-').map(n => parseInt(n)).filter(n => n > 0);
+    if (ordered.length && sizes.length && sizes.reduce((a, b) => a + b, 0) === ordered.length - 1) {
+      rows = [[ordered[0]]];
+      let idx = 1;
+      sizes.forEach(sz => { rows.push(ordered.slice(idx, idx + sz)); idx += sz; });
+    }
   }
 
   const token = (p) => {
