@@ -37,8 +37,11 @@ function initPresence(uid) {
 // from re-counting the same device on every visit).
 function countUserOnce() {
   if (localStorage.getItem('gol_counted')) return;
-  localStorage.setItem('gol_counted', '1');
-  db.ref('stats/totalUsers').transaction(count => (count || 0) + 1);
+  // Only mark this device "counted" once the increment actually commits, so a
+  // denied/failed write (e.g. rules not yet published) is retried on next visit.
+  db.ref('stats/totalUsers').transaction(count => (count || 0) + 1)
+    .then(res => { if (res.committed) localStorage.setItem('gol_counted', '1'); })
+    .catch(() => {});
 }
 
 // Live "online now" count.
