@@ -312,7 +312,13 @@ function showTab(tab) {
     const renderMatch = (m) => {
       const isMyMatch = APP.teamName && (m.home === APP.teamName || m.away === APP.teamName);
       return `
-      <div data-date="${m.date}" data-group="${m.group}" style="${glass};margin-bottom:0.75rem;overflow:hidden;${isMyMatch ? 'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22' : ''}">
+      <div data-date="${m.date}" data-group="${m.group}" style="${glass};margin-bottom:0.75rem;overflow:hidden;position:relative;${isMyMatch ? 'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22' : ''}">
+
+       <!-- Cute add-to-calendar chip (top-right, independent of the tap-to-open area) -->
+       <button onclick="addToCalendar(${m.id});event.stopPropagation()" title="Add to your calendar" aria-label="Add to calendar"
+         style="position:absolute;top:0.5rem;right:0.5rem;z-index:3;width:30px;height:30px;border-radius:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);cursor:pointer;font-size:0.9rem;line-height:1;display:flex;align-items:center;justify-content:center;transition:all 0.2s"
+         onmouseover="this.style.background='rgba(240,165,0,0.25)';this.style.transform='scale(1.1)'"
+         onmouseout="this.style.background='rgba(240,165,0,0.12)';this.style.transform='scale(1)'">🗓️</button>
 
        <div onclick="openMatchDetail(${m.id})" style="cursor:pointer">
         <!-- Date badge — centered, attractive -->
@@ -424,6 +430,12 @@ function showTab(tab) {
 
         <!-- Match cards column — sorted by date -->
         <div style="flex:1;min-width:0">
+          ${localStorage.getItem('gol_cal_hint') ? '' : `
+            <div id="cal-hint" style="display:flex;align-items:center;gap:0.6rem;background:linear-gradient(90deg,rgba(240,165,0,0.16),rgba(240,165,0,0.04));border:1px solid rgba(240,165,0,0.3);border-radius:14px;padding:0.6rem 0.75rem;margin-bottom:0.75rem">
+              <span style="font-size:1.1rem">🗓️</span>
+              <span style="flex:1;font-size:0.72rem;color:rgba(255,255,255,0.8);line-height:1.3">Tap the <b style="color:#f0a500">🗓️</b> on any match to add it to your calendar — never miss kick-off!</span>
+              <button onclick="dismissCalHint()" aria-label="Dismiss" style="background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:0.9rem;cursor:pointer;padding:0 0.2rem">✕</button>
+            </div>`}
           ${mySection}
           ${tlDates.map(date => {
             const d = new Date(date + 'T00:00:00');
@@ -747,6 +759,45 @@ function showTab(tab) {
         el.textContent = m ? `${m.home} vs ${m.away}` : 'No predictions yet';
       });
   }
+}
+
+// Build a Google Calendar "add event" link for a match. Times are IST and we
+// pass ctz=Asia/Kolkata so Google places it correctly in each user's calendar.
+function gcalUrl(m) {
+  const pad = n => String(n).padStart(2, '0');
+  const [hh, mm] = m.time.split(':').map(Number);
+  const start = `${m.date.replace(/-/g, '')}T${pad(hh)}${pad(mm)}00`;
+  // End +2h; roll over to the next day if it crosses midnight.
+  let eh = hh + 2, endDate = m.date;
+  if (eh >= 24) {
+    eh -= 24;
+    const d = new Date(m.date + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    // Use local date parts (not toISOString, which shifts to UTC and can roll
+    // the date back a day depending on the viewer's timezone).
+    endDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+  const end = `${endDate.replace(/-/g, '')}T${pad(eh)}${pad(mm)}00`;
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `${m.home} vs ${m.away} — FIFA World Cup 2026`,
+    dates: `${start}/${end}`,
+    ctz: 'Asia/Kolkata',
+    details: `Group ${m.group} · Watch on ZEE5 / DD Sports · via Gol! (getgol.in)`,
+    location: m.venue || '',
+  });
+  return 'https://calendar.google.com/calendar/render?' + params.toString();
+}
+
+function addToCalendar(matchId) {
+  const m = MATCHES.find(x => x.id === matchId);
+  if (m) window.open(gcalUrl(m), '_blank', 'noopener');
+}
+
+function dismissCalHint() {
+  localStorage.setItem('gol_cal_hint', '1');
+  const el = document.getElementById('cal-hint');
+  if (el) el.remove();
 }
 
 function predict(matchId, pick) {
