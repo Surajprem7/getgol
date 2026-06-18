@@ -1060,18 +1060,60 @@ async function fetchKnockout() {
   } catch (e) { return null; }
 }
 
+// Resolve a knockout placeholder ("Group A Winner", "Third Place Group A/B/C/D/F")
+// to the teams that could currently fill it, using live group standings.
+function koSlotCandidates(name, standings) {
+  let m;
+  if ((m = name.match(/^Group ([A-L]) Winner$/i))) {
+    const rows = standings[m[1].toUpperCase()] || [];
+    return { current: rows[0]?.name || null, list: rows.map(r => r.name) };
+  }
+  if ((m = name.match(/^Group ([A-L]) (?:2nd|Runner)/i))) {
+    const rows = standings[m[1].toUpperCase()] || [];
+    return { current: rows[1]?.name || null, list: rows.map(r => r.name) };
+  }
+  if ((m = name.match(/Third Place Group ([A-L/]+)/i))) {
+    const list = m[1].split('/').map(s => (standings[s.trim().toUpperCase()] || [])[2]?.name).filter(Boolean);
+    return { current: null, list };
+  }
+  return null;
+}
+
 function renderKnockout(content, glass, rounds) {
   const accent = APP.teamColor || '#f0a500';
   const istFmt = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+  const standings = (window.LIVE && window.LIVE.getStandings) ? window.LIVE.getStandings() : {};
+  const code = (n) => (typeof getCountryCode === 'function') ? getCountryCode(n) : 'un';
+  const miniFlag = (n) => `<img src="https://flagcdn.com/16x12/${code(n)}.png" title="${n}" style="border-radius:1px;flex-shrink:0;opacity:0.65" onerror="this.style.display='none'">`;
 
   const slotHTML = (t, align) => {
-    const flag = t.real ? `<img src="https://flagcdn.com/24x18/${t.code}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">` : '';
-    const nm = t.real
-      ? `<span style="font-size:0.8rem;color:#fff;font-weight:600">${t.name}</span>`
-      : `<span style="font-size:0.66rem;color:rgba(255,255,255,0.4);font-style:italic">${t.name || 'TBD'}</span>`;
-    return align === 'right'
-      ? `<div style="flex:1;display:flex;align-items:center;gap:0.4rem;justify-content:flex-end;text-align:right">${nm}${flag}</div>`
-      : `<div style="flex:1;display:flex;align-items:center;gap:0.4rem">${flag}${nm}</div>`;
+    const right = align === 'right';
+    // Confirmed team (ESPN filled it in)
+    if (t.real) {
+      const flag = `<img src="https://flagcdn.com/24x18/${t.code}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
+      const nm = `<span style="font-size:0.8rem;color:#fff;font-weight:600">${t.name}</span>`;
+      return `<div style="flex:1;display:flex;align-items:center;gap:0.4rem;${right ? 'justify-content:flex-end;text-align:right' : ''}">${right ? nm + flag : flag + nm}</div>`;
+    }
+    // Placeholder → show the possible teams from current standings
+    const cand = koSlotCandidates(t.name, standings);
+    let mainHTML, strip = [];
+    if (cand && cand.list.length) {
+      if (cand.current) {
+        const f = `<img src="https://flagcdn.com/24x18/${code(cand.current)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
+        const n = `<span style="font-size:0.78rem;color:rgba(255,255,255,0.92);font-weight:600">${cand.current}</span>`;
+        mainHTML = `<div style="display:flex;align-items:center;gap:0.35rem">${right ? n + f : f + n}</div>`;
+        strip = cand.list.filter(x => x !== cand.current);
+      } else {
+        mainHTML = `<span style="font-size:0.62rem;color:rgba(255,255,255,0.45);font-style:italic">${t.name}</span>`;
+        strip = cand.list;
+      }
+    } else {
+      mainHTML = `<span style="font-size:0.64rem;color:rgba(255,255,255,0.4);font-style:italic">${t.name || 'TBD'}</span>`;
+    }
+    const stripHTML = strip.length
+      ? `<div style="display:flex;gap:2px;flex-wrap:wrap;max-width:118px;${right ? 'justify-content:flex-end' : ''}">${strip.map(miniFlag).join('')}</div>`
+      : '';
+    return `<div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:${right ? 'flex-end' : 'flex-start'}">${mainHTML}${stripHTML}</div>`;
   };
 
   const matchRow = (m) => {
@@ -1106,6 +1148,7 @@ function renderKnockout(content, glass, rounds) {
     <div style="margin-bottom:0.5rem">
       <div style="color:#fff;font-weight:700;font-size:1rem">🏆 Knockout Stage</div>
       <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:0.25rem">Top 2 of each group + 8 best 3rd-placed teams advance · fills in live as groups finish</div>
+      <div style="font-size:0.62rem;color:rgba(255,255,255,0.3);margin-top:0.35rem">Bold = current group position · faded flags = other teams that could still take the spot</div>
     </div>
     ${sections}`;
 }
