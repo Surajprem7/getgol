@@ -221,6 +221,7 @@ function subscribeFirebaseLive() {
     if (activeTab === 'groups')   renderGroupsFromLive();
     if (activeTab === 'matches')  refreshMatchScores();
     if (activeTab === 'rankings') showTab('rankings');
+    if (activeTab === 'knockout') renderKnockoutFromLive();
   });
 }
 
@@ -229,6 +230,19 @@ function renderGroupsFromLive() {
   if (!content) return;
   const glass = 'background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:16px';
   buildStandingsTab(content, glass);
+}
+
+// Re-render the knockout bracket from cached ESPN data so the provisional
+// teams refresh against the latest standings on every live update. Cheap and
+// network-free (guarded so a missing cache or function can't throw).
+function renderKnockoutFromLive() {
+  try {
+    if (!window._koData || typeof renderKnockout !== 'function') return;
+    const content = document.getElementById('tab-content');
+    if (!content) return;
+    const glass = 'background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:16px';
+    renderKnockout(content, glass, window._koData);
+  } catch (e) { /* never let a re-render break the live loop */ }
 }
 
 function refreshMatchScores() {
