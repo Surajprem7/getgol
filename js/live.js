@@ -265,7 +265,57 @@ async function liveRefreshCycle() {
   setTimeout(liveRefreshCycle, hasLive ? 45000 : 300000);
 }
 
+// ── Dev-only schedule self-check ─────────────────────────────────────────────
+// Warns if any stored match date/time in matches.js disagrees with ESPN's
+// kickoff (compared in IST). Off for normal users; enable on localhost, with
+// ?audit in the URL, or by setting localStorage.gol_debug = '1'.
+function auditScheduleEnabled() {
+  return /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+    || location.search.includes('audit')
+    || localStorage.getItem('gol_debug');
+}
+
+async function auditScheduleVsESPN() {
+  if (!auditScheduleEnabled()) return;
+  try {
+    const res = await fetch(`${ESPN_SCOREBOARD}?dates=20260611-20260720`, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const istParts = (iso) => {
+      const f = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit',
+        day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).formatToParts(new Date(iso));
+      const g = t => f.find(x => x.type === t).value;
+      const hh = g('hour') === '24' ? '00' : g('hour');   // midnight quirk
+      return { date: `${g('year')}-${g('month')}-${g('day')}`, time: `${hh}:${g('minute')}` };
+    };
+
+    const issues = [];
+    (data.events || []).forEach(ev => {
+      const c = ev.competitions?.[0];
+      if (!c) return;
+      const names = (c.competitors || []).map(x => normName(x.team?.displayName));
+      const m = MATCHES.find(x => names.includes(x.home) && names.includes(x.away));
+      if (!m) return;
+      const espn = istParts(ev.date);
+      if (espn.date !== m.date || espn.time !== m.time) {
+        issues.push({ id: m.id, match: `${m.home} v ${m.away}`, ours: `${m.date} ${m.time}`, espnIST: `${espn.date} ${espn.time}` });
+      }
+    });
+
+    if (issues.length) {
+      console.warn(`[Gol] ⚠️ ${issues.length} match date/time(s) disagree with ESPN:`);
+      console.table(issues);
+    } else {
+      console.log('[Gol] ✓ Schedule matches ESPN for all currently listed matches.');
+    }
+  } catch (e) { /* ignore — audit is best-effort */ }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   subscribeFirebaseLive();
   liveRefreshCycle();
+  auditScheduleVsESPN();
 });
