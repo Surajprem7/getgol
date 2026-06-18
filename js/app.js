@@ -446,12 +446,12 @@ function showTab(tab) {
               background:rgba(240,165,0,0.10);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
               border:2.5px solid #f0a500;border-radius:18px;box-shadow:4px 4px 0 rgba(240,165,0,0.22);
               font-family:'Comic Sans MS','Comic Sans','Chalkboard SE',cursive">
-              <!-- glassy speech-bubble tail (rotated square continuing the outline) pointing up -->
-              <div style="position:absolute;top:-9px;right:28px;width:15px;height:15px;background:rgba(240,165,0,0.10);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-left:2.5px solid #f0a500;border-top:2.5px solid #f0a500;transform:rotate(45deg)"></div>
+              <!-- glassy speech-bubble tail (rotated square continuing the outline) pointing DOWN toward the 🗓️ chip on the card below -->
+              <div style="position:absolute;bottom:-9px;right:28px;width:15px;height:15px;background:rgba(240,165,0,0.10);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-right:2.5px solid #f0a500;border-bottom:2.5px solid #f0a500;transform:rotate(45deg)"></div>
               <span style="font-size:1.7rem;line-height:1;filter:drop-shadow(1px 1px 1px rgba(0,0,0,0.4))">🗓️</span>
               <div style="flex:1;line-height:1.15">
                 <div style="font-size:0.92rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:0.3px;transform:rotate(-1deg);text-shadow:0 1px 3px rgba(0,0,0,0.5)">Never miss your match!</div>
-                <div style="font-size:0.74rem;font-weight:700;color:#f0a500;margin-top:1px;text-shadow:0 1px 2px rgba(0,0,0,0.4)">👆 Tap the 🗓️ to add it to your Cal!</div>
+                <div style="font-size:0.74rem;font-weight:700;color:#f0a500;margin-top:1px;text-shadow:0 1px 2px rgba(0,0,0,0.4)">Add to your Calendar</div>
               </div>
               <button onclick="dismissCalHint()" aria-label="Dismiss" style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:rgba(240,165,0,0.18);border:2px solid #f0a500;color:#f0a500;font-size:0.7rem;font-weight:800;cursor:pointer;line-height:1">✕</button>
             </div>`}
