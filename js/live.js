@@ -208,10 +208,12 @@ function subscribeFirebaseLive() {
 
     if (val.standings) window.LIVE.standings = val.standings;
     // Merge, never replace — so a partial push doesn't wipe older results
+    let matchJustEnded = false;
     if (val.scores) {
       window.LIVE.scores = { ...window.LIVE.scores, ...val.scores };
       // Detect kickoff/goal/full-time and fire local notifications (Tier 1)
       if (typeof notifyScoreChanges === 'function') notifyScoreChanges(window.LIVE.scores);
+      matchJustEnded = detectNewlyFinished(window.LIVE.scores);
     }
     if (val.rankings)     window.LIVE.rankings     = val.rankings;
     if (val.rankingsMeta) window.LIVE.rankingsMeta = val.rankingsMeta;
@@ -221,8 +223,35 @@ function subscribeFirebaseLive() {
     if (activeTab === 'groups')   renderGroupsFromLive();
     if (activeTab === 'matches')  refreshMatchScores();
     if (activeTab === 'rankings') showTab('rankings');
-    if (activeTab === 'knockout') renderKnockoutFromLive();
+    if (activeTab === 'knockout') {
+      // A finished match can change who advances → pull a fresh ESPN bracket;
+      // otherwise just re-render the provisional teams from cache (network-free).
+      if (matchJustEnded) { window._koData = null; rebuildKnockoutFromLive(); }
+      else renderKnockoutFromLive();
+    }
   });
+}
+
+// True only when a match newly flips to Full Time (event-driven, not polling).
+let _ftSeen = null;
+function detectNewlyFinished(scores) {
+  const now = new Set(Object.entries(scores).filter(([, s]) => s.status === 'FT').map(([id]) => id));
+  if (_ftSeen === null) { _ftSeen = now; return false; }  // baseline on first load
+  let isNew = false;
+  now.forEach(id => { if (!_ftSeen.has(id)) isNew = true; });
+  _ftSeen = now;
+  return isNew;
+}
+
+// Refetch the ESPN bracket (real teams + scores) after a match ends.
+function rebuildKnockoutFromLive() {
+  try {
+    if (typeof buildKnockoutTab !== 'function') return;
+    const content = document.getElementById('tab-content');
+    if (!content) return;
+    const glass = 'background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:16px';
+    buildKnockoutTab(content, glass);
+  } catch (e) { /* never break the live loop */ }
 }
 
 function renderGroupsFromLive() {
