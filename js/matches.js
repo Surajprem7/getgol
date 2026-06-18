@@ -2,7 +2,7 @@ const MATCHES = [
   // GROUP A
   {id:1,group:'A',home:'Mexico',away:'South Africa',date:'2026-06-12',time:'00:30',venue:'Estadio Azteca, Mexico City'},
   {id:2,group:'A',home:'South Korea',away:'Czechia',date:'2026-06-12',time:'07:30',venue:'Estadio Akron, Zapopan'},
-  {id:3,group:'A',home:'Czechia',away:'South Africa',date:'2026-06-19',time:'21:30',venue:'Mercedes-Benz Stadium, Atlanta'},
+  {id:3,group:'A',home:'Czechia',away:'South Africa',date:'2026-06-18',time:'21:30',venue:'Mercedes-Benz Stadium, Atlanta'},
   {id:4,group:'A',home:'Mexico',away:'South Korea',date:'2026-06-19',time:'06:30',venue:'Estadio Akron, Zapopan'},
   {id:5,group:'A',home:'South Africa',away:'South Korea',date:'2026-06-25',time:'06:30',venue:'Estadio Guadalajara, Zapopan'},
   {id:6,group:'A',home:'Czechia',away:'Mexico',date:'2026-06-25',time:'06:30',venue:'Estadio Azteca, Mexico City'},
