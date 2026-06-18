@@ -219,7 +219,18 @@ function subscribeFirebaseLive() {
     if (val.rankingsMeta) window.LIVE.rankingsMeta = val.rankingsMeta;
     if (val._updated)  window.LIVE.updatedAt = val._updated;
 
+    // Authoritative date/time from ESPN — overlay onto the static MATCHES so any
+    // typo/reschedule self-corrects. Force a full re-render only if it changed.
+    let scheduleChanged = false;
+    if (val.schedule) scheduleChanged = applyScheduleOverrides(val.schedule);
+
     const activeTab = window._activeTab;
+    // A schedule correction changes the dates shown on cards — needs a full
+    // re-render, not just a score refresh.
+    if (scheduleChanged && ['matches', 'groups', 'knockout'].includes(activeTab)) {
+      showTab(activeTab);
+      return;
+    }
     if (activeTab === 'groups')   renderGroupsFromLive();
     if (activeTab === 'matches')  refreshMatchScores();
     if (activeTab === 'rankings') showTab('rankings');
@@ -252,6 +263,21 @@ function rebuildKnockoutFromLive() {
     const glass = 'background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:16px';
     buildKnockoutTab(content, glass);
   } catch (e) { /* never break the live loop */ }
+}
+
+// Overlay ESPN's authoritative date/time onto the static MATCHES list.
+// Returns true if anything actually changed (so we know to re-render).
+function applyScheduleOverrides(schedule) {
+  if (typeof MATCHES === 'undefined') return false;
+  let changed = false;
+  Object.entries(schedule).forEach(([id, s]) => {
+    if (!s) return;
+    const m = MATCHES.find(x => String(x.id) === String(id));
+    if (!m) return;
+    if (s.date && m.date !== s.date) { m.date = s.date; changed = true; }
+    if (s.time && m.time !== s.time) { m.time = s.time; changed = true; }
+  });
+  return changed;
 }
 
 function renderGroupsFromLive() {

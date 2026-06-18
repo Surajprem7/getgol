@@ -94,13 +94,33 @@ async function fetchESPNStandings() {
   return Object.keys(out).length ? out : null;
 }
 
-// ── Scoreboard (fetched once, reused for scores + line-up event ids) ──────────
+// ── Scoreboard (fetched once, reused for scores + schedule + line-up ids) ─────
+// Cover the whole group stage so every fixture's authoritative date/time is
+// available (not just the next few days).
 async function fetchScoreboardEvents() {
-  const url = `${ESPN_SCOREBOARD}?dates=${buildDateRange()}`;
+  const url = `${ESPN_SCOREBOARD}?dates=20260611-20260628`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`ESPN scoreboard HTTP ${res.status}`);
   const data = await res.json();
   return data.events || [];
+}
+
+// IST date ('YYYY-MM-DD') + time ('HH:MM') for an ISO timestamp.
+function istDateTime(iso) {
+  const f = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date(iso));
+  const g = t => f.find(x => x.type === t).value;
+  const hh = g('hour') === '24' ? '00' : g('hour');
+  return { date: `${g('year')}-${g('month')}-${g('day')}`, time: `${hh}:${g('minute')}` };
+}
+
+// Authoritative date/time per match id, in IST.
+function buildSchedule(mapped) {
+  const out = {};
+  mapped.forEach(({ matchId, event }) => { out[matchId] = istDateTime(event.date); });
+  return out;
 }
 
 // Map each ESPN event to one of our matches → { matchId, event, swapped }
@@ -234,6 +254,7 @@ async function main() {
 
   const mapped = mapEvents(events, MATCHES);
   const scores = parseScores(mapped);
+  const schedule = buildSchedule(mapped);
   const lineups = mapped.length
     ? await fetchLineups(mapped).catch(e => { console.warn('lineups:', e.message); return {}; })
     : {};
@@ -246,6 +267,7 @@ async function main() {
   const wcUpdates = { _updated: Date.now() };
   if (standings) wcUpdates.standings = standings;
   if (scores) Object.entries(scores).forEach(([id, sc]) => { wcUpdates[`scores/${id}`] = sc; });
+  if (Object.keys(schedule).length) wcUpdates.schedule = schedule;
   await admin.database().ref('wc2026').update(wcUpdates);
 
   // Bulky line-up data in its own node, read per-match on demand by clients.
@@ -254,7 +276,7 @@ async function main() {
   }
 
   const liveCount = scores ? Object.values(scores).filter(s => s.status === 'LIVE').length : 0;
-  console.log(`✅ Synced — standings:${standings ? Object.keys(standings).length + ' groups' : 'skipped'}, scores:${scores ? Object.keys(scores).length : 0} (${liveCount} live), lineups:${Object.keys(lineups).length}`);
+  console.log(`✅ Synced — standings:${standings ? Object.keys(standings).length + ' groups' : 'skipped'}, scores:${scores ? Object.keys(scores).length : 0} (${liveCount} live), schedule:${Object.keys(schedule).length}, lineups:${Object.keys(lineups).length}`);
   process.exit(0);
 }
 
