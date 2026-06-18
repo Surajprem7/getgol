@@ -1,4 +1,4 @@
-const CACHE = 'gol-v39';
+const CACHE = 'gol-v40';
 const FILES = ['/', '/index.html', '/manifest.json', '/js/matches.js', '/js/notifications.js', '/js/live.js', '/js/poster.js', '/js/matchdetail.js', '/js/app.js', '/js/firebase.js', '/js/selfcheck.js'];
 
 self.addEventListener('install', e => {
