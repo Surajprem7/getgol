@@ -187,6 +187,7 @@ function showApp(startTab) {
         <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto;background:rgba(255,255,255,0.05);padding:0.4rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08)">
           <button onclick="showTab('matches')" id="nav-matches" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Matches</button>
           <button onclick="showTab('groups')" id="nav-groups" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Groups</button>
+          <button onclick="showTab('knockout')" id="nav-knockout" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Knockout</button>
           <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Rankings</button>
           <button onclick="showTab('watch')" id="nav-watch" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Watch</button>
           <button onclick="showTab('stats')" id="nav-stats" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Stats</button>
@@ -285,7 +286,7 @@ function showTab(tab) {
   const content = document.getElementById('tab-content');
 
   // Update nav buttons
-  ['matches','groups','rankings','watch','stats'].forEach(t => {
+  ['matches','groups','knockout','rankings','watch','stats'].forEach(t => {
     const btn = document.getElementById('nav-'+t);
     if (!btn) return;
     if (t === tab) {
@@ -552,6 +553,9 @@ function showTab(tab) {
 
   } else if (tab === 'groups') {
     buildStandingsTab(content, glass);
+
+  } else if (tab === 'knockout') {
+    buildKnockoutTab(content, glass);
 
   } else if (tab === 'rankings') {
     // Live FIFA rankings (synced to Firebase by the weekly GitHub Action),
@@ -1013,6 +1017,113 @@ function buildStandingsTab(content, glass) {
   // Store team→group map for search
   window._teamToGroup = teamToGroup;
   window._allTeams = Object.keys(groupTeams).flatMap(g => [...groupTeams[g]]);
+}
+
+// ── Knockout bracket — pulled live from ESPN (auto-fills as groups finish) ────
+const KO_ROUND_ORDER = ['round-of-32', 'round-of-16', 'quarterfinals', 'semifinals', '3rd-place-match', 'final'];
+const KO_ROUND_LABEL = {
+  'round-of-32': 'Round of 32', 'round-of-16': 'Round of 16',
+  'quarterfinals': 'Quarter-finals', 'semifinals': 'Semi-finals',
+  '3rd-place-match': 'Third place', 'final': 'Final',
+};
+
+async function fetchKnockout() {
+  try {
+    const norm = (typeof normName === 'function') ? normName : (x => x);
+    const res = await fetch(`${ESPN_SCOREBOARD}?dates=20260628-20260719`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const rounds = {};
+    (data.events || []).forEach(ev => {
+      const c = ev.competitions?.[0];
+      if (!c) return;
+      const round = ev.season?.slug || '';   // 'round-of-32' | 'round-of-16' | … | 'final'
+      if (!KO_ROUND_LABEL[round]) return;
+      const h = c.competitors?.find(x => x.homeAway === 'home') || c.competitors?.[0];
+      const a = c.competitors?.find(x => x.homeAway === 'away') || c.competitors?.[1];
+      const type = ev.status?.type || {};
+      const state = type.state || 'pre';
+      const status = (type.completed === true || state === 'post') ? 'FT' : (state === 'in' ? 'LIVE' : 'SCHEDULED');
+      const slot = (cmp) => {
+        const name = norm(cmp?.team?.displayName || '');
+        const code = (typeof getCountryCode === 'function') ? getCountryCode(name) : 'un';
+        return { name, code, real: code !== 'un', score: parseInt(cmp?.score ?? '-1') };
+      };
+      (rounds[round] = rounds[round] || []).push({
+        date: ev.date, status,
+        clock: type.shortDetail || ev.status?.displayClock || '',
+        home: slot(h), away: slot(a),
+      });
+    });
+    Object.values(rounds).forEach(list => list.sort((x, y) => new Date(x.date) - new Date(y.date)));
+    return Object.keys(rounds).length ? rounds : null;
+  } catch (e) { return null; }
+}
+
+function renderKnockout(content, glass, rounds) {
+  const accent = APP.teamColor || '#f0a500';
+  const istFmt = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+
+  const slotHTML = (t, align) => {
+    const flag = t.real ? `<img src="https://flagcdn.com/24x18/${t.code}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">` : '';
+    const nm = t.real
+      ? `<span style="font-size:0.8rem;color:#fff;font-weight:600">${t.name}</span>`
+      : `<span style="font-size:0.66rem;color:rgba(255,255,255,0.4);font-style:italic">${t.name || 'TBD'}</span>`;
+    return align === 'right'
+      ? `<div style="flex:1;display:flex;align-items:center;gap:0.4rem;justify-content:flex-end;text-align:right">${nm}${flag}</div>`
+      : `<div style="flex:1;display:flex;align-items:center;gap:0.4rem">${flag}${nm}</div>`;
+  };
+
+  const matchRow = (m) => {
+    const live = m.status === 'LIVE', ft = m.status === 'FT';
+    const mid = (live || ft)
+      ? `<span style="font-weight:900;color:${live ? '#4ade80' : '#fff'}">${m.home.score >= 0 ? m.home.score : 0}–${m.away.score >= 0 ? m.away.score : 0}</span>`
+      : `<span style="color:rgba(255,255,255,0.25);font-weight:800;font-size:0.8rem">vs</span>`;
+    const meta = live ? `<span style="color:#4ade80;font-weight:700">● LIVE ${m.clock || ''}</span>`
+      : ft ? `<span style="color:rgba(255,255,255,0.4)">FULL TIME</span>`
+      : `${istFmt.format(new Date(m.date))} IST`;
+    return `
+      <div style="${glass};margin-bottom:0.5rem;padding:0.55rem 0.75rem">
+        <div style="font-size:0.6rem;color:rgba(255,255,255,0.35);text-align:center;margin-bottom:0.35rem">${meta}</div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          ${slotHTML(m.home, 'right')}
+          <div style="min-width:48px;text-align:center">${mid}</div>
+          ${slotHTML(m.away, 'left')}
+        </div>
+      </div>`;
+  };
+
+  const sections = KO_ROUND_ORDER.filter(r => rounds[r]).map(r => `
+    <div style="margin:1.1rem 0 0.5rem;display:flex;align-items:center;gap:0.5rem">
+      <div style="font-size:0.85rem;font-weight:800;color:${accent}">${r === 'final' ? '🏆 ' : ''}${KO_ROUND_LABEL[r]}</div>
+      <div style="flex:1;height:1px;background:linear-gradient(90deg,${accent}44,transparent)"></div>
+      <span style="font-size:0.6rem;color:rgba(255,255,255,0.3)">${rounds[r].length} match${rounds[r].length > 1 ? 'es' : ''}</span>
+    </div>
+    ${rounds[r].map(matchRow).join('')}
+  `).join('');
+
+  content.innerHTML = `
+    <div style="margin-bottom:0.5rem">
+      <div style="color:#fff;font-weight:700;font-size:1rem">🏆 Knockout Stage</div>
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:0.25rem">Top 2 of each group + 8 best 3rd-placed teams advance · fills in live as groups finish</div>
+    </div>
+    ${sections}`;
+}
+
+function buildKnockoutTab(content, glass) {
+  if (window._koData) renderKnockout(content, glass, window._koData);
+  else content.innerHTML = `<div style="${glass};padding:2.5rem 1rem;text-align:center;color:rgba(255,255,255,0.5)">Loading knockout bracket…</div>`;
+
+  fetchKnockout().then(rounds => {
+    if (!rounds) {
+      if (!window._koData && window._activeTab === 'knockout') {
+        content.innerHTML = `<div style="${glass};padding:2.5rem 1rem;text-align:center;color:rgba(255,255,255,0.5)">Knockout bracket isn't available yet — check back near the end of the group stage.</div>`;
+      }
+      return;
+    }
+    window._koData = rounds;
+    if (window._activeTab === 'knockout') renderKnockout(content, glass, rounds);
+  });
 }
 
 function jumpToTeamGroup(query) {
