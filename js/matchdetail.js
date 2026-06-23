@@ -78,8 +78,13 @@ async function openMatchDetail(matchId) {
   // Firebase-first: the sync Action pre-fetches line-ups into /lineups/<id>, so
   // most opens are instant with no ESPN call. Read per-match (.once) so we don't
   // stream every match's line-up to every client.
+  // The sync Action's cron runs unreliably (GitHub throttles high-frequency
+  // schedules), so during a LIVE match the cache can be stale by hours — skip
+  // it and go straight to ESPN if it's more than 2 minutes old.
   const stored = await mdStoredLineup(m.id);
-  if (stored && stored.rosters && stored.rosters.length) {
+  const isLive = window.LIVE && window.LIVE.score(m.id)?.status === 'LIVE';
+  const stale = isLive && (!stored?.syncedAt || Date.now() - stored.syncedAt > 120000);
+  if (stored && stored.rosters && stored.rosters.length && !stale) {
     MD.data = stored;
     renderMatchDetail(MD.data);
     return;
