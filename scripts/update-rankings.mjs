@@ -11,7 +11,10 @@
 // server-side fetch always returns {"rankings":[]}.
 
 import admin from 'firebase-admin';
-import puppeteer from 'puppeteer-core';
+import puppeteerExtra from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+
+puppeteerExtra.use(StealthPlugin());
 
 const DB_URL = 'https://getgol7-default-rtdb.asia-southeast1.firebasedatabase.app';
 
@@ -45,7 +48,7 @@ const norm = n => FIFA_NAME_MAP[n] || n;
 
 async function getFifaRankings() {
   console.log('Launching headless Chrome…');
-  const browser = await puppeteer.launch({
+  const browser = await puppeteerExtra.launch({
     executablePath: CHROME_PATH,
     headless: 'new',
     args: [
@@ -67,8 +70,8 @@ async function getFifaRankings() {
     // that returns actual rankings (not empty). Reject after 45s.
     const rankingPromise = new Promise((resolve, reject) => {
       const timer = setTimeout(
-        () => reject(new Error('Timed out waiting for ranking API response (45s)')),
-        45000
+        () => reject(new Error('Timed out waiting for ranking API response (60s)')),
+        60000
       );
       page.on('response', async response => {
         if (!response.url().includes('/api/ranking-overview')) return;
