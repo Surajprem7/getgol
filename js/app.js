@@ -736,6 +736,14 @@ function showTab(tab) {
           <button onclick="shareApp()" style="margin-top:0.5rem;padding:0.4rem 1.25rem;background:#25D366;border:none;border-radius:20px;color:#000;font-weight:700;cursor:pointer;font-size:0.85rem">Share via WhatsApp</button>
         </div>
       </div>
+      <div style="${glass};padding:1.25rem;margin-top:0.75rem;display:flex;align-items:center;gap:1rem;border-color:rgba(37,211,102,0.3)">
+        <div style="font-size:2rem">📩</div>
+        <div>
+          <div style="font-size:1.1rem;font-weight:700;color:#25D366">Contact Us</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-top:0.2rem">Suggestions, feedback or feature requests?</div>
+          <a href="https://wa.me/919995992458" target="_blank" rel="noopener" style="display:inline-block;margin-top:0.5rem;padding:0.4rem 1.25rem;background:#25D366;border-radius:20px;color:#000;font-weight:700;font-size:0.85rem;text-decoration:none">Message on WhatsApp</a>
+        </div>
+      </div>
     `;
 
   } else if (tab === 'stats') {
