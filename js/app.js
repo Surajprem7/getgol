@@ -29,9 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function registerSW() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
-  }
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    // Check for a new SW version on every app open (not just navigation).
+    reg.update();
+  });
+  // When a new SW takes control, reload automatically so all users get the update.
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
 }
 
 function showTeamPickerModal() {
