@@ -11,9 +11,13 @@
 // server-side fetch always returns {"rankings":[]}.
 
 import admin from 'firebase-admin';
-import puppeteerExtra from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { createRequire } from 'module';
 
+// puppeteer-extra and its plugins are CommonJS — use createRequire to load
+// them from an ESM module without the silent interop failure that breaks stealth.
+const require = createRequire(import.meta.url);
+const puppeteerExtra = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteerExtra.use(StealthPlugin());
 
 const DB_URL = 'https://getgol7-default-rtdb.asia-southeast1.firebasedatabase.app';
