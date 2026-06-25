@@ -237,6 +237,85 @@ async function fetchLineups(mapped) {
   return out;
 }
 
+// ── Elo ranking calculation ───────────────────────────────────────────────────
+// FIFA formula: New Points = Old Points + K × (Result − 1/(1 + 10^(−ΔPoints/600)))
+// K = 60 for WC group stage (no penalties in group stage, so W = 1 / 0.5 / 0 only).
+const ELO_K = 60;
+
+function eloExpected(ptsA, ptsB) {
+  return 1 / (1 + Math.pow(10, -(ptsA - ptsB) / 600));
+}
+
+function applyEloMatch(rankMap, homeTeam, awayTeam, homeGoals, awayGoals) {
+  const home = rankMap[homeTeam];
+  const away = rankMap[awayTeam];
+  if (!home || !away) {
+    console.warn(`Elo skip — team not in rankings: "${homeTeam}" vs "${awayTeam}"`);
+    return false;
+  }
+  const W_e = eloExpected(home.points, away.points);
+  const W_home = homeGoals > awayGoals ? 1 : homeGoals < awayGoals ? 0 : 0.5;
+  home.points = Math.round((home.points + ELO_K * (W_home - W_e)) * 100) / 100;
+  away.points = Math.round((away.points + ELO_K * ((1 - W_home) - (1 - W_e))) * 100) / 100;
+  return true;
+}
+
+function reRankAll(rankMap) {
+  return Object.values(rankMap)
+    .sort((a, b) => b.points - a.points)
+    .map((t, i) => ({ rank: i + 1, name: t.name, points: t.points }));
+}
+
+async function updateEloRankings(db, scores, MATCHES) {
+  const snapshot = await db.ref('wc2026/rankings').once('value');
+  const existing = snapshot.val();
+  if (!Array.isArray(existing) || existing.length === 0) {
+    console.log('Elo: no baseline rankings in Firebase — skipping');
+    return;
+  }
+
+  const rankMap = {};
+  existing.forEach(t => { rankMap[t.name] = { ...t }; });
+
+  const calcSnap = await db.ref('wc2026/rankingsCalcMeta').once('value');
+  const calcMeta = calcSnap.val() || {};
+  const processed = new Set(Object.keys(calcMeta.processed || {}));
+
+  let changed = 0;
+  const newlyProcessed = {};
+
+  for (const m of MATCHES) {
+    const sc = scores[m.id];
+    if (!sc || sc.status !== 'FT') continue;
+    if (processed.has(m.id)) continue;
+    if (typeof sc.home !== 'number' || typeof sc.away !== 'number') continue;
+    if (sc.home < 0 || sc.away < 0) continue;
+
+    const applied = applyEloMatch(rankMap, m.home, m.away, sc.home, sc.away);
+    if (applied) {
+      newlyProcessed[m.id] = Date.now();
+      changed++;
+      console.log(`Elo: ${m.home} ${sc.home}–${sc.away} ${m.away}`);
+    }
+  }
+
+  if (changed === 0) {
+    console.log('Elo: no new FT matches to process');
+    return;
+  }
+
+  const updatedTable = reRankAll(rankMap);
+  await db.ref('wc2026/rankings').set(updatedTable);
+  await db.ref('wc2026/rankingsCalcMeta').set({
+    processed: { ...(calcMeta.processed || {}), ...newlyProcessed },
+    source: 'elo-calculated',
+    updatedAt: Date.now(),
+    matchCount: Object.keys({ ...(calcMeta.processed || {}), ...newlyProcessed }).length,
+  });
+
+  console.log(`Elo: updated ${changed} match(es) — top 3: ${updatedTable.slice(0, 3).map(t => `${t.name} ${t.points}`).join(', ')}`);
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -246,6 +325,7 @@ async function main() {
   admin.initializeApp({ credential: admin.credential.cert(sa), databaseURL: DB_URL });
 
   const MATCHES = loadMatches();
+  const db = admin.database();
 
   const [standings, events] = await Promise.all([
     fetchESPNStandings().catch(e => { console.warn('standings:', e.message); return null; }),
@@ -268,11 +348,16 @@ async function main() {
   if (standings) wcUpdates.standings = standings;
   if (scores) Object.entries(scores).forEach(([id, sc]) => { wcUpdates[`scores/${id}`] = sc; });
   if (Object.keys(schedule).length) wcUpdates.schedule = schedule;
-  await admin.database().ref('wc2026').update(wcUpdates);
+  await db.ref('wc2026').update(wcUpdates);
 
   // Bulky line-up data in its own node, read per-match on demand by clients.
   if (Object.keys(lineups).length) {
-    await admin.database().ref('lineups').update(lineups);
+    await db.ref('lineups').update(lineups);
+  }
+
+  // Recalculate Elo rankings from WC match results.
+  if (scores) {
+    await updateEloRankings(db, scores, MATCHES).catch(e => console.warn('Elo rankings:', e.message));
   }
 
   const liveCount = scores ? Object.values(scores).filter(s => s.status === 'LIVE').length : 0;

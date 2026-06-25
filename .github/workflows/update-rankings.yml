@@ -2,10 +2,10 @@ name: Update FIFA Rankings
 
 on:
   schedule:
-    # FIFA publishes rankings roughly monthly. Run every Monday 06:00 UTC so
-    # a new edition is picked up within a few days of release.
+    # Rankings are now Elo-calculated inside sync-live-data.mjs.
+    # This workflow is kept so the schedule doesn't break; it logs and exits cleanly.
     - cron: '0 6 * * 1'
-  workflow_dispatch: {}   # adds a manual "Run workflow" button in the Actions tab
+  workflow_dispatch: {}
 
 jobs:
   update:
@@ -17,13 +17,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install firebase-admin@12 puppeteer-core@22 puppeteer-extra puppeteer-extra-plugin-stealth
-
-      - name: Verify Chrome is available
-        run: google-chrome-stable --version
-
-      - name: Sync FIFA rankings to Firebase
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Note — rankings now handled by Elo sync
         run: node scripts/update-rankings.mjs
