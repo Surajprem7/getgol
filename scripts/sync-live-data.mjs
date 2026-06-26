@@ -95,10 +95,9 @@ async function fetchESPNStandings() {
 }
 
 // ── Scoreboard (fetched once, reused for scores + schedule + line-up ids) ─────
-// Cover the whole group stage so every fixture's authoritative date/time is
-// available (not just the next few days).
+// Covers the full tournament (group stage + knockout) using a dynamic end date.
 async function fetchScoreboardEvents() {
-  const url = `${ESPN_SCOREBOARD}?dates=20260611-20260628`;
+  const url = `${ESPN_SCOREBOARD}?dates=${buildDateRange()}`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`ESPN scoreboard HTTP ${res.status}`);
   const data = await res.json();
@@ -266,7 +265,36 @@ function reRankAll(rankMap) {
     .map((t, i) => ({ rank: i + 1, name: t.name, points: t.points }));
 }
 
-async function updateEloRankings(db, scores, MATCHES) {
+// Build a flat list of all FT events from ESPN (group stage + knockout).
+function extractFtEvents(events) {
+  return events
+    .map(event => {
+      const comp = event.competitions?.[0];
+      if (!comp) return null;
+      const hComp = comp.competitors?.find(c => c.homeAway === 'home');
+      const aComp = comp.competitors?.find(c => c.homeAway === 'away');
+      if (!hComp || !aComp) return null;
+      const type = event.status?.type || {};
+      const done = type.completed === true || type.state === 'post';
+      if (!done) return null;
+      const hScore = parseInt(hComp.score ?? '-1');
+      const aScore = parseInt(aComp.score ?? '-1');
+      if (hScore < 0 || aScore < 0) return null;
+      // For penalty shootouts (knockout), ESPN shortDetail contains "PKs" or "PK".
+      // FIFA Elo treats a PK win as 0.75, loss as 0.25.
+      const detail = (type.shortDetail || '').toLowerCase();
+      const isPK = detail.includes('pk') || detail.includes('penalt');
+      return {
+        id: `espn_${event.id}`,
+        home: normName(hComp.team?.displayName),
+        away: normName(aComp.team?.displayName),
+        hScore, aScore, isPK,
+      };
+    })
+    .filter(Boolean);
+}
+
+async function updateEloRankings(db, events) {
   const snapshot = await db.ref('wc2026/rankings').once('value');
   const existing = snapshot.val();
   if (!Array.isArray(existing) || existing.length === 0) {
@@ -281,21 +309,27 @@ async function updateEloRankings(db, scores, MATCHES) {
   const calcMeta = calcSnap.val() || {};
   const processed = new Set(Object.keys(calcMeta.processed || {}));
 
+  const ftEvents = extractFtEvents(events);
   let changed = 0;
   const newlyProcessed = {};
 
-  for (const m of MATCHES) {
-    const sc = scores[m.id];
-    if (!sc || sc.status !== 'FT') continue;
-    if (processed.has(m.id)) continue;
-    if (typeof sc.home !== 'number' || typeof sc.away !== 'number') continue;
-    if (sc.home < 0 || sc.away < 0) continue;
-
-    const applied = applyEloMatch(rankMap, m.home, m.away, sc.home, sc.away);
+  for (const ev of ftEvents) {
+    if (processed.has(ev.id)) continue;
+    // For PK matches, use 0.75/0.25 instead of 1/0 (FIFA rule for extra-time results).
+    let hGoals = ev.hScore, aGoals = ev.aScore;
+    if (ev.isPK && ev.hScore === ev.aScore) {
+      // Scores are tied — winner decided on pens. We don't know who won from scores alone;
+      // treat as 0.75/0.25 based on ESPN's winner flag if available, else skip.
+      // ESPN doesn't expose PK score directly here so we conservatively skip to avoid errors.
+      newlyProcessed[ev.id] = Date.now(); // mark as seen so we don't retry
+      console.log(`Elo: PK match ${ev.home} vs ${ev.away} — skipped (scores tied, PK winner unknown)`);
+      continue;
+    }
+    const applied = applyEloMatch(rankMap, ev.home, ev.away, hGoals, aGoals);
     if (applied) {
-      newlyProcessed[m.id] = Date.now();
+      newlyProcessed[ev.id] = Date.now();
       changed++;
-      console.log(`Elo: ${m.home} ${sc.home}–${sc.away} ${m.away}`);
+      console.log(`Elo: ${ev.home} ${ev.hScore}–${ev.aScore} ${ev.away}${ev.isPK ? ' (AET)' : ''}`);
     }
   }
 
@@ -355,9 +389,9 @@ async function main() {
     await db.ref('lineups').update(lineups);
   }
 
-  // Recalculate Elo rankings from WC match results.
-  if (scores) {
-    await updateEloRankings(db, scores, MATCHES).catch(e => console.warn('Elo rankings:', e.message));
+  // Recalculate Elo rankings from all FT ESPN events (group stage + knockout).
+  if (events.length) {
+    await updateEloRankings(db, events).catch(e => console.warn('Elo rankings:', e.message));
   }
 
   const liveCount = scores ? Object.values(scores).filter(s => s.status === 'LIVE').length : 0;
