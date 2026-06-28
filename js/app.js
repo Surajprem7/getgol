@@ -1311,7 +1311,7 @@ function renderKnockout(content, glass, rounds) {
   window._koView = window._koView || 'list';
 
   const toggle = (view) => `
-    <button onclick="window._koView='${view}';renderKnockout(document.getElementById('ko-content'),window._koGlass,window._koData)"
+    <button onclick="window._koView='${view}';window._koGlass&&renderKnockout(document.getElementById('tab-content'),window._koGlass,window._koData)"
       style="flex:1;padding:0.35rem;border:none;border-radius:16px;cursor:pointer;font-size:0.75rem;font-weight:700;
              background:${window._koView === view ? accent : 'transparent'};
              color:${window._koView === view ? '#000' : 'rgba(255,255,255,0.5)'}">
@@ -1333,10 +1333,7 @@ function renderKnockout(content, glass, rounds) {
     </div>
     <div id="ko-view-content">${viewHTML}</div>`;
 
-  // Store refs for the toggle onclick
   window._koGlass = glass;
-  // Wrap content div so toggle re-render targets it
-  content.id = 'ko-content';
 
   // Show one-time hint pointing to Bracket button
   if (window._koView === 'list' && !localStorage.getItem('gol-hint-bracket')) {
