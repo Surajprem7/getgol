@@ -227,23 +227,23 @@ function showApp(startTab) {
         background:rgba(8,8,24,0.94);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
         border-top:1px solid rgba(255,255,255,0.09);
         display:flex;justify-content:space-around;padding:0.3rem 0 calc(0.3rem + env(safe-area-inset-bottom,0px))">
-        <button onclick="showTab('matches')" id="nav-matches" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
-          <span style="font-size:1.1rem">⚽</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Matches</span>
+        <button onclick="showTab('matches')" id="nav-matches" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:0.5rem 0.1rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.3px">Matches</span>
         </button>
-        <button onclick="showTab('groups')" id="nav-groups" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
-          <span style="font-size:1.1rem">📊</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Groups</span>
+        <button onclick="showTab('groups')" id="nav-groups" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:0.5rem 0.1rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.3px">Groups</span>
         </button>
-        <button onclick="showTab('knockout')" id="nav-knockout" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
-          <span style="font-size:1.1rem">🏆</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Knockout</span>
+        <button onclick="showTab('knockout')" id="nav-knockout" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:0.5rem 0.1rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.3px">Knockout</span>
         </button>
-        <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
-          <span style="font-size:1.1rem">🎖️</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Rankings</span>
+        <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:0.5rem 0.1rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.3px">Rankings</span>
         </button>
-        <button onclick="showTab('watch')" id="nav-watch" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
-          <span style="font-size:1.1rem">📺</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Watch</span>
+        <button onclick="showTab('watch')" id="nav-watch" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:0.5rem 0.1rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.3px">Watch</span>
         </button>
-        <button onclick="showTab('stats')" id="nav-stats" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
-          <span style="font-size:1.1rem">📈</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Stats</span>
+        <button onclick="showTab('stats')" id="nav-stats" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:none;cursor:pointer;padding:0.5rem 0.1rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.3px">Stats</span>
         </button>
       </nav>
     </div>
@@ -415,6 +415,10 @@ function jumpToDate(date) {
   window.scrollTo({ top, behavior: 'smooth' });
 }
 
+// Spacing constants for the scrollable timeline
+const TL_SPACING = 40; // px between date nodes
+const TL_PAD = 24;     // px top/bottom padding
+
 // Highlight the timeline node whose group is most visible in the viewport
 function updateTimelineActive() {
   const headers = document.querySelectorAll('[data-date-header]');
@@ -428,7 +432,6 @@ function updateTimelineActive() {
   if (!activeDate) return;
 
   const accent = APP.teamColor || '#f0a500';
-  // Use all timeline dates (group + knockout) if the rebuild has extended the set
   const baseDates = [...new Set([...MATCHES].sort((a,b) => a.date.localeCompare(b.date)).map(m => m.date))];
   const koDates2 = (() => {
     if (!window._koData) return [];
@@ -441,15 +444,18 @@ function updateTimelineActive() {
   const activeIdx = tlDates.indexOf(activeDate);
   if (activeIdx < 0) return;
 
-  const pct = tlDates.length === 1 ? 50 : (activeIdx / (tlDates.length - 1)) * 100;
+  const nodePx = TL_PAD + activeIdx * TL_SPACING;
 
   const bloom = document.getElementById('tl-bloom');
   const fill  = document.getElementById('tl-fill');
-  const tl    = document.getElementById('match-timeline');
-  if (tl) {
-    const nodePx = (pct / 100) * tl.offsetHeight;
-    if (bloom) bloom.style.top = (nodePx - 35) + 'px';
-    if (fill)  fill.style.height = pct + '%';
+  if (bloom) bloom.style.top = (nodePx - 35) + 'px';
+  if (fill)  fill.style.height = nodePx + 'px';
+
+  // Auto-scroll timeline to keep active node centered
+  const tlEl = document.getElementById('match-timeline');
+  if (tlEl) {
+    const target = nodePx - tlEl.offsetHeight / 2;
+    tlEl.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
   }
 
   tlDates.forEach((date, i) => {
@@ -620,42 +626,41 @@ function showTab(tab) {
 
     // Rebuild just the timeline inner nodes (called after async KO load adds new dates)
     const buildTimelineNodes = (dates) => {
-      const inner = document.querySelector('#match-timeline > div');
+      const inner = document.getElementById('tl-inner');
       if (!inner) return;
-      const bgLine  = inner.children[0];
-      const fill    = inner.children[1];
-      const bloom   = inner.children[2];
-      // Remove old nodes (keep first 3 static elements)
+      // Remove old nodes (keep first 3 static elements: bgLine, fill, bloom)
       while (inner.children.length > 3) inner.removeChild(inner.lastChild);
+      const totalH = TL_PAD * 2 + (dates.length - 1) * TL_SPACING;
+      inner.style.height = totalH + 'px';
       // Re-add nodes for full date set
       dates.forEach((date, i) => {
-        const pct = dates.length === 1 ? 50 : (i / (dates.length - 1)) * 100;
+        const top = TL_PAD + i * TL_SPACING;
         const d = new Date(date + 'T00:00:00');
         const day = d.getDate(), mon = months[d.getMonth()];
-        // Minor ticks
+        // Minor ticks between this and next node
         if (i < dates.length - 1) {
           [1,2].forEach(t => {
-            const mp = pct + (t/3) * (100/(dates.length-1));
+            const mp = top + (t/3) * TL_SPACING;
             const tick = document.createElement('div');
-            tick.style.cssText = `position:absolute;right:10px;top:${mp}%;width:4px;height:1px;background:rgba(255,255,255,0.1);transform:translateY(-50%)`;
+            tick.style.cssText = `position:absolute;right:10px;top:${mp}px;width:4px;height:1px;background:rgba(255,255,255,0.1);transform:translateY(-50%)`;
             inner.appendChild(tick);
           });
         }
         // Major tick
         const maj = document.createElement('div');
-        maj.style.cssText = `position:absolute;right:10px;top:${pct}%;width:8px;height:1px;background:rgba(255,255,255,0.25);transform:translateY(-50%)`;
+        maj.style.cssText = `position:absolute;right:10px;top:${top}px;width:8px;height:1px;background:rgba(255,255,255,0.25);transform:translateY(-50%)`;
         inner.appendChild(maj);
         // Label
         const label = document.createElement('div');
         label.id = `tl-day-${date}`;
-        label.style.cssText = `position:absolute;right:20px;top:${pct}%;transform:translateY(-50%);text-align:right;line-height:1.1;pointer-events:none`;
+        label.style.cssText = `position:absolute;right:20px;top:${top}px;transform:translateY(-50%);text-align:right;line-height:1.1;pointer-events:none`;
         label.innerHTML = `<div style="font-size:0.58rem;font-weight:700;color:rgba(255,255,255,0.3);transition:all 0.3s">${day}</div><div style="font-size:0.42rem;color:rgba(255,255,255,0.18);transition:all 0.3s">${mon}</div>`;
         inner.appendChild(label);
         // Node
         const node = document.createElement('div');
         node.id = `tl-node-${date}`;
         node.setAttribute('onclick', `jumpToDate('${date}')`);
-        node.style.cssText = `position:absolute;right:0;top:${pct}%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;cursor:pointer;background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.15);transition:all 0.3s;box-sizing:border-box;z-index:2`;
+        node.style.cssText = `position:absolute;right:0;top:${top}px;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;cursor:pointer;background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.15);transition:all 0.3s;box-sizing:border-box;z-index:2`;
         inner.appendChild(node);
       });
       allTlDates = dates;
@@ -696,14 +701,18 @@ function showTab(tab) {
     };
 
     const myMatches = APP.teamName
-      ? sortedMatches.filter(m => m.home === APP.teamName || m.away === APP.teamName)
+      ? sortedMatches.filter(m => {
+          if (m.home !== APP.teamName && m.away !== APP.teamName) return false;
+          const sc = window.LIVE && window.LIVE.score(m.id);
+          return !(sc && sc.status === 'FT');
+        })
       : [];
     const mySection = myMatches.length ? `
       <div style="${glass};padding:0.75rem;margin-bottom:0.75rem;border-color:${accentColor}55;background:linear-gradient(180deg,${accentColor}14,transparent)">
         <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
           <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
-          <span style="font-size:0.82rem;font-weight:800;color:${accentColor}">${APP.teamName} — your fixtures</span>
-          <span style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-left:auto">${myMatches.length} group games</span>
+          <span style="font-size:0.82rem;font-weight:800;color:${accentColor}">${APP.teamName} — upcoming</span>
+          <span style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-left:auto">${myMatches.length} match${myMatches.length !== 1 ? 'es' : ''}</span>
         </div>
         ${myMatches.map(renderMyRow).join('')}
       </div>` : '';
@@ -763,15 +772,18 @@ function showTab(tab) {
           <div id="ko-fixtures-section"></div>
         </div>
 
-        <!-- Ruler timeline — sticky -->
-        <div id="match-timeline" style="width:48px;flex-shrink:0;position:sticky;top:80px;align-self:flex-start;height:calc(100vh - 9.5rem);overflow:hidden;animation:tlFadeIn 0.4s ease">
-          <div style="position:relative;width:100%;height:100%">
+        <!-- Ruler timeline — sticky, scrollable -->
+        <div id="match-timeline" style="width:48px;flex-shrink:0;position:sticky;top:80px;align-self:flex-start;
+          height:calc(100vh - 9.5rem);overflow-y:scroll;overflow-x:hidden;
+          scrollbar-width:none;-ms-overflow-style:none;animation:tlFadeIn 0.4s ease">
+          <style>#match-timeline::-webkit-scrollbar{display:none}</style>
+          <div id="tl-inner" style="position:relative;width:100%;height:${TL_PAD*2+(allTlDates.length-1)*TL_SPACING}px">
 
             <!-- Dim background line (full height) -->
             <div style="position:absolute;right:8px;top:0;bottom:0;width:1.5px;background:rgba(255,255,255,0.08);border-radius:2px"></div>
 
             <!-- Bright filled line above active (updated by JS) -->
-            <div id="tl-fill" style="position:absolute;right:8px;top:0;width:2px;height:0%;background:linear-gradient(180deg,${accentColor}44,${accentColor});border-radius:2px;transition:height 0.4s cubic-bezier(0.4,0,0.2,1)"></div>
+            <div id="tl-fill" style="position:absolute;right:8px;top:0;width:2px;height:0;background:linear-gradient(180deg,${accentColor}44,${accentColor});border-radius:2px;transition:height 0.4s cubic-bezier(0.4,0,0.2,1)"></div>
 
             <!-- Horizontal glow bloom at active node -->
             <div id="tl-bloom" style="position:absolute;right:-6px;width:46px;height:70px;
@@ -781,23 +793,23 @@ function showTab(tab) {
 
             <!-- Ruler tick marks + date nodes -->
             ${allTlDates.map((date, i) => {
-              const pct = allTlDates.length === 1 ? 50 : (i / (allTlDates.length - 1)) * 100;
+              const top = TL_PAD + i * TL_SPACING;
               const d = new Date(date + 'T00:00:00');
               const day = d.getDate();
               const mon = months[d.getMonth()];
               const minorTicks = i < allTlDates.length - 1 ? [1,2].map(t => {
-                const mp = pct + (t / 3) * (100 / (allTlDates.length - 1));
-                return `<div style="position:absolute;right:10px;top:${mp}%;width:4px;height:1px;background:rgba(255,255,255,0.1);transform:translateY(-50%)"></div>`;
+                const mp = top + (t / 3) * TL_SPACING;
+                return `<div style="position:absolute;right:10px;top:${mp}px;width:4px;height:1px;background:rgba(255,255,255,0.1);transform:translateY(-50%)"></div>`;
               }).join('') : '';
               return `
                 ${minorTicks}
-                <div style="position:absolute;right:10px;top:${pct}%;width:8px;height:1px;background:rgba(255,255,255,0.25);transform:translateY(-50%)"></div>
-                <div id="tl-day-${date}" style="position:absolute;right:20px;top:${pct}%;transform:translateY(-50%);text-align:right;line-height:1.1;pointer-events:none">
+                <div style="position:absolute;right:10px;top:${top}px;width:8px;height:1px;background:rgba(255,255,255,0.25);transform:translateY(-50%)"></div>
+                <div id="tl-day-${date}" style="position:absolute;right:20px;top:${top}px;transform:translateY(-50%);text-align:right;line-height:1.1;pointer-events:none">
                   <div style="font-size:0.58rem;font-weight:700;color:rgba(255,255,255,0.3);transition:all 0.3s">${day}</div>
                   <div style="font-size:0.42rem;color:rgba(255,255,255,0.18);transition:all 0.3s">${mon}</div>
                 </div>
                 <div id="tl-node-${date}" onclick="jumpToDate('${date}')"
-                  style="position:absolute;right:0;top:${pct}%;transform:translateY(-50%);
+                  style="position:absolute;right:0;top:${top}px;transform:translateY(-50%);
                   width:14px;height:14px;border-radius:50%;cursor:pointer;
                   background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.15);
                   transition:all 0.3s;box-sizing:border-box;z-index:2"></div>
@@ -840,7 +852,31 @@ function showTab(tab) {
     if (_tlScrollHandler) window.removeEventListener('scroll', _tlScrollHandler);
     _tlScrollHandler = updateTimelineActive;
     window.addEventListener('scroll', _tlScrollHandler, { passive: true });
-    updateTimelineActive();
+
+    // Auto-scroll the page to today's date and centre it in the timeline
+    (() => {
+      const todayIST = new Date(Date.now() + 5.5*60*60*1000).toISOString().slice(0,10);
+      const activeDate = allTlDates.find(d => d >= todayIST) || allTlDates[allTlDates.length - 1];
+      if (activeDate) {
+        // Scroll the page to today's date header (instant so timeline logic fires cleanly)
+        const headerEl = document.querySelector(`[data-date-header="${activeDate}"]`);
+        if (headerEl) {
+          const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
+          window.scrollTo({ top: headerEl.getBoundingClientRect().top + window.scrollY - headerH - 8 });
+        }
+        // Centre the timeline on today's node
+        const idx = allTlDates.indexOf(activeDate);
+        if (idx >= 0) {
+          const tlEl = document.getElementById('match-timeline');
+          if (tlEl) {
+            const nodePx = TL_PAD + idx * TL_SPACING;
+            tlEl.scrollTop = Math.max(0, nodePx - tlEl.offsetHeight / 2);
+          }
+        }
+        updateTimelineActive();
+      }
+    })();
+
     if (typeof refreshMatchScores === 'function') refreshMatchScores();
 
     // Async: load knockout fixtures and append below group stage
