@@ -708,13 +708,15 @@ function showTab(tab) {
         })
       : [];
     const mySection = myMatches.length ? `
-      <div style="${glass};padding:0.75rem;margin-bottom:0.75rem;border-color:${accentColor}55;background:linear-gradient(180deg,${accentColor}14,transparent)">
-        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
-          <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
-          <span style="font-size:0.82rem;font-weight:800;color:${accentColor}">${APP.teamName} — upcoming</span>
-          <span style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-left:auto">${myMatches.length} match${myMatches.length !== 1 ? 'es' : ''}</span>
+      <div style="position:sticky;top:56px;z-index:100;margin-bottom:0.75rem">
+        <div style="${glass};padding:0.75rem;border-color:${accentColor}55;background:linear-gradient(180deg,${accentColor}18,rgba(8,8,24,0.97));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
+            <img src="https://flagcdn.com/24x18/${getCountryCode(APP.teamName)}.png" style="border-radius:2px" onerror="this.style.display='none'">
+            <span style="font-size:0.82rem;font-weight:800;color:${accentColor}">${APP.teamName} — upcoming</span>
+            <span style="font-size:0.6rem;color:rgba(255,255,255,0.3);margin-left:auto">${myMatches.length} match${myMatches.length !== 1 ? 'es' : ''}</span>
+          </div>
+          ${myMatches.map(renderMyRow).join('')}
         </div>
-        ${myMatches.map(renderMyRow).join('')}
       </div>` : '';
 
     content.innerHTML = `
