@@ -146,7 +146,7 @@ function showTeamPickerModal() {
 function closeTeamPicker() {
   const el = document.getElementById('team-picker-overlay');
   if (el) el.remove();
-  if (!localStorage.getItem('gol-tour-v1')) setTimeout(startTour, 600);
+  if (!localStorage.getItem('gol-tour-v2')) setTimeout(startTour, 600);
 }
 
 function browseRankings() {
@@ -211,7 +211,7 @@ function showApp(startTab) {
   showTab(startTab || 'matches');
   if (typeof updateNotifBell === 'function') updateNotifBell();
   // Start tour only if team picker is not in DOM — else closeTeamPicker() triggers it
-  if (!localStorage.getItem('gol-tour-v1')) {
+  if (!localStorage.getItem('gol-tour-v2')) {
     setTimeout(() => {
       if (!document.getElementById('team-picker-overlay')) startTour();
     }, 900);
@@ -220,7 +220,7 @@ function showApp(startTab) {
 
 // ── Spotlight guided tour ─────────────────────────────────────────────────────
 function startTour() {
-  const TOUR_KEY = 'gol-tour-v1';
+  const TOUR_KEY = 'gol-tour-v2';
   let step = 0;
 
   const steps = [
