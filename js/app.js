@@ -1334,6 +1334,39 @@ function renderKnockout(content, glass, rounds) {
   window._koGlass = glass;
   // Wrap content div so toggle re-render targets it
   content.id = 'ko-content';
+
+  // Show one-time hint pointing to Bracket button
+  if (window._koView === 'list' && !localStorage.getItem('gol-hint-bracket')) {
+    setTimeout(() => {
+      const toggleRow = content.querySelector('div[style*="display:flex"][style*="gap:4px"]');
+      if (!toggleRow) return;
+      const bracketBtn = toggleRow.querySelectorAll('button')[1];
+      if (!bracketBtn) return;
+      const rect = bracketBtn.getBoundingClientRect();
+      const hint = document.createElement('div');
+      hint.id = 'ko-bracket-hint';
+      hint.style.cssText = `position:fixed;z-index:9999;pointer-events:auto;
+        left:${rect.left + rect.width / 2}px;top:${rect.bottom + 10}px;
+        transform:translateX(-50%);
+        background:#f0a500;color:#000;
+        font-size:11px;font-weight:700;
+        padding:6px 10px 6px 8px;border-radius:8px;
+        white-space:nowrap;
+        box-shadow:0 4px 16px rgba(0,0,0,0.5);
+        display:flex;align-items:center;gap:6px;cursor:pointer`;
+      // Arrow pointing up
+      const arrow = document.createElement('div');
+      arrow.style.cssText = `position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+        width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
+        border-bottom:6px solid #f0a500`;
+      hint.appendChild(arrow);
+      hint.insertAdjacentHTML('beforeend', '👆 Try the Bracket view! &nbsp;<span style="opacity:0.6;font-weight:400">✕</span>');
+      hint.onclick = () => { hint.remove(); localStorage.setItem('gol-hint-bracket', '1'); };
+      document.body.appendChild(hint);
+      // Auto-dismiss after 6 seconds
+      setTimeout(() => { hint.remove(); localStorage.setItem('gol-hint-bracket', '1'); }, 6000);
+    }, 400);
+  }
 }
 
 function buildKnockoutTab(content, glass) {
