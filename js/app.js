@@ -281,28 +281,32 @@ function startTour() {
       `<div style="width:${i===stepIdx?20:6}px;height:6px;border-radius:3px;background:${i===stepIdx?'#f0a500':'rgba(255,255,255,0.2)'};transition:all 0.3s"></div>`
     ).join('');
     const accent = APP.teamColor || '#f0a500';
-    tip.style.cssText = `position:fixed;z-index:9900;left:0;right:0;bottom:0;
-      background:rgba(8,8,22,0.97);
-      backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
-      border-top:1px solid rgba(255,255,255,0.1);
-      border-radius:24px 24px 0 0;
-      padding:20px 20px 36px;
+    tip.style.cssText = `position:fixed;z-index:9900;
+      left:16px;right:16px;bottom:80px;
+      background:rgba(22,22,45,0.82);
+      backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
+      border:1px solid rgba(255,255,255,0.13);
+      border-radius:24px;
+      padding:18px 18px 18px;
       pointer-events:auto;
-      animation:tourSlideUp 0.35s cubic-bezier(0.34,1.4,0.64,1) both`;
+      box-shadow:0 24px 64px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.04);
+      animation:tourSlideUp 0.4s cubic-bezier(0.34,1.3,0.64,1) both`;
     tip.innerHTML = `
-      <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);margin:0 auto 18px"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-        <div style="display:flex;gap:6px;align-items:center">${dots}</div>
-        <button onclick="endTour()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,0.4);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="display:flex;gap:5px;align-items:center">${dots}</div>
+        <button onclick="endTour()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;color:rgba(255,255,255,0.35);font-size:13px;cursor:pointer;line-height:1">✕</button>
       </div>
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
-        <div style="width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${s.emoji}</div>
-        <div>
-          <div style="font-size:17px;font-weight:700;color:#fff;line-height:1.2">${s.title}</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.45);margin-top:4px;line-height:1.5">${s.body}</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <div style="width:52px;height:52px;flex-shrink:0;border-radius:18px;
+          background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);
+          display:flex;align-items:center;justify-content:center;font-size:26px">${s.emoji}</div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:700;color:#fff;line-height:1.25;margin-bottom:4px">${s.title}</div>
+          <div style="font-size:12.5px;color:rgba(255,255,255,0.5);line-height:1.5">${s.body}</div>
         </div>
       </div>
-      <button onclick="nextTourStep()" style="width:100%;padding:15px;border-radius:16px;border:none;background:${accent};color:#000;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:0.3px">${s.btn}</button>`;
+      <button onclick="nextTourStep()" style="width:100%;padding:13px;border-radius:14px;border:none;
+        background:${accent};color:#000;font-weight:800;font-size:14px;cursor:pointer;letter-spacing:0.2px">${s.btn}</button>`;
   }
 
   window.nextTourStep = function() {
