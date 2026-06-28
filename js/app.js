@@ -1165,10 +1165,18 @@ function renderKnockoutList(rounds, glass, accent) {
 
 // ── Knockout Bracket View ─────────────────────────────────────────────────────
 function renderKnockoutBracket(rounds, accent) {
+  const SLOT = 68;   // px per R32 slot
+  const CARD = 56;   // match card height (includes date row)
+  const N    = 8;    // R32 matches per side
+  const H    = N * SLOT; // total column height = 544px
+
   const code = (n) => (typeof getCountryCode === 'function') ? getCountryCode(n) : 'un';
   const flag = (name) => name
-    ? `<img src="https://flagcdn.com/16x12/${code(name)}.png" style="border-radius:1px;flex-shrink:0;width:16px" onerror="this.style.display='none'">`
+    ? `<img src="https://flagcdn.com/16x12/${code(name)}.png" style="border-radius:1px;flex-shrink:0;width:16px;height:12px" onerror="this.style.display='none'">`
     : `<span style="width:16px;display:inline-block"></span>`;
+  const istFmt = new Intl.DateTimeFormat('en-IN', {
+    timeZone:'Asia/Kolkata', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', hour12:false,
+  });
 
   const r32 = rounds['round-of-32'] || [];
   const r16 = rounds['round-of-16'] || [];
@@ -1177,69 +1185,119 @@ function renderKnockoutBracket(rounds, accent) {
   const fin = (rounds['final'] || [])[0] || null;
   const trd = (rounds['3rd-place-match'] || [])[0] || null;
 
-  const matchCard = (m) => {
-    if (!m) return `<div style="height:52px;border-radius:6px;border:1px dashed rgba(255,255,255,0.08);background:rgba(255,255,255,0.02)"></div>`;
+  // Match card — absolutely positioned within its slot
+  const card = (m, slotH, isAccent) => {
+    const top = Math.round((slotH - CARD) / 2);
+    if (!m) return `<div style="position:absolute;top:${top}px;left:0;right:0;height:${CARD}px;border-radius:7px;border:1px dashed rgba(255,255,255,0.1);background:rgba(255,255,255,0.02)"></div>`;
     const ft = m.status === 'FT', live = m.status === 'LIVE';
-    const hs = (ft || live) && m.home.score >= 0 ? m.home.score : null;
-    const as = (ft || live) && m.away.score >= 0 ? m.away.score : null;
+    const hs = (ft||live) && m.home.score >= 0 ? m.home.score : null;
+    const as = (ft||live) && m.away.score >= 0 ? m.away.score : null;
     const hn = m.home.real ? (m.home.name.length > 9 ? m.home.name.slice(0,8)+'…' : m.home.name) : 'TBD';
     const an = m.away.real ? (m.away.name.length > 9 ? m.away.name.slice(0,8)+'…' : m.away.name) : 'TBD';
     const hw = ft && hs !== null && as !== null && hs > as;
     const aw = ft && hs !== null && as !== null && as > hs;
-    const bdr = live ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.15)';
-    const row = (name, isReal, score, win) => `
-      <div style="display:flex;align-items:center;gap:3px;padding:2px 4px;min-height:22px;${win ? `background:rgba(255,255,255,0.1);font-weight:700` : ''}">
-        ${flag(isReal ? name : null)}
-        <span style="flex:1;font-size:0.58rem;color:rgba(255,255,255,${isReal ? '0.9' : '0.35'});overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${name}</span>
-        ${score !== null ? `<span style="font-size:0.62rem;font-weight:800;color:${live ? '#4ade80' : '#fff'};margin-left:2px">${score}</span>` : ''}
+    const bdr = live ? 'rgba(74,222,128,0.55)' : isAccent ? accent + '99' : 'rgba(255,255,255,0.18)';
+    const glow = isAccent ? `box-shadow:0 0 14px ${accent}33;` : '';
+    const dateStr = m.date ? istFmt.format(new Date(m.date)) + ' IST' : '';
+    const row = (name, real, sc, win) => `
+      <div style="display:flex;align-items:center;gap:3px;padding:1px 5px;${win ? 'background:rgba(255,255,255,0.1);font-weight:700' : ''}">
+        ${flag(real ? name : null)}
+        <span style="flex:1;font-size:0.56rem;color:rgba(255,255,255,${real?'0.9':'0.32'});overflow:hidden;white-space:nowrap">${name}</span>
+        ${sc !== null ? `<span style="font-size:0.6rem;font-weight:800;color:${live?'#4ade80':'#fff'}">${sc}</span>` : ''}
       </div>`;
-    return `<div style="height:52px;border-radius:6px;border:1px solid ${bdr};background:rgba(255,255,255,0.07);overflow:hidden;display:flex;flex-direction:column;justify-content:space-around">
-      ${row(hn, m.home.real, hs, hw)}
-      <div style="height:1px;background:rgba(255,255,255,0.07)"></div>
-      ${row(an, m.away.real, as, aw)}
-    </div>`;
-  };
-
-  // A column renders N matches evenly distributed across the full bracket height
-  const col = (matches, totalSlots, label, isAccent) => {
-    const padded = [...matches];
-    while (padded.length < totalSlots) padded.push(null);
     return `
-      <div style="flex-shrink:0;width:92px;display:flex;flex-direction:column">
-        <div style="font-size:0.48rem;font-weight:800;letter-spacing:0.04em;text-align:center;padding:2px 0;color:${isAccent ? accent : 'rgba(255,255,255,0.35)'}">${label}</div>
-        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:2px">
-          ${padded.map(m => matchCard(m)).join('')}
+      <div style="position:absolute;top:${top}px;left:0;right:0;height:${CARD}px;border-radius:7px;border:1px solid ${bdr};background:rgba(255,255,255,0.08);overflow:hidden;${glow}display:flex;flex-direction:column">
+        <div style="font-size:0.42rem;text-align:center;padding:1px 2px;color:rgba(255,255,255,0.3);background:rgba(0,0,0,0.15);white-space:nowrap;overflow:hidden">${dateStr}</div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-around">
+          ${row(hn, m.home.real, hs, hw)}
+          <div style="height:1px;background:rgba(255,255,255,0.07)"></div>
+          ${row(an, m.away.real, as, aw)}
         </div>
       </div>`;
   };
 
-  // Connecting arrow between columns
-  const arrow = `<div style="flex-shrink:0;width:8px;display:flex;align-items:center;justify-content:center">
-    <div style="width:100%;height:1px;background:rgba(255,255,255,0.1)"></div>
-  </div>`;
+  // A round column: slotsPerMatch × SLOT tall per match, absolute-positioned
+  const roundCol = (matches, slotsPerMatch, label, isAccent) => {
+    const count = N / slotsPerMatch;
+    const items = Array.from({length: count}, (_, i) => {
+      const slotH = slotsPerMatch * SLOT;
+      return `<div style="position:absolute;top:${i * slotH}px;left:0;right:0;height:${slotH}px">${card(matches[i] || null, slotH, isAccent)}</div>`;
+    }).join('');
+    return `
+      <div style="flex-shrink:0;width:88px;display:flex;flex-direction:column">
+        <div style="font-size:0.46rem;font-weight:800;letter-spacing:0.05em;text-align:center;padding:2px 0;color:${isAccent ? accent : 'rgba(255,255,255,0.38)'}">${label}</div>
+        <div style="position:relative;height:${H}px">${items}</div>
+      </div>`;
+  };
 
-  const HEIGHT = 544;
+  // Connector column — draws bracket arms between rounds
+  // Each arm covers 2 × slotsPerMatch slots and joins two matches into one
+  // side='right' → arm opens right (left half); side='left' → opens left (right half)
+  const connCol = (slotsPerMatch, side) => {
+    const armH = slotsPerMatch * 2 * SLOT;
+    const numArms = H / armH;
+    const br = side === 'right' ? 'border-right' : 'border-left';
+    const LINE = '1px solid rgba(255,255,255,0.2)';
+    const arms = Array.from({length: numArms}, (_, i) => `
+      <div style="position:absolute;top:${i * armH}px;left:0;right:0;height:${armH}px;display:flex;flex-direction:column">
+        <div style="flex:1;${br}:${LINE};border-bottom:${LINE}"></div>
+        <div style="flex:1;${br}:${LINE};border-top:${LINE}"></div>
+      </div>`).join('');
+    return `
+      <div style="flex-shrink:0;width:16px;display:flex;flex-direction:column">
+        <div style="font-size:0.46rem;padding:2px 0;color:transparent">·</div>
+        <div style="position:relative;height:${H}px">${arms}</div>
+      </div>`;
+  };
+
+  const thirdHTML = trd ? (() => {
+    const ft=trd.status==='FT', live=trd.status==='LIVE';
+    const hs=(ft||live)&&trd.home.score>=0?trd.home.score:null;
+    const as=(ft||live)&&trd.away.score>=0?trd.away.score:null;
+    const hw=ft&&hs>as, aw=ft&&as>hs;
+    const hn=trd.home.real?(trd.home.name.length>9?trd.home.name.slice(0,8)+'…':trd.home.name):'TBD';
+    const an=trd.away.real?(trd.away.name.length>9?trd.away.name.slice(0,8)+'…':trd.away.name):'TBD';
+    const dateStr=trd.date?istFmt.format(new Date(trd.date))+' IST':'';
+    const row=(name,real,sc,win)=>`<div style="display:flex;align-items:center;gap:3px;padding:2px 5px;${win?'background:rgba(255,255,255,0.1)':''}">
+      ${flag(real?name:null)}<span style="flex:1;font-size:0.56rem;color:rgba(255,255,255,${real?'0.9':'0.3'});overflow:hidden;white-space:nowrap">${name}</span>
+      ${sc!==null?`<span style="font-size:0.6rem;font-weight:800;color:#fff">${sc}</span>`:''}
+    </div>`;
+    return `<div style="margin-top:0.75rem;text-align:center">
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.38);margin-bottom:4px">🥉 Third Place · ${dateStr}</div>
+      <div style="max-width:200px;margin:0 auto;border-radius:7px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.07);overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:1px;background:rgba(255,255,255,0.07);margin-top:${CARD*0.4}px"></div>
+        ${row(hn,trd.home.real,hs,hw)}
+        <div style="height:1px;background:rgba(255,255,255,0.07)"></div>
+        ${row(an,trd.away.real,as,aw)}
+      </div>
+    </div>`;
+  })() : '';
+
+  // Assemble all columns — left half, final, right half
+  const MIN_W = 88 * 9 + 16 * 8; // 792 + 128 = 920px
   const cols = [
-    col(r32.slice(0,8),  8, 'ROUND OF 32'),  arrow,
-    col(r16.slice(0,4),  8, 'ROUND OF 16'),  arrow,
-    col(qf.slice(0,2),   8, 'QF'),            arrow,
-    col(sf.slice(0,1),   8, 'SEMI'),          arrow,
-    col(fin ? [fin] : [],8, '🏆 FINAL', true), arrow,
-    col(sf.slice(1,2),   8, 'SEMI'),          arrow,
-    col(qf.slice(2,4),   8, 'QF'),            arrow,
-    col(r16.slice(4,8),  8, 'ROUND OF 16'),  arrow,
-    col(r32.slice(8),    8, 'ROUND OF 32'),
+    roundCol(r32.slice(0,8),  1, 'ROUND OF 32'),
+    connCol(1, 'right'),
+    roundCol(r16.slice(0,4),  2, 'ROUND OF 16'),
+    connCol(2, 'right'),
+    roundCol(qf.slice(0,2),   4, 'QUARTER-FINAL'),
+    connCol(4, 'right'),
+    roundCol(sf.slice(0,1),   8, 'SEMI-FINAL'),
+    connCol(8, 'right'),
+    roundCol(fin ? [fin] : [], 8, '🏆 FINAL', true),
+    connCol(8, 'left'),
+    roundCol(sf.slice(1,2),   8, 'SEMI-FINAL'),
+    connCol(4, 'left'),
+    roundCol(qf.slice(2,4),   4, 'QUARTER-FINAL'),
+    connCol(2, 'left'),
+    roundCol(r16.slice(4,8),  2, 'ROUND OF 16'),
+    connCol(1, 'left'),
+    roundCol(r32.slice(8),    1, 'ROUND OF 32'),
   ].join('');
 
-  const thirdHTML = trd ? `
-    <div style="text-align:center;margin-top:0.75rem">
-      <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-bottom:4px">🥉 Third Place Play-off</div>
-      <div style="max-width:92px;margin:0 auto">${matchCard(trd)}</div>
-    </div>` : '';
-
   return `
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px">
-      <div style="display:flex;height:${HEIGHT}px;min-width:900px">${cols}</div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin:0 -0.1rem">
+      <div style="display:flex;min-width:${MIN_W}px">${cols}</div>
     </div>
     ${thirdHTML}`;
 }
