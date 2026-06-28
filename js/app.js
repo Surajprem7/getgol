@@ -226,9 +226,10 @@ function startTour() {
   const steps = [
     {
       getEl: () => document.getElementById('nav-knockout'),
-      title: '🏆 New feature added!',
-      body: 'We just added a visual Bracket view to the Knockout tab. Let us show you.',
-      btn: 'Show me →',
+      emoji: '🏆',
+      title: 'Bracket view is here!',
+      body: 'See the full tournament tree — tap to explore.',
+      btn: 'Show me',
       after: () => showTab('knockout'),
     },
     {
@@ -237,18 +238,30 @@ function startTour() {
         for (const b of btns) { if (b.textContent.includes('Bracket')) return b; }
         return null;
       },
-      title: 'Switch to Bracket view',
-      body: 'Tap this button to see the full tournament tree with live scores and connecting lines.',
+      emoji: '👆',
+      title: 'Tap Bracket',
+      body: 'Switch between List and visual Bracket view anytime.',
       btn: 'Got it!',
       after: null,
     },
   ];
 
-  function spotlight(el) {
+  // Inject pulse keyframe once
+  if (!document.getElementById('gol-tour-style')) {
+    const st = document.createElement('style');
+    st.id = 'gol-tour-style';
+    st.textContent = '@keyframes tourPulse{0%,100%{box-shadow:0 0 0 4px rgba(240,165,0,0.5),0 0 0 8px rgba(240,165,0,0.15)}50%{box-shadow:0 0 0 6px rgba(240,165,0,0.7),0 0 0 14px rgba(240,165,0,0.08)}}@keyframes tourSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}';
+    document.head.appendChild(st);
+  }
+
+  function render(el, s, stepIdx) {
     const r = el.getBoundingClientRect();
-    const p = 10;
+    const p = 8;
     const x = r.left - p, y = r.top - p, w = r.width + p*2, h = r.height + p*2;
-    const bg = 'rgba(0,0,0,0.82)';
+    const bg = 'rgba(0,0,0,0.72)';
+    const total = steps.length;
+
+    // Overlay with hole
     let ov = document.getElementById('gol-tour-ov');
     if (!ov) { ov = document.createElement('div'); ov.id = 'gol-tour-ov'; document.body.appendChild(ov); }
     ov.style.cssText = 'position:fixed;inset:0;z-index:9800;pointer-events:none';
@@ -258,38 +271,35 @@ function startTour() {
       <div style="position:absolute;left:${x+w}px;top:${y}px;right:0;height:${h}px;background:${bg}"></div>
       <div style="position:absolute;left:0;top:${y+h}px;right:0;bottom:0;background:${bg}"></div>
       <div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;
-        border-radius:12px;border:2px solid #f0a500;
-        box-shadow:0 0 0 3px rgba(240,165,0,0.25),0 0 24px rgba(240,165,0,0.35)"></div>`;
-  }
+        border-radius:12px;animation:tourPulse 1.6s ease-in-out infinite;
+        border:2px solid #f0a500"></div>`;
 
-  function tooltip(el, s, stepNum) {
-    const r = el.getBoundingClientRect();
-    const total = steps.length;
-    const spaceBelow = window.innerHeight - r.bottom;
-    const above = spaceBelow < 160;
+    // Bottom card — always anchored to bottom, never jumps
     let tip = document.getElementById('gol-tour-tip');
     if (!tip) { tip = document.createElement('div'); tip.id = 'gol-tour-tip'; document.body.appendChild(tip); }
-    const tipW = Math.min(280, window.innerWidth - 32);
-    let left = r.left + r.width/2 - tipW/2;
-    left = Math.max(16, Math.min(left, window.innerWidth - tipW - 16));
-    const top = above ? r.top - 10 : r.bottom + 14;
-    const arrowDir = above ? 'bottom:-7px;border-top:7px solid #f0a500;border-bottom:none' : 'top:-7px;border-bottom:7px solid #f0a500;border-top:none';
-    const arrowLeft = (r.left + r.width/2) - left - 8;
-    tip.style.cssText = `position:fixed;z-index:9900;width:${tipW}px;
-      left:${left}px;${above ? 'top:auto;bottom:'+(window.innerHeight-r.top+14) : 'top:'+top}px;
-      background:#1a1a2e;border:1.5px solid #f0a500;border-radius:14px;
-      box-shadow:0 8px 32px rgba(0,0,0,0.6);overflow:hidden;pointer-events:auto`;
+    const dots = Array.from({length: total}, (_,i) =>
+      `<div style="width:${i===stepIdx?20:6}px;height:6px;border-radius:3px;background:${i===stepIdx?'#f0a500':'rgba(255,255,255,0.2)'};transition:all 0.3s"></div>`
+    ).join('');
+    tip.style.cssText = `position:fixed;z-index:9900;left:0;right:0;bottom:0;
+      background:linear-gradient(180deg,#12122a,#0d0d1e);
+      border-top:1.5px solid rgba(240,165,0,0.35);
+      border-radius:22px 22px 0 0;
+      padding:20px 20px 32px;
+      pointer-events:auto;
+      animation:tourSlideUp 0.35s cubic-bezier(0.34,1.4,0.64,1) both`;
     tip.innerHTML = `
-      <div style="padding:14px 14px 12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:11px;font-weight:700;color:#f0a500;letter-spacing:0.08em">${stepNum} OF ${total}</span>
-          <button onclick="endTour()" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>
-        </div>
-        <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">${s.title}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:12px">${s.body}</div>
-        <button onclick="nextTourStep()" style="width:100%;padding:9px;border-radius:20px;border:none;background:#f0a500;color:#000;font-weight:800;font-size:13px;cursor:pointer">${s.btn}</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;gap:6px;align-items:center">${dots}</div>
+        <button onclick="endTour()" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:28px;height:28px;color:rgba(255,255,255,0.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
       </div>
-      <div style="position:absolute;left:${Math.max(8,Math.min(arrowLeft,tipW-24))}px;${arrowDir};width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent"></div>`;
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div style="width:44px;height:44px;border-radius:14px;background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${s.emoji}</div>
+        <div>
+          <div style="font-size:17px;font-weight:700;color:#fff;line-height:1.2">${s.title}</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:3px;line-height:1.4">${s.body}</div>
+        </div>
+      </div>
+      <button onclick="nextTourStep()" style="width:100%;margin-top:14px;padding:14px;border-radius:16px;border:none;background:#f0a500;color:#000;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:0.3px">${s.btn}</button>`;
   }
 
   window.nextTourStep = function() {
@@ -304,21 +314,19 @@ function startTour() {
         else endTour();
         return;
       }
-      spotlight(el);
-      tooltip(el, steps[step], step + 1);
+      render(el, steps[step], step);
     };
     setTimeout(() => tryShow(0), 400);
   };
 
   window.endTour = function() {
-    ['gol-tour-ov','gol-tour-tip'].forEach(id => { const e = document.getElementById(id); if (e) e.remove(); });
+    ['gol-tour-ov','gol-tour-tip','gol-tour-style'].forEach(id => { const e = document.getElementById(id); if (e) e.remove(); });
     localStorage.setItem(TOUR_KEY, '1');
   };
 
   const el = steps[0].getEl();
   if (!el) return;
-  spotlight(el);
-  tooltip(el, steps[0], 1);
+  render(el, steps[0], 0);
 }
 
 function jumpToDate(date) {
