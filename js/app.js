@@ -210,8 +210,12 @@ function showApp(startTab) {
   `;
   showTab(startTab || 'matches');
   if (typeof updateNotifBell === 'function') updateNotifBell();
-  // Only start tour if team picker is not showing (returning user or already picked)
-  if (!localStorage.getItem('gol-tour-v1') && APP.team) setTimeout(startTour, 800);
+  // Start tour only if team picker is not in DOM — else closeTeamPicker() triggers it
+  if (!localStorage.getItem('gol-tour-v1')) {
+    setTimeout(() => {
+      if (!document.getElementById('team-picker-overlay')) startTour();
+    }, 900);
+  }
 }
 
 // ── Spotlight guided tour ─────────────────────────────────────────────────────
