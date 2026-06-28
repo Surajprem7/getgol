@@ -31,12 +31,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.register('/sw.js').then(reg => {
-    // Check for a new SW version on every app open (not just navigation).
     reg.update();
   });
-  // When a new SW takes control, reload automatically so all users get the update.
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     window.location.reload();
+  });
+  // SW posts UPDATE_AVAILABLE on activate — catches old clients that
+  // didn't yet have the controllerchange listener
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'UPDATE_AVAILABLE') window.location.reload();
   });
 }
 
