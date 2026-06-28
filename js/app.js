@@ -408,15 +408,19 @@ function startTour() {
 }
 
 function jumpToDate(date) {
-  const header = document.querySelector(`[data-date-header="${date}"]`);
-  if (header) header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const el = document.querySelector(`[data-date-header="${date}"]`);
+  if (!el) return;
+  const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 60;
+  const top = el.getBoundingClientRect().top + window.scrollY - headerH - 8;
+  window.scrollTo({ top, behavior: 'smooth' });
 }
 
 // Highlight the timeline node whose group is most visible in the viewport
 function updateTimelineActive() {
   const headers = document.querySelectorAll('[data-date-header]');
   let activeDate = null;
-  const mid = window.innerHeight * 0.4;
+  const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
+  const mid = headerH + (window.innerHeight - headerH) * 0.35;
   headers.forEach(h => {
     const rect = h.getBoundingClientRect();
     if (rect.top <= mid) activeDate = h.dataset.dateHeader;
@@ -688,7 +692,7 @@ function showTab(tab) {
         </div>
 
         <!-- Ruler timeline — sticky -->
-        <div id="match-timeline" style="width:48px;flex-shrink:0;position:sticky;top:0.5rem;align-self:flex-start;height:calc(100vh - 5rem);overflow:hidden;animation:tlFadeIn 0.4s ease">
+        <div id="match-timeline" style="width:48px;flex-shrink:0;position:sticky;top:80px;align-self:flex-start;height:calc(100vh - 9.5rem);overflow:hidden;animation:tlFadeIn 0.4s ease">
           <div style="position:relative;width:100%;height:100%">
 
             <!-- Dim background line (full height) -->
