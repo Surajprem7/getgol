@@ -230,6 +230,9 @@ function startTour() {
       title: 'Bracket view is here!',
       body: 'See the full tournament tree — tap to explore.',
       btn: 'Show me',
+      color: '#f0a500',
+      pulse: 'tourPulseGold',
+      btnText: '#000',
       after: () => showTab('knockout'),
     },
     {
@@ -242,16 +245,28 @@ function startTour() {
       title: 'Tap Bracket',
       body: 'Switch between List and visual Bracket view anytime.',
       btn: 'Got it!',
+      color: '#4cc9f0',
+      pulse: 'tourPulseBlue',
+      btnText: '#000',
       after: null,
     },
   ];
 
-  // Inject pulse keyframe once
+  // Inject keyframes once (one per step color)
   if (!document.getElementById('gol-tour-style')) {
     const st = document.createElement('style');
     st.id = 'gol-tour-style';
-    st.textContent = '@keyframes tourPulse{0%,100%{box-shadow:0 0 0 4px rgba(240,165,0,0.5),0 0 0 8px rgba(240,165,0,0.15)}50%{box-shadow:0 0 0 6px rgba(240,165,0,0.7),0 0 0 14px rgba(240,165,0,0.08)}}@keyframes tourSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}';
+    st.textContent = [
+      '@keyframes tourPulseGold{0%,100%{box-shadow:0 0 0 4px rgba(240,165,0,0.55),0 0 0 9px rgba(240,165,0,0.15)}50%{box-shadow:0 0 0 7px rgba(240,165,0,0.75),0 0 0 16px rgba(240,165,0,0.07)}}',
+      '@keyframes tourPulseBlue{0%,100%{box-shadow:0 0 0 4px rgba(76,201,240,0.55),0 0 0 9px rgba(76,201,240,0.15)}50%{box-shadow:0 0 0 7px rgba(76,201,240,0.75),0 0 0 16px rgba(76,201,240,0.07)}}',
+      '@keyframes tourSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}',
+    ].join('');
     document.head.appendChild(st);
+  }
+
+  function hexRgba(hex, a) {
+    const rv = parseInt(hex.slice(1,3),16), gv = parseInt(hex.slice(3,5),16), bv = parseInt(hex.slice(5,7),16);
+    return `rgba(${rv},${gv},${bv},${a})`;
   }
 
   function render(el, s, stepIdx) {
@@ -260,6 +275,7 @@ function startTour() {
     const x = r.left - p, y = r.top - p, w = r.width + p*2, h = r.height + p*2;
     const bg = 'rgba(0,0,0,0.72)';
     const total = steps.length;
+    const c = s.color;
 
     // Overlay with hole
     let ov = document.getElementById('gol-tour-ov');
@@ -271,42 +287,44 @@ function startTour() {
       <div style="position:absolute;left:${x+w}px;top:${y}px;right:0;height:${h}px;background:${bg}"></div>
       <div style="position:absolute;left:0;top:${y+h}px;right:0;bottom:0;background:${bg}"></div>
       <div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;
-        border-radius:12px;animation:tourPulse 1.6s ease-in-out infinite;
-        border:2px solid #f0a500"></div>`;
+        border-radius:12px;animation:${s.pulse} 1.6s ease-in-out infinite;
+        border:2px solid ${c}"></div>`;
 
-    // Bottom card — always anchored to bottom, never jumps
+    // Floating card — per-step color theme
     let tip = document.getElementById('gol-tour-tip');
     if (!tip) { tip = document.createElement('div'); tip.id = 'gol-tour-tip'; document.body.appendChild(tip); }
     const dots = Array.from({length: total}, (_,i) =>
-      `<div style="width:${i===stepIdx?20:6}px;height:6px;border-radius:3px;background:${i===stepIdx?'#f0a500':'rgba(255,255,255,0.2)'};transition:all 0.3s"></div>`
+      `<div style="width:${i===stepIdx?22:6}px;height:6px;border-radius:3px;background:${i===stepIdx?c:'rgba(255,255,255,0.18)'};transition:all 0.35s;box-shadow:${i===stepIdx?`0 0 8px ${hexRgba(c,0.7)}`:'none'}"></div>`
     ).join('');
-    const accent = APP.teamColor || '#f0a500';
     tip.style.cssText = `position:fixed;z-index:9900;
       left:16px;right:16px;bottom:80px;
-      background:rgba(22,22,45,0.82);
+      background:linear-gradient(145deg,${hexRgba(c,0.14)} 0%,rgba(10,10,28,0.96) 55%);
       backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
-      border:1px solid rgba(255,255,255,0.13);
+      border:1px solid ${hexRgba(c,0.35)};
       border-radius:24px;
-      padding:18px 18px 18px;
+      padding:18px;
       pointer-events:auto;
-      box-shadow:0 24px 64px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.04);
+      box-shadow:0 0 0 1px ${hexRgba(c,0.08)},0 8px 40px rgba(0,0,0,0.6),0 0 60px ${hexRgba(c,0.1)};
       animation:tourSlideUp 0.4s cubic-bezier(0.34,1.3,0.64,1) both`;
     tip.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <div style="display:flex;gap:5px;align-items:center">${dots}</div>
-        <button onclick="endTour()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;color:rgba(255,255,255,0.35);font-size:13px;cursor:pointer;line-height:1">✕</button>
+        <div style="display:flex;gap:6px;align-items:center">${dots}</div>
+        <button onclick="endTour()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;line-height:1">✕</button>
       </div>
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
-        <div style="width:52px;height:52px;flex-shrink:0;border-radius:18px;
-          background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);
-          display:flex;align-items:center;justify-content:center;font-size:26px">${s.emoji}</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <div style="width:54px;height:54px;flex-shrink:0;border-radius:18px;
+          background:${hexRgba(c,0.15)};border:1.5px solid ${hexRgba(c,0.45)};
+          display:flex;align-items:center;justify-content:center;font-size:28px;
+          box-shadow:0 0 20px ${hexRgba(c,0.25)}">${s.emoji}</div>
         <div style="flex:1">
-          <div style="font-size:16px;font-weight:700;color:#fff;line-height:1.25;margin-bottom:4px">${s.title}</div>
-          <div style="font-size:12.5px;color:rgba(255,255,255,0.5);line-height:1.5">${s.body}</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;line-height:1.25;margin-bottom:5px">${s.title}</div>
+          <div style="font-size:12.5px;color:rgba(255,255,255,0.55);line-height:1.55">${s.body}</div>
         </div>
       </div>
       <button onclick="nextTourStep()" style="width:100%;padding:13px;border-radius:14px;border:none;
-        background:${accent};color:#000;font-weight:800;font-size:14px;cursor:pointer;letter-spacing:0.2px">${s.btn}</button>`;
+        background:linear-gradient(90deg,${c},${hexRgba(c,0.8)});
+        color:${s.btnText};font-weight:800;font-size:14px;cursor:pointer;
+        letter-spacing:0.3px;box-shadow:0 4px 20px ${hexRgba(c,0.45)}">${s.btn}</button>`;
   }
 
   window.nextTourStep = function() {
