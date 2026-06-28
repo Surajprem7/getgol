@@ -1,3 +1,19 @@
+const TEAM_COLORS = {
+  'Mexico':'#006847','South Africa':'#007A4D','South Korea':'#003478','Czechia':'#D7141A',
+  'Canada':'#FF0000','Bosnia':'#002395','Qatar':'#8D1B3D','Switzerland':'#FF0000',
+  'Brazil':'#009C3B','Morocco':'#C1272D','Haiti':'#00209F','Scotland':'#003F87',
+  'USA':'#B22234','Paraguay':'#D52B1E','Australia':'#FFCD00','Turkey':'#E30A17',
+  'Curacao':'#002B7F','Ivory Coast':'#F77F00','Ecuador':'#FFD100','Germany':'#FFD700',
+  'Netherlands':'#FF6600','Japan':'#BC002D','Tunisia':'#E70013','Sweden':'#006AA7',
+  'Belgium':'#EF3340','Egypt':'#CE1126','Iran':'#239F40','New Zealand':'#00247D',
+  'Spain':'#AA151B','Cape Verde':'#003893','Saudi Arabia':'#006C35','Uruguay':'#5EB6E4',
+  'France':'#002395','Senegal':'#00853F','Norway':'#EF2B2D','Iraq':'#007A3D',
+  'Argentina':'#74ACDF','Algeria':'#006233','Austria':'#ED2939','Jordan':'#007A3D',
+  'Portugal':'#006600','Uzbekistan':'#1EB53A','Colombia':'#FCD116','DR Congo':'#007FFF',
+  'England':'#CF111B','Croatia':'#FF0000','Ghana':'#006B3F','Panama':'#005293',
+};
+function getTeamColor(name) { return TEAM_COLORS[name] || '#f0a500'; }
+
 function getCountryCode(team) {
   const codes = {
     'Mexico':'mx','South Africa':'za','South Korea':'kr','Czechia':'cz',
@@ -175,17 +191,25 @@ function showApp(startTab) {
     : `<button onclick="showTeamPickerModal()" style="background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.4);border-radius:20px;color:#f0a500;font-size:0.8rem;font-weight:600;padding:0.4rem 0.9rem;cursor:pointer">⚽ Pick your team</button>`;
 
   document.getElementById('app').innerHTML = `
+    <style>
+      @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+      @keyframes headerShrink { from{padding:1rem 0} to{padding:0.4rem 0} }
+      #gol-header { transition:padding 0.3s,border-color 0.3s; }
+      #gol-header.scrolled { padding:0.35rem 0; border-bottom-color:rgba(255,255,255,0.06); }
+      #gol-header.scrolled .gol-logo { font-size:1.3rem; }
+      #gol-header.scrolled .gol-tagline { display:none; }
+    </style>
     <div style="min-height:100vh;background:linear-gradient(135deg,#050510 0%,#100620 40%,#050d18 100%);position:relative">
 
       <!-- Background glow effects -->
       <div style="position:fixed;top:-20%;left:-20%;width:60%;height:60%;background:radial-gradient(circle,${accentColor}10 0%,transparent 70%);pointer-events:none;z-index:0"></div>
       <div style="position:fixed;bottom:-20%;right:-20%;width:60%;height:60%;background:radial-gradient(circle,#4cc9f010 0%,transparent 70%);pointer-events:none;z-index:0"></div>
 
-      <div style="max-width:600px;margin:0 auto;padding:1rem;position:relative;z-index:1">
-        <header style="display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:0.5rem;backdrop-filter:blur(10px)">
+      <div style="max-width:600px;margin:0 auto;padding:1rem 1rem 5rem;position:relative;z-index:1">
+        <header id="gol-header" style="display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:0.5rem;backdrop-filter:blur(10px);position:sticky;top:0;z-index:200;background:rgba(5,5,16,0.85)">
           <div>
-            <span style="font-size:1.8rem;font-weight:900;color:${accentColor};text-shadow:0 0 20px ${accentColor}88">Gol!</span>
-            <span style="color:#f0a500;font-size:0.7rem;font-style:italic;margin-left:0.4rem;opacity:0.8">¡Pasion por el Gol!</span>
+            <span class="gol-logo" style="font-size:1.8rem;font-weight:900;color:${accentColor};text-shadow:0 0 20px ${accentColor}88;transition:font-size 0.3s">Gol!</span>
+            <span class="gol-tagline" style="color:#f0a500;font-size:0.7rem;font-style:italic;margin-left:0.4rem;opacity:0.8;transition:opacity 0.3s">¡Pasion por el Gol!</span>
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem">
             <button id="notif-bell" onclick="toggleNotifications()" title="Tap to enable match alerts"
@@ -193,21 +217,50 @@ function showApp(startTab) {
             ${headerRight}
           </div>
         </header>
-        
-        <nav style="display:flex;gap:0.5rem;margin:1rem 0;overflow-x:auto;background:rgba(255,255,255,0.05);padding:0.4rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08)">
-          <button onclick="showTab('matches')" id="nav-matches" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Matches</button>
-          <button onclick="showTab('groups')" id="nav-groups" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Groups</button>
-          <button onclick="showTab('knockout')" id="nav-knockout" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Knockout</button>
-          <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Rankings</button>
-          <button onclick="showTab('watch')" id="nav-watch" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Watch</button>
-          <button onclick="showTab('stats')" id="nav-stats" style="flex:1;padding:0.5rem 1rem;border-radius:16px;border:none;background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;transition:all 0.3s">Stats</button>
-        </nav>
 
         <div id="notif-prompt"></div>
         <div id="tab-content"></div>
       </div>
+
+      <!-- Bottom navigation bar -->
+      <nav id="gol-nav" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;z-index:400;
+        background:rgba(8,8,24,0.94);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+        border-top:1px solid rgba(255,255,255,0.09);
+        display:flex;justify-content:space-around;padding:0.3rem 0 calc(0.3rem + env(safe-area-inset-bottom,0px))">
+        <button onclick="showTab('matches')" id="nav-matches" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:1.1rem">⚽</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Matches</span>
+        </button>
+        <button onclick="showTab('groups')" id="nav-groups" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:1.1rem">📊</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Groups</span>
+        </button>
+        <button onclick="showTab('knockout')" id="nav-knockout" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:1.1rem">🏆</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Knockout</span>
+        </button>
+        <button onclick="showTab('rankings')" id="nav-rankings" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:1.1rem">🎖️</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Rankings</span>
+        </button>
+        <button onclick="showTab('watch')" id="nav-watch" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:1.1rem">📺</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Watch</span>
+        </button>
+        <button onclick="showTab('stats')" id="nav-stats" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:transparent;border:none;cursor:pointer;padding:0.4rem 0.15rem;border-radius:10px;transition:all 0.25s;color:rgba(255,255,255,0.45)">
+          <span style="font-size:1.1rem">📈</span><span style="font-size:0.58rem;font-weight:600;letter-spacing:0.2px">Stats</span>
+        </button>
+      </nav>
     </div>
   `;
+  // Header scroll-shrink — direct JS because inline styles beat CSS class rules
+  const _applyHeaderScroll = () => {
+    const scrolled = window.scrollY > 40;
+    const hdr = document.getElementById('gol-header');
+    const logo = hdr && hdr.querySelector('.gol-logo');
+    const tag = hdr && hdr.querySelector('.gol-tagline');
+    if (hdr) hdr.style.padding = scrolled ? '0.3rem 0' : '1rem 0';
+    if (logo) logo.style.fontSize = scrolled ? '1.2rem' : '1.8rem';
+    if (tag)  { tag.style.opacity = scrolled ? '0' : '0.8'; tag.style.maxWidth = scrolled ? '0' : ''; tag.style.overflow = scrolled ? 'hidden' : ''; }
+  };
+  window.removeEventListener('scroll', window._headerScrollFn);
+  window._headerScrollFn = _applyHeaderScroll;
+  window.addEventListener('scroll', window._headerScrollFn, { passive: true });
   showTab(startTab || 'matches');
   if (typeof updateNotifBell === 'function') updateNotifBell();
   // Start tour only if team picker is not in DOM — else closeTeamPicker() triggers it
@@ -411,9 +464,12 @@ function renderVS(matchId) {
   const sc = window.LIVE && window.LIVE.score(matchId);
   if (sc && (sc.status === 'FT' || sc.status === 'LIVE')) {
     const live = sc.status === 'LIVE';
-    return `${live ? `<div style="font-size:0.52rem;color:#4ade80;font-weight:700;letter-spacing:1px">● LIVE</div>` : ''}
+    return `${live ? `<div style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.5);border-radius:8px;padding:1px 6px;margin-bottom:3px">
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;animation:livePulse 1s ease-in-out infinite"></span>
+      <span style="font-size:0.55rem;color:#ef4444;font-weight:800;letter-spacing:0.8px">LIVE</span>
+    </div>` : ''}
       <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.1">${sc.home}–${sc.away}</div>
-      ${!live ? `<div style="font-size:0.58rem;color:rgba(255,255,255,0.3);margin-top:1px">FT</div>` : `<div style="font-size:0.58rem;color:#4ade80">${sc.clock||''}</div>`}`;
+      ${!live ? `<div style="font-size:0.58rem;color:rgba(255,255,255,0.3);margin-top:1px">FT</div>` : `<div style="font-size:0.58rem;color:#f87171;font-weight:600">${sc.clock||''}</div>`}`;
   }
   return `<div style="font-size:1rem;font-weight:900;color:rgba(255,255,255,0.2);letter-spacing:2px">VS</div>`;
 }
@@ -440,18 +496,17 @@ function showTab(tab) {
   }
   const content = document.getElementById('tab-content');
 
-  // Update nav buttons
+  // Update bottom nav active state
+  const accent = APP.teamColor || '#f0a500';
   ['matches','groups','knockout','rankings','watch','stats'].forEach(t => {
     const btn = document.getElementById('nav-'+t);
     if (!btn) return;
     if (t === tab) {
-      btn.style.background = APP.teamColor;
-      btn.style.color = '#000';
-      btn.style.fontWeight = '700';
+      btn.style.color = accent;
+      btn.style.background = accent + '18';
     } else {
+      btn.style.color = 'rgba(255,255,255,0.45)';
       btn.style.background = 'transparent';
-      btn.style.color = 'rgba(255,255,255,0.6)';
-      btn.style.fontWeight = '400';
     }
   });
 
@@ -467,8 +522,12 @@ function showTab(tab) {
 
     const renderMatch = (m) => {
       const isMyMatch = APP.teamName && (m.home === APP.teamName || m.away === APP.teamName);
+      const hc = getTeamColor(m.home);
+      const ac = getTeamColor(m.away);
       return `
       <div data-date="${m.date}" data-group="${m.group}" style="${glass};margin-bottom:0.75rem;overflow:hidden;position:relative;${isMyMatch ? 'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22' : ''}">
+       <!-- Team color stripe top -->
+       <div style="height:3px;background:linear-gradient(90deg,${hc} 0%,${hc} 50%,${ac} 50%,${ac} 100%);opacity:0.85"></div>
 
        <!-- Cute add-to-calendar chip (top-right, independent of the tap-to-open area) -->
        <button onclick="addToCalendar(${m.id});event.stopPropagation()" title="Add to your calendar" aria-label="Add to calendar"
@@ -624,6 +683,8 @@ function showTab(tab) {
               ${dayMatches.map(m => renderMatch(m)).join('')}
             `;
           }).join('')}
+          <!-- Knockout fixtures injected async below -->
+          <div id="ko-fixtures-section"></div>
         </div>
 
         <!-- Ruler timeline — sticky -->
@@ -705,6 +766,65 @@ function showTab(tab) {
     window.addEventListener('scroll', _tlScrollHandler, { passive: true });
     updateTimelineActive();
     if (typeof refreshMatchScores === 'function') refreshMatchScores();
+
+    // Async: load knockout fixtures and append below group stage
+    (async () => {
+      try {
+        const koData = window._koData || await fetchKnockout();
+        if (!koData) return;
+        window._koData = koData;
+        const section = document.getElementById('ko-fixtures-section');
+        if (!section) return;
+        const istFmt = new Intl.DateTimeFormat('en-IN', {
+          timeZone:'Asia/Kolkata', day:'numeric', month:'short',
+          hour:'2-digit', minute:'2-digit', hour12:false
+        });
+        const roundLabel = { 'round-of-32':'Round of 32','round-of-16':'Round of 16',
+          'quarterfinals':'Quarter-finals','semifinals':'Semi-finals',
+          '3rd-place-match':'Third Place','final':'⚽ THE FINAL' };
+        const roundOrder = ['round-of-32','round-of-16','quarterfinals','semifinals','3rd-place-match','final'];
+        let html = `<div style="display:flex;align-items:center;gap:0.5rem;margin:1.5rem 0 0.75rem">
+          <div style="font-size:0.78rem;font-weight:700;color:#a78bfa;white-space:nowrap">🏆 Knockout Stage</div>
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,#a78bfa44,transparent)"></div>
+        </div>`;
+        for (const round of roundOrder) {
+          const matches = koData[round];
+          if (!matches) continue;
+          html += `<div style="font-size:0.7rem;font-weight:700;color:rgba(167,139,250,0.7);text-transform:uppercase;letter-spacing:1px;margin:0.75rem 0 0.4rem">${roundLabel[round]||round}</div>`;
+          for (const ev of matches) {
+            const h = ev.home, a = ev.away;
+            const hName = h.name || '?', aName = a.name || '?';
+            const hc = getTeamColor(hName), ac2 = getTeamColor(aName);
+            const hReal = h.real, aReal = a.real;
+            const isLive = ev.status === 'LIVE', isFT = ev.status === 'FT';
+            const isMyKO = APP.teamName && (hName === APP.teamName || aName === APP.teamName);
+            const dateStr = ev.date ? istFmt.format(new Date(ev.date)) : '';
+            const scoreHTML = (isFT || isLive) && h.score >= 0
+              ? `<div style="font-size:1.1rem;font-weight:900;color:#fff">${h.score}–${a.score}</div>
+                 <div style="font-size:0.55rem;color:${isLive?'#ef4444':'rgba(255,255,255,0.3)'};">${isLive?'LIVE':isFT?'FT':''}</div>`
+              : `<div style="font-size:0.9rem;font-weight:900;color:rgba(255,255,255,0.25)">VS</div>`;
+            html += `<div style="${glass};margin-bottom:0.6rem;overflow:hidden;position:relative;${isMyKO?'border-color:'+accentColor+'66;box-shadow:0 0 20px '+accentColor+'22':'border-color:rgba(167,139,250,0.2)'}">
+              <div style="height:3px;background:linear-gradient(90deg,${hc} 0%,${hc} 50%,${ac2} 50%,${ac2} 100%);opacity:0.85"></div>
+              <div style="padding:0.6rem 0.9rem">
+                <div style="font-size:0.65rem;color:rgba(167,139,250,0.8);margin-bottom:0.5rem;font-weight:600">${dateStr}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+                  <div style="text-align:center;flex:1">
+                    ${hReal ? `<img src="https://flagcdn.com/32x24/${h.code}.png" style="border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.4)" onerror="this.style.display='none'">` : '<div style="font-size:1.5rem;opacity:0.4">🏴</div>'}
+                    <div style="font-size:0.78rem;color:${hName===APP.teamName?accentColor:'#fff'};font-weight:${hName===APP.teamName?'700':'500'};margin-top:0.3rem">${hName}</div>
+                  </div>
+                  <div style="text-align:center;min-width:48px">${scoreHTML}</div>
+                  <div style="text-align:center;flex:1">
+                    ${aReal ? `<img src="https://flagcdn.com/32x24/${a.code}.png" style="border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.4)" onerror="this.style.display='none'">` : '<div style="font-size:1.5rem;opacity:0.4">🏴</div>'}
+                    <div style="font-size:0.78rem;color:${aName===APP.teamName?accentColor:'#fff'};font-weight:${aName===APP.teamName?'700':'500'};margin-top:0.3rem">${aName}</div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          }
+        }
+        section.innerHTML = html;
+      } catch(e) { /* silently skip */ }
+    })();
 
   } else if (tab === 'groups') {
     buildStandingsTab(content, glass);
@@ -797,6 +917,7 @@ function showTab(tab) {
           <div style="flex:1;font-size:0.9rem;font-weight:${isUser ? '700' : '500'};color:${isUser ? accentColor : '#fff'}">
             ${r.name}${isUser ? ' ← You' : ''}
           </div>
+          ${r.points ? `<div style="font-size:0.72rem;font-weight:700;color:${isUser ? accentColor : 'rgba(255,255,255,0.3)'};min-width:44px;text-align:right">${Math.round(r.points)} pts</div>` : ''}
           ${!APP.teamName ? `<button onclick="selectTeam('${r.name}','${getTeamColor(r.name)}')" style="background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.35);border-radius:12px;color:#f0a500;font-size:0.7rem;padding:0.25rem 0.6rem;cursor:pointer;white-space:nowrap">Pick ⚽</button>` : ''}
         </div>
       `;
