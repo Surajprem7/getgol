@@ -288,6 +288,9 @@ function shortScoreHTML(matchId) {
 
 function showTab(tab) {
   window._activeTab = tab;
+  // Remove any floating hint from knockout tab
+  const oldHint = document.getElementById('ko-bracket-hint');
+  if (oldHint) oldHint.remove();
   if (tab !== 'matches' && _tlScrollHandler) {
     window.removeEventListener('scroll', _tlScrollHandler);
     _tlScrollHandler = null;
@@ -1338,6 +1341,7 @@ function renderKnockout(content, glass, rounds) {
   // Show one-time hint pointing to Bracket button
   if (window._koView === 'list' && !localStorage.getItem('gol-hint-bracket')) {
     setTimeout(() => {
+      if (window._activeTab !== 'knockout') return;
       const toggleRow = content.querySelector('div[style*="display:flex"][style*="gap:4px"]');
       if (!toggleRow) return;
       const bracketBtn = toggleRow.querySelectorAll('button')[1];
