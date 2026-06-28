@@ -201,6 +201,51 @@ function showApp(startTab) {
     </style>
     <div style="min-height:100vh;background:linear-gradient(135deg,#050510 0%,#100620 40%,#050d18 100%);position:relative">
 
+      <!-- Stadium pitch background -->
+      <div style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;opacity:0.22">
+        <svg viewBox="0 0 400 620" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
+          <!-- Pitch turf stripes (alternating dark/light green) -->
+          <rect width="400" height="620" fill="#071c07"/>
+          <rect x="0"   y="0" width="50" height="620" fill="#0a240a"/>
+          <rect x="100" y="0" width="50" height="620" fill="#0a240a"/>
+          <rect x="200" y="0" width="50" height="620" fill="#0a240a"/>
+          <rect x="300" y="0" width="50" height="620" fill="#0a240a"/>
+          <!-- All lines in bright grass-green -->
+          <!-- Outer boundary -->
+          <rect x="18" y="28" width="364" height="564" fill="none" stroke="#4caf50" stroke-width="2.5"/>
+          <!-- Centre line -->
+          <line x1="18" y1="310" x2="382" y2="310" stroke="#4caf50" stroke-width="2"/>
+          <!-- Centre circle -->
+          <circle cx="200" cy="310" r="65" fill="none" stroke="#4caf50" stroke-width="2"/>
+          <circle cx="200" cy="310" r="4" fill="#4caf50"/>
+          <!-- Top penalty area -->
+          <rect x="90" y="28" width="220" height="95" fill="none" stroke="#4caf50" stroke-width="2"/>
+          <!-- Top goal area -->
+          <rect x="143" y="28" width="114" height="36" fill="none" stroke="#4caf50" stroke-width="1.8"/>
+          <!-- Top penalty spot -->
+          <circle cx="200" cy="90" r="3" fill="#4caf50"/>
+          <!-- Top penalty arc -->
+          <path d="M150 123 A65 65 0 0 1 250 123" fill="none" stroke="#4caf50" stroke-width="2"/>
+          <!-- Top goal net -->
+          <rect x="166" y="16" width="68" height="14" fill="none" stroke="#4caf50" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <!-- Bottom penalty area -->
+          <rect x="90" y="497" width="220" height="95" fill="none" stroke="#4caf50" stroke-width="2"/>
+          <!-- Bottom goal area -->
+          <rect x="143" y="556" width="114" height="36" fill="none" stroke="#4caf50" stroke-width="1.8"/>
+          <!-- Bottom penalty spot -->
+          <circle cx="200" cy="530" r="3" fill="#4caf50"/>
+          <!-- Bottom penalty arc -->
+          <path d="M150 497 A65 65 0 0 0 250 497" fill="none" stroke="#4caf50" stroke-width="2"/>
+          <!-- Bottom goal net -->
+          <rect x="166" y="590" width="68" height="14" fill="none" stroke="#4caf50" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <!-- Corner arcs -->
+          <path d="M18 40 A14 14 0 0 1 32 28" fill="none" stroke="#4caf50" stroke-width="1.5"/>
+          <path d="M370 28 A14 14 0 0 1 382 40" fill="none" stroke="#4caf50" stroke-width="1.5"/>
+          <path d="M18 580 A14 14 0 0 0 32 592" fill="none" stroke="#4caf50" stroke-width="1.5"/>
+          <path d="M370 592 A14 14 0 0 0 382 580" fill="none" stroke="#4caf50" stroke-width="1.5"/>
+        </svg>
+      </div>
+
       <!-- Background glow effects -->
       <div style="position:fixed;top:-20%;left:-20%;width:60%;height:60%;background:radial-gradient(circle,${accentColor}10 0%,transparent 70%);pointer-events:none;z-index:0"></div>
       <div style="position:fixed;bottom:-20%;right:-20%;width:60%;height:60%;background:radial-gradient(circle,#4cc9f010 0%,transparent 70%);pointer-events:none;z-index:0"></div>
@@ -450,13 +495,6 @@ function updateTimelineActive() {
   const fill  = document.getElementById('tl-fill');
   if (bloom) bloom.style.top = (nodePx - 35) + 'px';
   if (fill)  fill.style.height = nodePx + 'px';
-
-  // Auto-scroll timeline to keep active node centered
-  const tlEl = document.getElementById('match-timeline');
-  if (tlEl) {
-    const target = nodePx - tlEl.offsetHeight / 2;
-    tlEl.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-  }
 
   tlDates.forEach((date, i) => {
     const node  = document.getElementById('tl-node-' + date);
