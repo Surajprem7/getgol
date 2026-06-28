@@ -1093,8 +1093,8 @@ function koSlotCandidates(name, standings) {
   return null;
 }
 
-function renderKnockout(content, glass, rounds) {
-  const accent = APP.teamColor || '#f0a500';
+// ── Knockout List View ────────────────────────────────────────────────────────
+function renderKnockoutList(rounds, glass, accent) {
   const istFmt = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
   const standings = (window.LIVE && window.LIVE.getStandings) ? window.LIVE.getStandings() : {};
   const code = (n) => (typeof getCountryCode === 'function') ? getCountryCode(n) : 'un';
@@ -1102,13 +1102,11 @@ function renderKnockout(content, glass, rounds) {
 
   const slotHTML = (t, align) => {
     const right = align === 'right';
-    // Confirmed team (ESPN filled it in)
     if (t.real) {
       const flag = `<img src="https://flagcdn.com/24x18/${t.code}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
       const nm = `<span style="font-size:0.8rem;color:#fff;font-weight:600">${t.name}</span>`;
       return `<div style="flex:1;display:flex;align-items:center;gap:0.4rem;${right ? 'justify-content:flex-end;text-align:right' : ''}">${right ? nm + flag : flag + nm}</div>`;
     }
-    // Placeholder → show the possible teams from current standings
     const cand = koSlotCandidates(t.name, standings);
     let mainHTML, strip = [];
     if (cand && cand.list.length) {
@@ -1158,13 +1156,126 @@ function renderKnockout(content, glass, rounds) {
     ${rounds[r].map(matchRow).join('')}
   `).join('');
 
-  content.innerHTML = `
+  return `
     <div style="margin-bottom:0.5rem">
-      <div style="color:#fff;font-weight:700;font-size:1rem">🏆 Knockout Stage</div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:0.25rem">Top 2 of each group + 8 best 3rd-placed teams advance · fills in live as groups finish</div>
-      <div style="font-size:0.62rem;color:rgba(255,255,255,0.3);margin-top:0.35rem">Bold = current group position · faded flags = other teams that could still take the spot</div>
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.35)">Top 2 of each group + 8 best 3rd-placed teams advance · fills in live as groups finish</div>
     </div>
     ${sections}`;
+}
+
+// ── Knockout Bracket View ─────────────────────────────────────────────────────
+function renderKnockoutBracket(rounds, accent) {
+  const code = (n) => (typeof getCountryCode === 'function') ? getCountryCode(n) : 'un';
+  const flag = (name) => name
+    ? `<img src="https://flagcdn.com/16x12/${code(name)}.png" style="border-radius:1px;flex-shrink:0;width:16px" onerror="this.style.display='none'">`
+    : `<span style="width:16px;display:inline-block"></span>`;
+
+  const r32 = rounds['round-of-32'] || [];
+  const r16 = rounds['round-of-16'] || [];
+  const qf  = rounds['quarterfinals'] || [];
+  const sf  = rounds['semifinals'] || [];
+  const fin = (rounds['final'] || [])[0] || null;
+  const trd = (rounds['3rd-place-match'] || [])[0] || null;
+
+  const matchCard = (m) => {
+    if (!m) return `<div style="height:52px;border-radius:6px;border:1px dashed rgba(255,255,255,0.08);background:rgba(255,255,255,0.02)"></div>`;
+    const ft = m.status === 'FT', live = m.status === 'LIVE';
+    const hs = (ft || live) && m.home.score >= 0 ? m.home.score : null;
+    const as = (ft || live) && m.away.score >= 0 ? m.away.score : null;
+    const hn = m.home.real ? (m.home.name.length > 9 ? m.home.name.slice(0,8)+'…' : m.home.name) : 'TBD';
+    const an = m.away.real ? (m.away.name.length > 9 ? m.away.name.slice(0,8)+'…' : m.away.name) : 'TBD';
+    const hw = ft && hs !== null && as !== null && hs > as;
+    const aw = ft && hs !== null && as !== null && as > hs;
+    const bdr = live ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.15)';
+    const row = (name, isReal, score, win) => `
+      <div style="display:flex;align-items:center;gap:3px;padding:2px 4px;min-height:22px;${win ? `background:rgba(255,255,255,0.1);font-weight:700` : ''}">
+        ${flag(isReal ? name : null)}
+        <span style="flex:1;font-size:0.58rem;color:rgba(255,255,255,${isReal ? '0.9' : '0.35'});overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${name}</span>
+        ${score !== null ? `<span style="font-size:0.62rem;font-weight:800;color:${live ? '#4ade80' : '#fff'};margin-left:2px">${score}</span>` : ''}
+      </div>`;
+    return `<div style="height:52px;border-radius:6px;border:1px solid ${bdr};background:rgba(255,255,255,0.07);overflow:hidden;display:flex;flex-direction:column;justify-content:space-around">
+      ${row(hn, m.home.real, hs, hw)}
+      <div style="height:1px;background:rgba(255,255,255,0.07)"></div>
+      ${row(an, m.away.real, as, aw)}
+    </div>`;
+  };
+
+  // A column renders N matches evenly distributed across the full bracket height
+  const col = (matches, totalSlots, label, isAccent) => {
+    const padded = [...matches];
+    while (padded.length < totalSlots) padded.push(null);
+    return `
+      <div style="flex-shrink:0;width:92px;display:flex;flex-direction:column">
+        <div style="font-size:0.48rem;font-weight:800;letter-spacing:0.04em;text-align:center;padding:2px 0;color:${isAccent ? accent : 'rgba(255,255,255,0.35)'}">${label}</div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:2px">
+          ${padded.map(m => matchCard(m)).join('')}
+        </div>
+      </div>`;
+  };
+
+  // Connecting arrow between columns
+  const arrow = `<div style="flex-shrink:0;width:8px;display:flex;align-items:center;justify-content:center">
+    <div style="width:100%;height:1px;background:rgba(255,255,255,0.1)"></div>
+  </div>`;
+
+  const HEIGHT = 544;
+  const cols = [
+    col(r32.slice(0,8),  8, 'ROUND OF 32'),  arrow,
+    col(r16.slice(0,4),  8, 'ROUND OF 16'),  arrow,
+    col(qf.slice(0,2),   8, 'QF'),            arrow,
+    col(sf.slice(0,1),   8, 'SEMI'),          arrow,
+    col(fin ? [fin] : [],8, '🏆 FINAL', true), arrow,
+    col(sf.slice(1,2),   8, 'SEMI'),          arrow,
+    col(qf.slice(2,4),   8, 'QF'),            arrow,
+    col(r16.slice(4,8),  8, 'ROUND OF 16'),  arrow,
+    col(r32.slice(8),    8, 'ROUND OF 32'),
+  ].join('');
+
+  const thirdHTML = trd ? `
+    <div style="text-align:center;margin-top:0.75rem">
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-bottom:4px">🥉 Third Place Play-off</div>
+      <div style="max-width:92px;margin:0 auto">${matchCard(trd)}</div>
+    </div>` : '';
+
+  return `
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px">
+      <div style="display:flex;height:${HEIGHT}px;min-width:900px">${cols}</div>
+    </div>
+    ${thirdHTML}`;
+}
+
+// ── Knockout dispatcher — adds view toggle, calls list or bracket ─────────────
+function renderKnockout(content, glass, rounds) {
+  const accent = APP.teamColor || '#f0a500';
+  window._koView = window._koView || 'list';
+
+  const toggle = (view) => `
+    <button onclick="window._koView='${view}';renderKnockout(document.getElementById('ko-content'),window._koGlass,window._koData)"
+      style="flex:1;padding:0.35rem;border:none;border-radius:16px;cursor:pointer;font-size:0.75rem;font-weight:700;
+             background:${window._koView === view ? accent : 'transparent'};
+             color:${window._koView === view ? '#000' : 'rgba(255,255,255,0.5)'}">
+      ${view === 'list' ? '📋 List' : '🏆 Bracket'}
+    </button>`;
+
+  const viewHTML = window._koView === 'bracket'
+    ? renderKnockoutBracket(rounds, accent)
+    : renderKnockoutList(rounds, glass, accent);
+
+  content.innerHTML = `
+    <div style="margin-bottom:0.75rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div style="color:#fff;font-weight:700;font-size:1rem">🏆 Knockout Stage</div>
+      </div>
+      <div style="display:flex;gap:4px;background:rgba(255,255,255,0.05);border-radius:20px;padding:3px">
+        ${toggle('list')}${toggle('bracket')}
+      </div>
+    </div>
+    <div id="ko-view-content">${viewHTML}</div>`;
+
+  // Store refs for the toggle onclick
+  window._koGlass = glass;
+  // Wrap content div so toggle re-render targets it
+  content.id = 'ko-content';
 }
 
 function buildKnockoutTab(content, glass) {
