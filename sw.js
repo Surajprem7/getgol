@@ -8,15 +8,12 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then(clients => Promise.all(clients.map(client => client.navigate(client.url))))
   );
-  self.clients.claim();
-  // Notify all open tabs to refresh
-  self.clients.matchAll().then(clients => {
-    clients.forEach(client => client.postMessage({type: 'UPDATE_AVAILABLE'}));
-  });
 });
 
 self.addEventListener('fetch', e => {
