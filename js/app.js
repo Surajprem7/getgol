@@ -428,7 +428,16 @@ function updateTimelineActive() {
   if (!activeDate) return;
 
   const accent = APP.teamColor || '#f0a500';
-  const tlDates = [...new Set([...MATCHES].sort((a,b) => a.date.localeCompare(b.date)).map(m => m.date))];
+  // Use all timeline dates (group + knockout) if the rebuild has extended the set
+  const baseDates = [...new Set([...MATCHES].sort((a,b) => a.date.localeCompare(b.date)).map(m => m.date))];
+  const koDates2 = (() => {
+    if (!window._koData) return [];
+    const s = new Set();
+    const toIST = (iso) => { const d = new Date(new Date(iso).getTime() + 5.5*60*60*1000); return d.toISOString().slice(0,10); };
+    Object.values(window._koData).forEach(list => list.forEach(ev => { if (ev.date) s.add(toIST(ev.date)); }));
+    return [...s];
+  })();
+  const tlDates = [...new Set([...baseDates, ...koDates2])].sort();
   const activeIdx = tlDates.indexOf(activeDate);
   if (activeIdx < 0) return;
 
@@ -588,8 +597,71 @@ function showTab(tab) {
       </div>
     `; };
 
-    // Unique match dates sorted chronologically for the timeline
+    // Group-stage dates
     const tlDates = [...new Set(sortedMatches.map(m => m.date))].sort();
+
+    // Helper: extract unique IST dates from cached knockout data
+    const toISTDateStr = (iso) => {
+      if (!iso) return '';
+      const d = new Date(new Date(iso).getTime() + 5.5 * 60 * 60 * 1000);
+      return d.toISOString().slice(0, 10);
+    };
+    const getKoDates = () => {
+      if (!window._koData) return [];
+      const s = new Set();
+      Object.values(window._koData).forEach(list =>
+        list.forEach(ev => { const d = toISTDateStr(ev.date); if (d) s.add(d); })
+      );
+      return [...s].sort();
+    };
+
+    // All timeline dates = group stage + knockout (if cached)
+    let allTlDates = [...new Set([...tlDates, ...getKoDates()])].sort();
+
+    // Rebuild just the timeline inner nodes (called after async KO load adds new dates)
+    const buildTimelineNodes = (dates) => {
+      const inner = document.querySelector('#match-timeline > div');
+      if (!inner) return;
+      const bgLine  = inner.children[0];
+      const fill    = inner.children[1];
+      const bloom   = inner.children[2];
+      // Remove old nodes (keep first 3 static elements)
+      while (inner.children.length > 3) inner.removeChild(inner.lastChild);
+      // Re-add nodes for full date set
+      dates.forEach((date, i) => {
+        const pct = dates.length === 1 ? 50 : (i / (dates.length - 1)) * 100;
+        const d = new Date(date + 'T00:00:00');
+        const day = d.getDate(), mon = months[d.getMonth()];
+        // Minor ticks
+        if (i < dates.length - 1) {
+          [1,2].forEach(t => {
+            const mp = pct + (t/3) * (100/(dates.length-1));
+            const tick = document.createElement('div');
+            tick.style.cssText = `position:absolute;right:10px;top:${mp}%;width:4px;height:1px;background:rgba(255,255,255,0.1);transform:translateY(-50%)`;
+            inner.appendChild(tick);
+          });
+        }
+        // Major tick
+        const maj = document.createElement('div');
+        maj.style.cssText = `position:absolute;right:10px;top:${pct}%;width:8px;height:1px;background:rgba(255,255,255,0.25);transform:translateY(-50%)`;
+        inner.appendChild(maj);
+        // Label
+        const label = document.createElement('div');
+        label.id = `tl-day-${date}`;
+        label.style.cssText = `position:absolute;right:20px;top:${pct}%;transform:translateY(-50%);text-align:right;line-height:1.1;pointer-events:none`;
+        label.innerHTML = `<div style="font-size:0.58rem;font-weight:700;color:rgba(255,255,255,0.3);transition:all 0.3s">${day}</div><div style="font-size:0.42rem;color:rgba(255,255,255,0.18);transition:all 0.3s">${mon}</div>`;
+        inner.appendChild(label);
+        // Node
+        const node = document.createElement('div');
+        node.id = `tl-node-${date}`;
+        node.setAttribute('onclick', `jumpToDate('${date}')`);
+        node.style.cssText = `position:absolute;right:0;top:${pct}%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;cursor:pointer;background:#0d0d1e;border:1.5px solid rgba(255,255,255,0.15);transition:all 0.3s;box-sizing:border-box;z-index:2`;
+        inner.appendChild(node);
+      });
+      allTlDates = dates;
+      updateTimelineActive();
+    };
+    window._buildTimelineNodes = buildTimelineNodes;
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     // Group matches by date for rendering with date headers
@@ -708,13 +780,13 @@ function showTab(tab) {
               animation:bloomPulse 2.5s ease-in-out infinite;pointer-events:none"></div>
 
             <!-- Ruler tick marks + date nodes -->
-            ${tlDates.map((date, i) => {
-              const pct = tlDates.length === 1 ? 50 : (i / (tlDates.length - 1)) * 100;
+            ${allTlDates.map((date, i) => {
+              const pct = allTlDates.length === 1 ? 50 : (i / (allTlDates.length - 1)) * 100;
               const d = new Date(date + 'T00:00:00');
               const day = d.getDate();
               const mon = months[d.getMonth()];
-              const minorTicks = i < tlDates.length - 1 ? [1,2].map(t => {
-                const mp = pct + (t / 3) * (100 / (tlDates.length - 1));
+              const minorTicks = i < allTlDates.length - 1 ? [1,2].map(t => {
+                const mp = pct + (t / 3) * (100 / (allTlDates.length - 1));
                 return `<div style="position:absolute;right:10px;top:${mp}%;width:4px;height:1px;background:rgba(255,255,255,0.1);transform:translateY(-50%)"></div>`;
               }).join('') : '';
               return `
@@ -779,54 +851,94 @@ function showTab(tab) {
         window._koData = koData;
         const section = document.getElementById('ko-fixtures-section');
         if (!section) return;
-        const istFmt = new Intl.DateTimeFormat('en-IN', {
-          timeZone:'Asia/Kolkata', day:'numeric', month:'short',
-          hour:'2-digit', minute:'2-digit', hour12:false
-        });
+
+        // Convert ESPN UTC date → IST date string (YYYY-MM-DD)
+        const toISTDate = (iso) => {
+          if (!iso) return '';
+          const d = new Date(new Date(iso).getTime() + 5.5 * 60 * 60 * 1000);
+          return d.toISOString().slice(0, 10);
+        };
+
+        // Rebuild timeline with newly-loaded knockout IST dates
+        const freshKoDates = (() => {
+          const s = new Set();
+          Object.values(koData).forEach(list => list.forEach(ev => { const d = toISTDate(ev.date); if (d) s.add(d); }));
+          return [...s].sort();
+        })();
+        const newAllDates = [...new Set([...tlDates, ...freshKoDates])].sort();
+        if (newAllDates.length !== allTlDates.length && typeof window._buildTimelineNodes === 'function') {
+          window._buildTimelineNodes(newAllDates);
+        }
+
+        const timeFmt = new Intl.DateTimeFormat('en-IN', { timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:false });
+        const dayFmt  = new Intl.DateTimeFormat('en-IN', { timeZone:'Asia/Kolkata', day:'numeric', month:'short' });
         const roundLabel = { 'round-of-32':'Round of 32','round-of-16':'Round of 16',
           'quarterfinals':'Quarter-finals','semifinals':'Semi-finals',
           '3rd-place-match':'Third Place','final':'⚽ THE FINAL' };
         const roundOrder = ['round-of-32','round-of-16','quarterfinals','semifinals','3rd-place-match','final'];
+
+        // Flatten all matches sorted by date, tagged with round
+        const allMatches = [];
+        for (const round of roundOrder) {
+          (koData[round] || []).forEach(ev => allMatches.push({ ...ev, round }));
+        }
+        allMatches.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // Group by IST date
+        const byISTDate = {};
+        allMatches.forEach(ev => {
+          const d = toISTDate(ev.date);
+          if (d) { if (!byISTDate[d]) byISTDate[d] = []; byISTDate[d].push(ev); }
+        });
+
         let html = `<div style="display:flex;align-items:center;gap:0.5rem;margin:1.5rem 0 0.75rem">
           <div style="font-size:0.78rem;font-weight:700;color:#a78bfa;white-space:nowrap">🏆 Knockout Stage</div>
           <div style="flex:1;height:1px;background:linear-gradient(90deg,#a78bfa44,transparent)"></div>
         </div>`;
-        for (const round of roundOrder) {
-          const matches = koData[round];
-          if (!matches) continue;
-          html += `<div style="font-size:0.7rem;font-weight:700;color:rgba(167,139,250,0.7);text-transform:uppercase;letter-spacing:1px;margin:0.75rem 0 0.4rem">${roundLabel[round]||round}</div>`;
-          for (const ev of matches) {
+
+        for (const isoDate of Object.keys(byISTDate).sort()) {
+          const eventsOnDay = byISTDate[isoDate];
+          const d = new Date(isoDate + 'T00:00:00');
+          const dayLabel = `${d.getDate()} ${months[d.getMonth()]}`;
+          // Date header — used by jumpToDate
+          html += `<div data-date-header="${isoDate}" style="display:flex;align-items:center;gap:0.5rem;margin:1rem 0 0.5rem">
+            <div style="font-size:0.78rem;font-weight:700;color:#a78bfa;white-space:nowrap">${dayLabel}</div>
+            <div style="flex:1;height:1px;background:linear-gradient(90deg,#a78bfa44,transparent)"></div>
+          </div>`;
+          let lastRound = '';
+          for (const ev of eventsOnDay) {
+            if (ev.round !== lastRound) {
+              html += `<div style="font-size:0.62rem;font-weight:700;color:rgba(167,139,250,0.6);text-transform:uppercase;letter-spacing:1px;margin:0.4rem 0 0.3rem">${roundLabel[ev.round]||ev.round}</div>`;
+              lastRound = ev.round;
+            }
             const h = ev.home, a = ev.away;
             const hName = h.name || '?', aName = a.name || '?';
             const hc = getTeamColor(hName), ac2 = getTeamColor(aName);
-            const hReal = h.real, aReal = a.real;
             const isLive = ev.status === 'LIVE', isFT = ev.status === 'FT';
             const isMyKO = APP.teamName && (hName === APP.teamName || aName === APP.teamName);
-            const dateStr = ev.date ? istFmt.format(new Date(ev.date)) : '';
+            const timeStr = ev.date ? timeFmt.format(new Date(ev.date)) : '';
             const scoreHTML = (isFT || isLive) && h.score >= 0
               ? `<div style="font-size:1.1rem;font-weight:900;color:#fff">${h.score}–${a.score}</div>
-                 <div style="font-size:0.55rem;color:${isLive?'#ef4444':'rgba(255,255,255,0.3)'};">${isLive?'LIVE':isFT?'FT':''}</div>`
-              : `<div style="font-size:0.9rem;font-weight:900;color:rgba(255,255,255,0.25)">VS</div>`;
+                 <div style="font-size:0.55rem;color:${isLive?'#ef4444':'rgba(255,255,255,0.3)'};">${isLive?'● LIVE':isFT?'FT':''}</div>`
+              : `<div style="font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.35)">${timeStr}</div>`;
             html += `<div style="${glass};margin-bottom:0.6rem;overflow:hidden;position:relative;${isMyKO?'border-color:'+accentColor+'66;box-shadow:0 0 20px '+accentColor+'22':'border-color:rgba(167,139,250,0.2)'}">
               <div style="height:3px;background:linear-gradient(90deg,${hc} 0%,${hc} 50%,${ac2} 50%,${ac2} 100%);opacity:0.85"></div>
-              <div style="padding:0.6rem 0.9rem">
-                <div style="font-size:0.65rem;color:rgba(167,139,250,0.8);margin-bottom:0.5rem;font-weight:600">${dateStr}</div>
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
-                  <div style="text-align:center;flex:1">
-                    ${hReal ? `<img src="https://flagcdn.com/32x24/${h.code}.png" style="border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.4)" onerror="this.style.display='none'">` : '<div style="font-size:1.5rem;opacity:0.4">🏴</div>'}
-                    <div style="font-size:0.78rem;color:${hName===APP.teamName?accentColor:'#fff'};font-weight:${hName===APP.teamName?'700':'500'};margin-top:0.3rem">${hName}</div>
-                  </div>
-                  <div style="text-align:center;min-width:48px">${scoreHTML}</div>
-                  <div style="text-align:center;flex:1">
-                    ${aReal ? `<img src="https://flagcdn.com/32x24/${a.code}.png" style="border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.4)" onerror="this.style.display='none'">` : '<div style="font-size:1.5rem;opacity:0.4">🏴</div>'}
-                    <div style="font-size:0.78rem;color:${aName===APP.teamName?accentColor:'#fff'};font-weight:${aName===APP.teamName?'700':'500'};margin-top:0.3rem">${aName}</div>
-                  </div>
+              <div style="padding:0.6rem 0.9rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+                <div style="text-align:center;flex:1">
+                  ${h.real ? `<img src="https://flagcdn.com/32x24/${h.code}.png" style="border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.4)" onerror="this.style.display='none'"><br>` : '<div style="font-size:1.2rem;opacity:0.35">🏴</div>'}
+                  <div style="font-size:0.78rem;color:${hName===APP.teamName?accentColor:'#fff'};font-weight:${hName===APP.teamName?'700':'500'};margin-top:0.25rem">${hName}</div>
+                </div>
+                <div style="text-align:center;min-width:52px">${scoreHTML}</div>
+                <div style="text-align:center;flex:1">
+                  ${a.real ? `<img src="https://flagcdn.com/32x24/${a.code}.png" style="border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.4)" onerror="this.style.display='none'"><br>` : '<div style="font-size:1.2rem;opacity:0.35">🏴</div>'}
+                  <div style="font-size:0.78rem;color:${aName===APP.teamName?accentColor:'#fff'};font-weight:${aName===APP.teamName?'700':'500'};margin-top:0.25rem">${aName}</div>
                 </div>
               </div>
             </div>`;
           }
         }
         section.innerHTML = html;
+        updateTimelineActive();
       } catch(e) { /* silently skip */ }
     })();
 
