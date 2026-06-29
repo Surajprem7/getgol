@@ -718,33 +718,57 @@ function showTab(tab) {
     const renderMyRow = (m) => {
       const d = new Date(m.date + 'T00:00:00');
       const dl = `${d.getDate()} ${months[d.getMonth()]}`;
+      const isKO = m.isKO;
+      const groupLabel = isKO ? (m.group || 'Knockout') : `Grp ${m.group}`;
+      const groupColor = isKO ? '#a78bfa' : 'rgba(255,255,255,0.5)';
+      const scoreMid = isKO
+        ? `<span style="color:rgba(255,255,255,0.3);font-weight:700;font-size:0.7rem">vs</span>`
+        : `<span data-vs="${m.id}" data-vs-style="mini" style="min-width:42px;text-align:center;font-size:0.85rem">${shortScoreHTML(m.id)}</span>`;
       return `
         <div onclick="jumpToDate('${m.date}')" style="padding:0.55rem 0.6rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.4rem;cursor:pointer;transition:background 0.2s"
           onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-          <!-- Meta line: date · time · group -->
           <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem">
             <span style="font-size:0.64rem;font-weight:700;color:rgba(255,255,255,0.75)">${dl}</span>
             <span style="font-size:0.58rem;color:rgba(255,255,255,0.35)">${m.time} IST</span>
-            <span style="margin-left:auto;font-size:0.55rem;font-weight:700;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:0.12rem 0.45rem;white-space:nowrap">Grp ${m.group}</span>
+            <span style="margin-left:auto;font-size:0.55rem;font-weight:700;color:${groupColor};background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:0.12rem 0.45rem;white-space:nowrap">${groupLabel}</span>
           </div>
-          <!-- Matchup line: full width -->
           <div style="display:flex;align-items:center;gap:0.5rem">
             <span style="flex:1;text-align:right;font-size:0.8rem;color:#fff;font-weight:${m.home === APP.teamName ? '700' : '500'}">${m.home}</span>
             <img src="https://flagcdn.com/24x18/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
-            <span data-vs="${m.id}" data-vs-style="mini" style="min-width:42px;text-align:center;font-size:0.85rem">${shortScoreHTML(m.id)}</span>
+            ${scoreMid}
             <img src="https://flagcdn.com/24x18/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
             <span style="flex:1;text-align:left;font-size:0.8rem;color:#fff;font-weight:${m.away === APP.teamName ? '700' : '500'}">${m.away}</span>
           </div>
         </div>`;
     };
 
-    const myMatches = APP.teamName
-      ? sortedMatches.filter(m => {
-          if (m.home !== APP.teamName && m.away !== APP.teamName) return false;
-          const sc = window.LIVE && window.LIVE.score(m.id);
-          return !(sc && sc.status === 'FT');
-        })
-      : [];
+    const _koISTDateStr = (iso) => { const d = new Date(new Date(iso).getTime() + 5.5*60*60*1000); return d.toISOString().slice(0,10); };
+    const _koTimeFmt = new Intl.DateTimeFormat('en-IN', { timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:false });
+    const myMatches = APP.teamName ? (() => {
+      const groupUpcoming = sortedMatches.filter(m => {
+        if (m.home !== APP.teamName && m.away !== APP.teamName) return false;
+        const sc = window.LIVE && window.LIVE.score(m.id);
+        return !(sc && sc.status === 'FT');
+      });
+      const koUpcoming = [];
+      if (window._koData) {
+        Object.entries(window._koData).forEach(([round, list]) => {
+          list.forEach(ev => {
+            const hName = ev.home?.name || '', aName = ev.away?.name || '';
+            if (hName !== APP.teamName && aName !== APP.teamName) return;
+            if (ev.status === 'FT') return;
+            koUpcoming.push({
+              id: `ko-${ev.espnId}`, isKO: true,
+              home: hName || 'TBD', away: aName || 'TBD',
+              date: _koISTDateStr(ev.date),
+              time: _koTimeFmt.format(new Date(ev.date)),
+              group: KO_ROUND_LABEL[round] || round,
+            });
+          });
+        });
+      }
+      return [...groupUpcoming, ...koUpcoming];
+    })() : [];
     const mySection = myMatches.length ? `
       <div style="position:sticky;top:56px;z-index:100;margin-bottom:0.75rem">
         <div style="${glass};padding:0.75rem;border-color:${accentColor}55;background:linear-gradient(180deg,${accentColor}18,rgba(8,8,24,0.97));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)">
@@ -1623,22 +1647,79 @@ function renderKnockoutList(rounds, glass, accent) {
     return `<div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:${right ? 'flex-end' : 'flex-start'}">${mainHTML}${stripHTML}</div>`;
   };
 
-  const matchRow = (m) => {
-    const live = m.status === 'LIVE', ft = m.status === 'FT';
-    const mid = (live || ft)
-      ? `<span style="font-weight:900;color:${live ? '#4ade80' : '#fff'}">${m.home.score >= 0 ? m.home.score : 0}–${m.away.score >= 0 ? m.away.score : 0}</span>`
-      : `<span style="color:rgba(255,255,255,0.25);font-weight:800;font-size:0.8rem">vs</span>`;
-    const meta = live ? `<span style="color:#4ade80;font-weight:700">● LIVE ${m.clock || ''}</span>`
-      : ft ? `<span style="color:rgba(255,255,255,0.4)">FULL TIME</span>`
-      : `${istFmt.format(new Date(m.date))} IST`;
+  const timeFmtKO = new Intl.DateTimeFormat('en-IN', { timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:false });
+  const matchRow = (ev, roundKey) => {
+    const h = ev.home, a = ev.away;
+    const hName = h.name || 'TBD', aName = a.name || 'TBD';
+    const hc = (typeof getTeamColor === 'function') ? getTeamColor(hName) : accent;
+    const ac2 = (typeof getTeamColor === 'function') ? getTeamColor(aName) : accent;
+    const isLive = ev.status === 'LIVE', isFT = ev.status === 'FT';
+    const isMyKO = APP.teamName && (hName === APP.teamName || aName === APP.teamName);
+    const timeStr = ev.date ? timeFmtKO.format(new Date(ev.date)) + ' IST' : '';
+    const roundLbl = KO_ROUND_LABEL[roundKey] || roundKey || '';
+
+    const flagOrSlot = (t, side) => {
+      if (t.real) {
+        return `<img src="https://flagcdn.com/48x36/${t.code}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">`;
+      }
+      const cand = koSlotCandidates(t.name, standings);
+      if (cand && cand.current) {
+        const cc = (typeof getCountryCode === 'function') ? getCountryCode(cand.current) : 'un';
+        return `<img src="https://flagcdn.com/48x36/${cc}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);opacity:0.7" onerror="this.style.display='none'">`;
+      }
+      return `<div style="width:48px;height:36px;border-radius:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🛡️</div>`;
+    };
+
+    const displayName = (t) => {
+      if (t.real) return t.name;
+      const cand = koSlotCandidates(t.name, standings);
+      if (cand && cand.current) return `<span style="opacity:0.75">${cand.current}</span>`;
+      return `<span style="font-size:0.7rem;color:rgba(255,255,255,0.4);font-style:italic">${t.name || 'TBD'}</span>`;
+    };
+
+    const vsHTML = (isFT || isLive) && h.score >= 0
+      ? `${isLive ? `<div style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.5);border-radius:8px;padding:1px 6px;margin-bottom:3px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;animation:livePulse 1s ease-in-out infinite"></span><span style="font-size:0.55rem;color:#ef4444;font-weight:800;letter-spacing:0.8px">LIVE</span></div>` : ''}
+         <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.1">${h.score}–${a.score}</div>
+         <div style="font-size:0.58rem;color:${isLive ? '#f87171' : 'rgba(255,255,255,0.3)'};margin-top:1px">${isLive ? (ev.clock || '') : 'FT'}</div>`
+      : `<div style="font-size:1rem;font-weight:900;color:rgba(255,255,255,0.2);letter-spacing:2px">VS</div>`;
+
+    const predHTML = (h.real && a.real && !isFT)
+      ? `<div style="border-top:1px solid rgba(255,255,255,0.06);padding:0.65rem 0.75rem 0.5rem">
+           <div style="display:flex;gap:0.4rem">
+             <button onclick="predict('ko-${ev.espnId||ev.date}','${hName.replace(/'/g,"\\'")}');event.stopPropagation()" style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${hName}</button>
+             <button onclick="predict('ko-${ev.espnId||ev.date}','${aName.replace(/'/g,"\\'")}');event.stopPropagation()" style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${aName}</button>
+           </div>
+         </div>`
+      : '';
+
+    const detailBtn = ev.espnId
+      ? `<div style="text-align:center;padding:0 1rem 0.7rem"><span style="display:inline-block;font-size:0.68rem;font-weight:700;color:#fff;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:0.32rem 0.85rem">👆 Tap for line-ups, stats &amp; summary</span></div>`
+      : '';
+
     return `
-      <div style="${glass};margin-bottom:0.5rem;padding:0.55rem 0.75rem">
-        <div style="font-size:0.6rem;color:rgba(255,255,255,0.35);text-align:center;margin-bottom:0.35rem">${meta}</div>
-        <div style="display:flex;align-items:center;gap:0.5rem">
-          ${slotHTML(m.home, 'right')}
-          <div style="min-width:48px;text-align:center">${mid}</div>
-          ${slotHTML(m.away, 'left')}
+      <div style="${glass};margin-bottom:0.75rem;overflow:hidden;position:relative;${isMyKO ? 'border-color:'+accent+'66;box-shadow:0 0 24px '+accent+'22' : 'border-color:rgba(167,139,250,0.2)'}">
+        <div style="height:3px;background:linear-gradient(90deg,${hc} 0%,${hc} 50%,${ac2} 50%,${ac2} 100%);opacity:0.85"></div>
+        <div onclick="${ev.espnId ? `openKOMatchDetail('${ev.espnId}')` : ''}" style="cursor:${ev.espnId ? 'pointer' : 'default'}">
+          <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+            <span style="font-size:0.72rem;font-weight:600;color:#a78bfa">${roundLbl}</span>
+            <span style="color:rgba(255,255,255,0.25);font-size:0.65rem">•</span>
+            <span style="font-size:0.72rem;font-weight:600;color:#a78bfa">${timeStr}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1rem 0.5rem">
+            <div style="text-align:center;flex:1">
+              ${flagOrSlot(h, 'left')}
+              <div style="font-size:0.85rem;color:${hName===APP.teamName?accent:'#fff'};margin-top:0.4rem;font-weight:${hName===APP.teamName?'700':'600'}">${displayName(h)}</div>
+            </div>
+            <div style="text-align:center;padding:0 0.5rem;min-width:56px">${vsHTML}</div>
+            <div style="text-align:center;flex:1">
+              ${flagOrSlot(a, 'right')}
+              <div style="font-size:0.85rem;color:${aName===APP.teamName?accent:'#fff'};margin-top:0.4rem;font-weight:${aName===APP.teamName?'700':'600'}">${displayName(a)}</div>
+            </div>
+          </div>
+          ${ev.venue ? `<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);text-align:center;padding:0 1rem 0.3rem">${ev.venue}</div>` : ''}
+          ${detailBtn}
         </div>
+        ${predHTML}
       </div>`;
   };
 
@@ -1648,7 +1729,7 @@ function renderKnockoutList(rounds, glass, accent) {
       <div style="flex:1;height:1px;background:linear-gradient(90deg,${accent}44,transparent)"></div>
       <span style="font-size:0.6rem;color:rgba(255,255,255,0.3)">${rounds[r].length} match${rounds[r].length > 1 ? 'es' : ''}</span>
     </div>
-    ${rounds[r].map(matchRow).join('')}
+    ${rounds[r].map(ev => matchRow(ev, r)).join('')}
   `).join('');
 
   return `
