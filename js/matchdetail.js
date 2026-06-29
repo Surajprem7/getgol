@@ -105,6 +105,44 @@ function closeMatchDetail() {
   if (el) el.remove();
 }
 
+// Open match detail for a knockout match using ESPN event ID directly
+async function openKOMatchDetail(espnId) {
+  if (!espnId) return;
+  // Find the KO event in cached data to build a match object
+  let koEv = null;
+  if (window._koData) {
+    for (const list of Object.values(window._koData)) {
+      koEv = list.find(e => String(e.espnId) === String(espnId));
+      if (koEv) break;
+    }
+  }
+  const hName = koEv?.home?.name || '?';
+  const aName = koEv?.away?.name || '?';
+  const istDate = koEv?.date ? new Date(new Date(koEv.date).getTime() + 5.5*60*60*1000).toISOString().slice(0,10) : '';
+  const istTime = koEv?.date ? new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(koEv.date)) : '';
+  // Synthetic match object compatible with renderMatchDetail
+  MD.match = { id: `ko-${espnId}`, home: hName, away: aName, date: istDate, time: istTime, group: koEv?.round?.replace(/-/g,' ') || 'Knockout', venue: koEv?.venue || '' };
+  MD.data = null; MD.tab = 'lineups'; MD.team = 'home';
+  closeMatchDetail();
+  const overlay = document.createElement('div');
+  overlay.id = 'md-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;display:flex;flex-direction:column;justify-content:flex-end';
+  overlay.innerHTML = `
+    <div onclick="closeMatchDetail()" style="position:absolute;inset:0;background:rgba(0,0,0,0.65)"></div>
+    <div style="position:relative;z-index:1;background:linear-gradient(180deg,#0c0c1c 0%,#080812 100%);border-radius:24px 24px 0 0;max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid rgba(255,255,255,0.1)">
+      <div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0.75rem auto 0"></div>
+      <div id="md-body" style="padding:1rem 1rem 2rem">
+        <div style="text-align:center;padding:3rem 1rem;color:rgba(255,255,255,0.5)">Loading match details…</div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const res = await fetch(ESPN_SUMMARY + espnId, { cache: 'no-store' });
+    MD.data = await res.json();
+  } catch (e) { MD.data = null; }
+  renderMatchDetail(MD.data);
+}
+
 function mdTab(tab) { MD.tab = tab; renderMatchDetail(MD.data); }
 function mdTeam(side) { MD.team = side; renderMatchDetail(MD.data); }
 

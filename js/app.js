@@ -984,32 +984,64 @@ function showTab(tab) {
           let lastRound = '';
           for (const ev of eventsOnDay) {
             if (ev.round !== lastRound) {
-              html += `<div style="font-size:0.62rem;font-weight:700;color:rgba(167,139,250,0.6);text-transform:uppercase;letter-spacing:1px;margin:0.4rem 0 0.3rem">${roundLabel[ev.round]||ev.round}</div>`;
+              html += `<div style="font-size:0.62rem;font-weight:700;color:rgba(167,139,250,0.6);text-transform:uppercase;letter-spacing:1px;margin:0.5rem 0 0.3rem">${roundLabel[ev.round]||ev.round}</div>`;
               lastRound = ev.round;
             }
             const h = ev.home, a = ev.away;
-            const hName = h.name || '?', aName = a.name || '?';
+            const hName = h.name || 'TBD', aName = a.name || 'TBD';
             const hc = getTeamColor(hName), ac2 = getTeamColor(aName);
             const isLive = ev.status === 'LIVE', isFT = ev.status === 'FT';
             const isMyKO = APP.teamName && (hName === APP.teamName || aName === APP.teamName);
             const timeStr = ev.date ? timeFmt.format(new Date(ev.date)) : '';
-            const scoreHTML = (isFT || isLive) && h.score >= 0
-              ? `<div style="font-size:1.1rem;font-weight:900;color:#fff">${h.score}–${a.score}</div>
-                 <div style="font-size:0.55rem;color:${isLive?'#ef4444':'rgba(255,255,255,0.3)'};">${isLive?'● LIVE':isFT?'FT':''}</div>`
-              : `<div style="font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.35)">${timeStr}</div>`;
-            html += `<div style="${glass};margin-bottom:0.6rem;overflow:hidden;position:relative;${isMyKO?'border-color:'+accentColor+'66;box-shadow:0 0 20px '+accentColor+'22':'border-color:rgba(167,139,250,0.2)'}">
+            const roundLbl = roundLabel[ev.round] || ev.round || '';
+            const flagH = h.real
+              ? `<img src="https://flagcdn.com/48x36/${h.code}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">`
+              : `<div style="width:48px;height:36px;border-radius:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🛡️</div>`;
+            const flagA = a.real
+              ? `<img src="https://flagcdn.com/48x36/${a.code}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">`
+              : `<div style="width:48px;height:36px;border-radius:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🛡️</div>`;
+            const vsHTML = (isFT || isLive) && h.score >= 0
+              ? `${isLive ? `<div style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.5);border-radius:8px;padding:1px 6px;margin-bottom:3px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;animation:livePulse 1s ease-in-out infinite"></span><span style="font-size:0.55rem;color:#ef4444;font-weight:800;letter-spacing:0.8px">LIVE</span></div>` : ''}
+                 <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.1">${h.score}–${a.score}</div>
+                 <div style="font-size:0.58rem;color:${isLive?'#f87171':'rgba(255,255,255,0.3)'};margin-top:1px">${isLive?(ev.clock||''):'FT'}</div>`
+              : `<div style="font-size:1rem;font-weight:900;color:rgba(255,255,255,0.2);letter-spacing:2px">VS</div>`;
+            const predHTML = (h.real && a.real && !isFT)
+              ? `<div style="border-top:1px solid rgba(255,255,255,0.06);padding:0.65rem 0.75rem 0.5rem">
+                   <div style="display:flex;gap:0.4rem">
+                     <button onclick="predict('ko-${ev.espnId||ev.date}','${hName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko${ev.espnId}-home"
+                       style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${hName}</button>
+                     <button onclick="predict('ko-${ev.espnId||ev.date}','${aName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko${ev.espnId}-away"
+                       style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${aName}</button>
+                   </div>
+                 </div>`
+              : '';
+            const detailBtn = ev.espnId
+              ? `<div style="text-align:center;padding:0 1rem 0.7rem"><span style="display:inline-block;font-size:0.68rem;font-weight:700;color:#fff;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:0.32rem 0.85rem">👆 Tap for line-ups, stats &amp; summary</span></div>`
+              : '';
+            html += `
+            <div style="${glass};margin-bottom:0.75rem;overflow:hidden;position:relative;${isMyKO?'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22':'border-color:rgba(167,139,250,0.2)'}">
               <div style="height:3px;background:linear-gradient(90deg,${hc} 0%,${hc} 50%,${ac2} 50%,${ac2} 100%);opacity:0.85"></div>
-              <div style="padding:0.6rem 0.9rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
-                <div style="text-align:center;flex:1">
-                  ${h.real ? `<img src="https://flagcdn.com/32x24/${h.code}.png" style="border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.4)" onerror="this.style.display='none'"><br>` : '<div style="font-size:1.2rem;opacity:0.35">🏴</div>'}
-                  <div style="font-size:0.78rem;color:${hName===APP.teamName?accentColor:'#fff'};font-weight:${hName===APP.teamName?'700':'500'};margin-top:0.25rem">${hName}</div>
+              <div onclick="${ev.espnId?`openKOMatchDetail('${ev.espnId}')`:''}" style="cursor:${ev.espnId?'pointer':'default'}">
+                <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+                  <span style="font-size:0.72rem;font-weight:600;color:#a78bfa;letter-spacing:0.3px">${roundLbl}</span>
+                  <span style="color:rgba(255,255,255,0.25);font-size:0.65rem">•</span>
+                  <span style="font-size:0.72rem;font-weight:600;color:#a78bfa;letter-spacing:0.3px">${timeStr} IST</span>
                 </div>
-                <div style="text-align:center;min-width:52px">${scoreHTML}</div>
-                <div style="text-align:center;flex:1">
-                  ${a.real ? `<img src="https://flagcdn.com/32x24/${a.code}.png" style="border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.4)" onerror="this.style.display='none'"><br>` : '<div style="font-size:1.2rem;opacity:0.35">🏴</div>'}
-                  <div style="font-size:0.78rem;color:${aName===APP.teamName?accentColor:'#fff'};font-weight:${aName===APP.teamName?'700':'500'};margin-top:0.25rem">${aName}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1rem 0.5rem">
+                  <div style="text-align:center;flex:1">
+                    ${flagH}
+                    <div style="font-size:0.85rem;color:${hName===APP.teamName?accentColor:'#fff'};margin-top:0.4rem;font-weight:${hName===APP.teamName?'700':'600'}">${hName}</div>
+                  </div>
+                  <div style="text-align:center;padding:0 0.5rem;min-width:56px">${vsHTML}</div>
+                  <div style="text-align:center;flex:1">
+                    ${flagA}
+                    <div style="font-size:0.85rem;color:${aName===APP.teamName?accentColor:'#fff'};margin-top:0.4rem;font-weight:${aName===APP.teamName?'700':'600'}">${aName}</div>
+                  </div>
                 </div>
+                ${ev.venue ? `<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);text-align:center;padding:0 1rem 0.3rem">${ev.venue}</div>` : ''}
+                ${detailBtn}
               </div>
+              ${predHTML}
             </div>`;
           }
         }
@@ -1526,8 +1558,9 @@ async function fetchKnockout() {
         return { name, code, real: code !== 'un', score: parseInt(cmp?.score ?? '-1') };
       };
       (rounds[round] = rounds[round] || []).push({
-        date: ev.date, status,
+        date: ev.date, status, espnId: ev.id,
         clock: type.shortDetail || ev.status?.displayClock || '',
+        venue: c.venue?.fullName || c.venue?.shortName || '',
         home: slot(h), away: slot(a),
       });
     });
