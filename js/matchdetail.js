@@ -163,7 +163,7 @@ function renderMatchDetail(data) {
 
   const header = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.25rem">
-      <span style="font-size:0.62rem;font-weight:700;color:#f0a500">Group ${m.group}</span>
+      <span style="font-size:0.62rem;font-weight:700;color:#f0a500">${m.group && m.group.length === 1 ? 'Group ' + m.group : (m.group || '')}</span>
       <button onclick="closeMatchDetail()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:1.9rem;height:1.9rem;color:rgba(255,255,255,0.6);font-size:0.9rem;cursor:pointer">✕</button>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding:0.5rem 0 0.75rem">
