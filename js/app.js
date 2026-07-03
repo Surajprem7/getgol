@@ -1079,9 +1079,9 @@ function showTab(tab) {
             const predHTML = (h.real && a.real && !isFT)
               ? `<div style="border-top:1px solid rgba(255,255,255,0.06);padding:0.65rem 0.75rem 0.5rem">
                    <div style="display:flex;gap:0.4rem">
-                     <button onclick="predict('ko-${ev.espnId||ev.date}','${hName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko${ev.espnId}-home"
+                     <button onclick="predict('ko-${ev.espnId||ev.date}','${hName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko${ev.espnId||ev.date}-home"
                        style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${hName}</button>
-                     <button onclick="predict('ko-${ev.espnId||ev.date}','${aName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko${ev.espnId}-away"
+                     <button onclick="predict('ko-${ev.espnId||ev.date}','${aName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko${ev.espnId||ev.date}-away"
                        style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${aName}</button>
                    </div>
                  </div>`
@@ -1442,7 +1442,7 @@ function resetTeam() {
   localStorage.removeItem('gol_team');
   localStorage.removeItem('gol_team_name');
   localStorage.removeItem('gol_team_color');
-  APP.team = null; APP.teamName = null; APP.teamColor = '#f0a500';
+  APP.team = null; APP.teamName = null; APP.teamColor = null;
   showApp();
   showTeamPickerModal();
 }
@@ -2048,20 +2048,3 @@ function filterRankings(query) {
     .join('');
 }
 
-function getTeamColor(name) {
-  const colorMap = {
-    'Mexico':'#006847','South Africa':'#007A4D','South Korea':'#003478','Czechia':'#D7141A',
-    'Canada':'#FF0000','Bosnia':'#002395','Qatar':'#8D1B3D','Switzerland':'#FF0000',
-    'Brazil':'#009C3B','Morocco':'#C1272D','Haiti':'#00209F','Scotland':'#003F87',
-    'USA':'#B22234','Paraguay':'#D52B1E','Australia':'#FFCD00','Turkey':'#E30A17',
-    'Germany':'#FFD700','Curacao':'#002B7F','Ivory Coast':'#F77F00','Ecuador':'#FFD100',
-    'Netherlands':'#FF6600','Japan':'#BC002D','Tunisia':'#E70013','Sweden':'#006AA7',
-    'Belgium':'#EF3340','Egypt':'#CE1126','Iran':'#239F40','New Zealand':'#00247D',
-    'Spain':'#AA151B','Cape Verde':'#003893','Saudi Arabia':'#006C35','Uruguay':'#5EB6E4',
-    'France':'#002395','Senegal':'#00853F','Norway':'#EF2B2D','Iraq':'#007A3D',
-    'Argentina':'#74ACDF','Algeria':'#006233','Austria':'#ED2939','Jordan':'#007A3D',
-    'Portugal':'#006600','Uzbekistan':'#1EB53A','Colombia':'#FCD116','DR Congo':'#007FFF',
-    'England':'#CF111B','Croatia':'#FF0000','Ghana':'#006B3F','Panama':'#005293',
-  };
-  return colorMap[name] || '#f0a500';
-}
