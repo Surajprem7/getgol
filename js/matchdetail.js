@@ -381,31 +381,109 @@ function mdRenderStats(data, norm) {
 function mdRenderSummary(data, norm) {
   const events = data.keyEvents || [];
   const rosters = data.rosters || [];
-  const homeId = rosters.find(r => r.homeAway === 'home')?.team?.id;
+  const homeId  = rosters.find(r => r.homeAway === 'home')?.team?.id;
+  const m       = MD.match;
+  const accent  = APP.teamColor || '#f0a500';
 
-  const icon = (t) => {
-    if (/own goal/i.test(t)) return '⚽';
-    if (/goal/i.test(t)) return '⚽';
-    if (/yellow/i.test(t)) return '🟨';
-    if (/red/i.test(t)) return '🟥';
-    if (/substitution/i.test(t)) return '🔁';
-    return '•';
-  };
   const keep = events.filter(e => /goal|card|substitution/i.test(e.type?.text || ''));
-  if (!keep.length) return `<div style="${mdGlass()};padding:1.5rem;text-align:center;color:rgba(255,255,255,0.4);font-size:0.8rem">No goals or cards recorded yet.</div>`;
+  if (!keep.length) return `
+    <div style="${mdGlass()};padding:2rem 1rem;text-align:center">
+      <div style="font-size:2rem;margin-bottom:0.5rem">📋</div>
+      <div style="color:rgba(255,255,255,0.45);font-size:0.8rem">No match events recorded yet.</div>
+    </div>`;
+
+  // Running score
+  let hGoals = 0, aGoals = 0;
+  let htInserted = false;
 
   const rows = keep.map(e => {
-    const t = e.type?.text || '';
-    const isHome = e.team?.id && String(e.team.id) === String(homeId);
-    const who = e.participants?.[0]?.athlete?.displayName || '';
-    const min = e.clock?.displayValue || '';
-    const ic = icon(t);
-    const line = `<span style="font-size:0.62rem;color:rgba(255,255,255,0.35)">${min}</span> <span style="font-size:0.75rem;color:#fff;font-weight:600">${ic} ${who}</span> <span style="font-size:0.6rem;color:rgba(255,255,255,0.3)">${t}</span>`;
-    return `
-      <div style="display:flex;${isHome ? '' : 'flex-direction:row-reverse;text-align:right'};padding:0.45rem 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-        <div style="flex:1;${isHome ? '' : 'text-align:right'}">${line}</div>
-      </div>`;
+    const typeText = e.type?.text || '';
+    const isHome   = e.team?.id && String(e.team.id) === String(homeId);
+    const min      = e.clock?.displayValue || '';
+    const minNum   = parseInt(min) || 0;
+    const parts    = e.participants || [];
+
+    // Half-time divider — insert before the first 2nd-half event
+    let htDivider = '';
+    if (!htInserted && minNum > 45) {
+      htInserted = true;
+      htDivider = `
+        <div style="display:flex;align-items:center;gap:0.5rem;margin:0.6rem 0">
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
+          <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1px;white-space:nowrap">HALF TIME · ${hGoals}–${aGoals}</div>
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
+        </div>`;
+    }
+
+    let iconEl = '', detail = '', subDetail = '';
+
+    if (/goal/i.test(typeText)) {
+      const isOG  = /own goal/i.test(typeText);
+      const isPK  = /penalty/i.test(typeText);
+      const scorer   = parts.find(p => /scor/i.test(p.type?.text || '') || !p.type)?.athlete?.displayName
+                    || parts[0]?.athlete?.displayName || '';
+      const assister = parts.find(p => /assist/i.test(p.type?.text || ''))?.athlete?.displayName || '';
+      if (isHome) hGoals++; else aGoals++;
+      iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:${isOG ? 'rgba(255,255,255,0.15)' : '#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">⚽</div>`;
+      detail = `<div style="font-size:0.8rem;font-weight:700;color:#fff">${scorer}${isOG ? ' <span style="color:rgba(255,255,255,0.4);font-size:0.65rem">(OG)</span>' : ''}${isPK ? ' <span style="color:#f0a500;font-size:0.65rem">(P)</span>' : ''}</div>`;
+      if (assister) subDetail = `<div style="font-size:0.65rem;color:rgba(255,255,255,0.4);margin-top:1px">Assist: ${assister}</div>`;
+      subDetail += `<div style="font-size:0.62rem;color:${accent};font-weight:800;margin-top:2px">${hGoals}–${aGoals}</div>`;
+    } else if (/yellow.*red|red.*yellow/i.test(typeText)) {
+      const player = parts[0]?.athlete?.displayName || '';
+      iconEl = `<div style="position:relative;width:14px;height:18px;flex-shrink:0"><div style="position:absolute;width:12px;height:16px;background:#f59e0b;border-radius:2px;top:0;left:0"></div><div style="position:absolute;width:12px;height:16px;background:#ef4444;border-radius:2px;top:2px;left:2px"></div></div>`;
+      detail = `<div style="font-size:0.78rem;font-weight:700;color:#fff">${player}</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">Second Yellow / Red</div>`;
+    } else if (/red/i.test(typeText)) {
+      const player = parts[0]?.athlete?.displayName || '';
+      iconEl = `<div style="width:14px;height:18px;background:#ef4444;border-radius:2px;flex-shrink:0"></div>`;
+      detail = `<div style="font-size:0.78rem;font-weight:700;color:#fff">${player}</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">Red Card</div>`;
+    } else if (/yellow/i.test(typeText)) {
+      const player = parts[0]?.athlete?.displayName || '';
+      iconEl = `<div style="width:14px;height:18px;background:#f59e0b;border-radius:2px;flex-shrink:0"></div>`;
+      detail = `<div style="font-size:0.78rem;font-weight:700;color:#fff">${player}</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">Yellow Card</div>`;
+    } else if (/substitution/i.test(typeText)) {
+      const off = parts.find(p => /out|off/i.test(p.type?.text || ''))?.athlete?.displayName
+               || parts[0]?.athlete?.displayName || '';
+      const on  = parts.find(p => /in$/i.test(p.type?.text || ''))?.athlete?.displayName
+               || parts[1]?.athlete?.displayName || '';
+      iconEl = `<div style="font-size:1rem;flex-shrink:0;line-height:1">🔁</div>`;
+      detail = on
+        ? `<div style="font-size:0.73rem;font-weight:700;color:#4ade80">▲ ${on}</div><div style="font-size:0.73rem;color:rgba(255,255,255,0.45)">▼ ${off}</div>`
+        : `<div style="font-size:0.73rem;font-weight:700;color:#fff">${off}</div>`;
+    } else {
+      const player = parts[0]?.athlete?.displayName || '';
+      iconEl = `<div style="font-size:0.75rem;flex-shrink:0">•</div>`;
+      detail = `<div style="font-size:0.75rem;color:#fff">${player} — ${typeText}</div>`;
+    }
+
+    const minBadge = `<div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.35);white-space:nowrap;min-width:24px;text-align:center">${min}</div>`;
+
+    // Home events: icon-left, content-left; Away: mirrored
+    const evRow = isHome
+      ? `<div style="display:flex;align-items:flex-start;gap:0.4rem">
+           ${iconEl}
+           <div style="flex:1">${detail}${subDetail}</div>
+           <div style="flex:1"></div>
+           ${minBadge}
+         </div>`
+      : `<div style="display:flex;align-items:flex-start;gap:0.4rem">
+           ${minBadge}
+           <div style="flex:1"></div>
+           <div style="flex:1;text-align:right">${detail}${subDetail}</div>
+           ${iconEl}
+         </div>`;
+
+    return htDivider + `<div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05)">${evRow}</div>`;
   }).join('');
 
-  return `<div style="${mdGlass()};padding:0.5rem 1rem">${rows}</div>`;
+  // Column headers
+  const headers = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid rgba(255,255,255,0.08)">
+      <div style="font-size:0.65rem;font-weight:800;color:${accent};letter-spacing:0.5px">${m.home}</div>
+      <div style="font-size:0.65rem;font-weight:800;color:#4cc9f0;letter-spacing:0.5px">${m.away}</div>
+    </div>`;
+
+  return `<div style="${mdGlass()};padding:0.75rem 1rem">${headers}${rows}</div>`;
 }
