@@ -385,7 +385,7 @@ function mdRenderSummary(data, norm) {
   const m       = MD.match;
   const accent  = APP.teamColor || '#f0a500';
 
-  const keep = events.filter(e => /goal|card|substitution/i.test(e.type?.text || ''));
+  const keep = events.filter(e => /goal|card|substitution|penalty/i.test(e.type?.text || ''));
   if (!keep.length) return `
     <div style="${mdGlass()};padding:2rem 1rem;text-align:center">
       <div style="font-size:2rem;margin-bottom:0.5rem">📋</div>
@@ -443,6 +443,22 @@ function mdRenderSummary(data, norm) {
       iconEl = `<div style="width:14px;height:18px;background:#f59e0b;border-radius:2px;flex-shrink:0"></div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:#fff">${player}</div>`;
       subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">Yellow Card</div>`;
+    } else if (/penalty miss/i.test(typeText)) {
+      const player = parts[0]?.athlete?.displayName || '';
+      iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">❌</div>`;
+      detail = `<div style="font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.7)">${player}</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:rgba(255,100,100,0.7)">Penalty Missed</div>`;
+    } else if (/penalty saved/i.test(typeText)) {
+      const taker = parts.find(p => /taker|kick/i.test(p.type?.text || ''))?.athlete?.displayName || parts[0]?.athlete?.displayName || '';
+      const keeper = parts.find(p => /keep|save/i.test(p.type?.text || ''))?.athlete?.displayName || parts[1]?.athlete?.displayName || '';
+      iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">🧤</div>`;
+      detail = `<div style="font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.7)">${taker}</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:#4ade80">Penalty Saved${keeper ? ' by ' + keeper : ''}</div>`;
+    } else if (/penalty/i.test(typeText)) {
+      const player = parts[0]?.athlete?.displayName || '';
+      iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">🥅</div>`;
+      detail = `<div style="font-size:0.78rem;font-weight:700;color:#f0a500">${player}</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">${typeText}</div>`;
     } else if (/substitution/i.test(typeText)) {
       const off = parts.find(p => /out|off/i.test(p.type?.text || ''))?.athlete?.displayName
                || parts[0]?.athlete?.displayName || '';
