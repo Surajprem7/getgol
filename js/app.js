@@ -753,10 +753,8 @@ function showTab(tab) {
         ? `openKOMatchDetail('${koEspnId}')`
         : `jumpToDate('${m.date}')`;
 
-      const hFlag = isKO && !getCountryCode(m.home)
-        ? '' : `<img src="https://flagcdn.com/24x18/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
-      const aFlag = isKO && !getCountryCode(m.away)
-        ? '' : `<img src="https://flagcdn.com/24x18/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
+      const hFlag = `<img src="https://flagcdn.com/24x18/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
+      const aFlag = `<img src="https://flagcdn.com/24x18/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
 
       return `
         <div onclick="${onclick}" style="padding:0.55rem 0.6rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.4rem;cursor:pointer;transition:background 0.2s"
