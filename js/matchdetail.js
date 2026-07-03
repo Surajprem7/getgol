@@ -385,7 +385,8 @@ function mdRenderSummary(data, norm) {
   const m       = MD.match;
   const accent  = APP.teamColor || '#f0a500';
 
-  const keep = events.filter(e => /goal|card|substitution|penalty/i.test(e.type?.text || ''));
+  // Include Halftime event so we can use it as the divider trigger
+  const keep = events.filter(e => /goal|card|substitution|penalty|halftime/i.test(e.type?.text || ''));
   if (!keep.length) return `
     <div style="${mdGlass()};padding:2rem 1rem;text-align:center">
       <div style="font-size:2rem;margin-bottom:0.5rem">📋</div>
@@ -394,20 +395,16 @@ function mdRenderSummary(data, norm) {
 
   // Running score
   let hGoals = 0, aGoals = 0;
-  let htInserted = false;
 
   const rows = keep.map(e => {
     const typeText = e.type?.text || '';
     const isHome   = e.team?.id && String(e.team.id) === String(homeId);
     const min      = e.clock?.displayValue || '';
-    const minNum   = parseInt(min) || 0;
     const parts    = e.participants || [];
 
-    // Half-time divider — insert before the first 2nd-half event
-    let htDivider = '';
-    if (!htInserted && minNum > 45) {
-      htInserted = true;
-      htDivider = `
+    // ESPN provides a Halftime event — use it as the divider
+    if (/halftime/i.test(typeText)) {
+      return `
         <div style="display:flex;align-items:center;gap:0.5rem;margin:0.6rem 0">
           <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
           <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1px;white-space:nowrap">HALF TIME · ${hGoals}–${aGoals}</div>
@@ -420,9 +417,9 @@ function mdRenderSummary(data, norm) {
     if (/goal/i.test(typeText)) {
       const isOG  = /own goal/i.test(typeText);
       const isPK  = /penalty/i.test(typeText);
-      const scorer   = parts.find(p => /scor/i.test(p.type?.text || '') || !p.type)?.athlete?.displayName
-                    || parts[0]?.athlete?.displayName || '';
-      const assister = parts.find(p => /assist/i.test(p.type?.text || ''))?.athlete?.displayName || '';
+      // ESPN participants have no type.text — parts[0] = scorer, parts[1] = assister
+      const scorer   = parts[0]?.athlete?.displayName || '';
+      const assister = parts[1]?.athlete?.displayName || '';
       if (isHome) hGoals++; else aGoals++;
       iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:${isOG ? 'rgba(255,255,255,0.15)' : '#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">⚽</div>`;
       detail = `<div style="font-size:0.8rem;font-weight:700;color:#fff">${scorer}${isOG ? ' <span style="color:rgba(255,255,255,0.4);font-size:0.65rem">(OG)</span>' : ''}${isPK ? ' <span style="color:#f0a500;font-size:0.65rem">(P)</span>' : ''}</div>`;
@@ -443,27 +440,27 @@ function mdRenderSummary(data, norm) {
       iconEl = `<div style="width:14px;height:18px;background:#f59e0b;border-radius:2px;flex-shrink:0"></div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:#fff">${player}</div>`;
       subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">Yellow Card</div>`;
-    } else if (/penalty miss/i.test(typeText)) {
+    } else if (/penalty\s*-\s*miss/i.test(typeText)) {
       const player = parts[0]?.athlete?.displayName || '';
       iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">❌</div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.7)">${player}</div>`;
-      subDetail = `<div style="font-size:0.62rem;color:rgba(255,100,100,0.7)">Penalty Missed</div>`;
-    } else if (/penalty saved/i.test(typeText)) {
-      const taker = parts.find(p => /taker|kick/i.test(p.type?.text || ''))?.athlete?.displayName || parts[0]?.athlete?.displayName || '';
-      const keeper = parts.find(p => /keep|save/i.test(p.type?.text || ''))?.athlete?.displayName || parts[1]?.athlete?.displayName || '';
+      subDetail = `<div style="font-size:0.62rem;color:rgba(255,100,100,0.8)">Penalty Missed</div>`;
+    } else if (/penalty\s*-\s*saved/i.test(typeText)) {
+      // parts[0] = taker, parts[1] = goalkeeper
+      const taker  = parts[0]?.athlete?.displayName || '';
+      const keeper = parts[1]?.athlete?.displayName || '';
       iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">🧤</div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.7)">${taker}</div>`;
-      subDetail = `<div style="font-size:0.62rem;color:#4ade80">Penalty Saved${keeper ? ' by ' + keeper : ''}</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:#4ade80">Saved${keeper ? ' by ' + keeper : ''}</div>`;
     } else if (/penalty/i.test(typeText)) {
       const player = parts[0]?.athlete?.displayName || '';
       iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">🥅</div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:#f0a500">${player}</div>`;
       subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">${typeText}</div>`;
     } else if (/substitution/i.test(typeText)) {
-      const off = parts.find(p => /out|off/i.test(p.type?.text || ''))?.athlete?.displayName
-               || parts[0]?.athlete?.displayName || '';
-      const on  = parts.find(p => /in$/i.test(p.type?.text || ''))?.athlete?.displayName
-               || parts[1]?.athlete?.displayName || '';
+      // ESPN parts[0] = player going OFF, parts[1] = player coming ON
+      const off = parts[0]?.athlete?.displayName || '';
+      const on  = parts[1]?.athlete?.displayName || '';
       iconEl = `<div style="font-size:1rem;flex-shrink:0;line-height:1">🔁</div>`;
       detail = on
         ? `<div style="font-size:0.73rem;font-weight:700;color:#4ade80">▲ ${on}</div><div style="font-size:0.73rem;color:rgba(255,255,255,0.45)">▼ ${off}</div>`
@@ -471,10 +468,10 @@ function mdRenderSummary(data, norm) {
     } else {
       const player = parts[0]?.athlete?.displayName || '';
       iconEl = `<div style="font-size:0.75rem;flex-shrink:0">•</div>`;
-      detail = `<div style="font-size:0.75rem;color:#fff">${player} — ${typeText}</div>`;
+      detail = `<div style="font-size:0.75rem;color:#fff">${player ? player + ' — ' : ''}${typeText}</div>`;
     }
 
-    const minBadge = `<div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.35);white-space:nowrap;min-width:24px;text-align:center">${min}</div>`;
+    const minBadge = `<div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.35);white-space:nowrap;min-width:28px;text-align:center">${min}</div>`;
 
     // Home events: icon-left, content-left; Away: mirrored
     const evRow = isHome
@@ -491,7 +488,7 @@ function mdRenderSummary(data, norm) {
            ${iconEl}
          </div>`;
 
-    return htDivider + `<div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05)">${evRow}</div>`;
+    return `<div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05)">${evRow}</div>`;
   }).join('');
 
   // Column headers
