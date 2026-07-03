@@ -726,11 +726,40 @@ function showTab(tab) {
       const isKO = m.isKO;
       const groupLabel = isKO ? (m.group || 'Knockout') : `Grp ${m.group}`;
       const groupColor = isKO ? '#a78bfa' : 'rgba(255,255,255,0.5)';
-      const scoreMid = isKO
-        ? `<span style="color:rgba(255,255,255,0.3);font-weight:700;font-size:0.7rem">vs</span>`
-        : `<span data-vs="${m.id}" data-vs-style="mini" style="min-width:42px;text-align:center;font-size:0.85rem">${shortScoreHTML(m.id)}</span>`;
+
+      // For KO rows: look up live score from _koData
+      const koEspnId = isKO ? m.id.replace('ko-', '') : null;
+      const koEv = koEspnId && window._koData ? (() => {
+        for (const list of Object.values(window._koData)) {
+          const found = list.find(e => String(e.espnId) === koEspnId);
+          if (found) return found;
+        }
+        return null;
+      })() : null;
+
+      let scoreMid;
+      if (isKO) {
+        if (koEv && (koEv.status === 'FT' || koEv.status === 'LIVE') && koEv.home.score >= 0) {
+          const live = koEv.status === 'LIVE';
+          scoreMid = `<span style="font-weight:900;font-size:0.85rem;color:${live ? '#4ade80' : '#fff'}">${koEv.home.score}–${koEv.away.score}</span>`;
+        } else {
+          scoreMid = `<span style="color:rgba(255,255,255,0.3);font-weight:700;font-size:0.7rem">vs</span>`;
+        }
+      } else {
+        scoreMid = `<span data-vs="${m.id}" data-vs-style="mini" style="min-width:42px;text-align:center;font-size:0.85rem">${shortScoreHTML(m.id)}</span>`;
+      }
+
+      const onclick = isKO
+        ? `openKOMatchDetail('${koEspnId}')`
+        : `jumpToDate('${m.date}')`;
+
+      const hFlag = isKO && !getCountryCode(m.home)
+        ? '' : `<img src="https://flagcdn.com/24x18/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
+      const aFlag = isKO && !getCountryCode(m.away)
+        ? '' : `<img src="https://flagcdn.com/24x18/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">`;
+
       return `
-        <div onclick="jumpToDate('${m.date}')" style="padding:0.55rem 0.6rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.4rem;cursor:pointer;transition:background 0.2s"
+        <div onclick="${onclick}" style="padding:0.55rem 0.6rem;border-radius:10px;background:rgba(255,255,255,0.03);margin-bottom:0.4rem;cursor:pointer;transition:background 0.2s"
           onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
           <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem">
             <span style="font-size:0.64rem;font-weight:700;color:rgba(255,255,255,0.75)">${dl}</span>
@@ -739,9 +768,9 @@ function showTab(tab) {
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem">
             <span style="flex:1;text-align:right;font-size:0.8rem;color:#fff;font-weight:${m.home === APP.teamName ? '700' : '500'}">${m.home}</span>
-            <img src="https://flagcdn.com/24x18/${getCountryCode(m.home)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
+            ${hFlag}
             ${scoreMid}
-            <img src="https://flagcdn.com/24x18/${getCountryCode(m.away)}.png" style="border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
+            ${aFlag}
             <span style="flex:1;text-align:left;font-size:0.8rem;color:#fff;font-weight:${m.away === APP.teamName ? '700' : '500'}">${m.away}</span>
           </div>
         </div>`;
@@ -956,6 +985,22 @@ function showTab(tab) {
         window._koData = koData;
         const section = document.getElementById('ko-fixtures-section');
         if (!section) return;
+        const _koStandings = (window.LIVE && window.LIVE.getStandings) ? window.LIVE.getStandings() : {};
+        const _koFlagOrSlot = (t) => {
+          if (t.real) return `<img src="https://flagcdn.com/48x36/${t.code}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">`;
+          const cand = koSlotCandidates(t.name, _koStandings);
+          if (cand && cand.current) {
+            const cc = getCountryCode(cand.current);
+            return `<img src="https://flagcdn.com/48x36/${cc}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);opacity:0.7" onerror="this.style.display='none'">`;
+          }
+          return `<div style="width:48px;height:36px;border-radius:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🛡️</div>`;
+        };
+        const _koDisplayName = (t) => {
+          if (t.real) return t.name;
+          const cand = koSlotCandidates(t.name, _koStandings);
+          if (cand && cand.current) return `<span style="opacity:0.75">${cand.current}</span>`;
+          return `<span style="font-size:0.7rem;color:rgba(255,255,255,0.4);font-style:italic">${t.name || 'TBD'}</span>`;
+        };
 
         // Convert ESPN UTC date → IST date string (YYYY-MM-DD)
         const toISTDate = (iso) => {
@@ -1018,17 +1063,16 @@ function showTab(tab) {
             }
             const h = ev.home, a = ev.away;
             const hName = h.name || 'TBD', aName = a.name || 'TBD';
-            const hc = getTeamColor(hName), ac2 = getTeamColor(aName);
+            const hc = getTeamColor(h.real ? hName : (koSlotCandidates(hName,_koStandings)?.current || hName));
+            const ac2 = getTeamColor(a.real ? aName : (koSlotCandidates(aName,_koStandings)?.current || aName));
             const isLive = ev.status === 'LIVE', isFT = ev.status === 'FT';
             const isMyKO = APP.teamName && (hName === APP.teamName || aName === APP.teamName);
             const timeStr = ev.date ? timeFmt.format(new Date(ev.date)) : '';
             const roundLbl = roundLabel[ev.round] || ev.round || '';
-            const flagH = h.real
-              ? `<img src="https://flagcdn.com/48x36/${h.code}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">`
-              : `<div style="width:48px;height:36px;border-radius:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🛡️</div>`;
-            const flagA = a.real
-              ? `<img src="https://flagcdn.com/48x36/${a.code}.png" width="48" height="36" style="border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4)" onerror="this.style.display='none'">`
-              : `<div style="width:48px;height:36px;border-radius:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🛡️</div>`;
+            const flagH = _koFlagOrSlot(h);
+            const flagA = _koFlagOrSlot(a);
+            const hDisplayName = _koDisplayName(h);
+            const aDisplayName = _koDisplayName(a);
             const vsHTML = (isFT || isLive) && h.score >= 0
               ? `${isLive ? `<div style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.5);border-radius:8px;padding:1px 6px;margin-bottom:3px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;animation:livePulse 1s ease-in-out infinite"></span><span style="font-size:0.55rem;color:#ef4444;font-weight:800;letter-spacing:0.8px">LIVE</span></div>` : ''}
                  <div style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.1">${h.score}–${a.score}</div>
@@ -1059,12 +1103,12 @@ function showTab(tab) {
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1rem 0.5rem">
                   <div style="text-align:center;flex:1">
                     ${flagH}
-                    <div style="font-size:0.85rem;color:${hName===APP.teamName?accentColor:'#fff'};margin-top:0.4rem;font-weight:${hName===APP.teamName?'700':'600'}">${hName}</div>
+                    <div style="font-size:0.85rem;color:${hName===APP.teamName?accentColor:'#fff'};margin-top:0.4rem;font-weight:${hName===APP.teamName?'700':'600'}">${hDisplayName}</div>
                   </div>
                   <div style="text-align:center;padding:0 0.5rem;min-width:56px">${vsHTML}</div>
                   <div style="text-align:center;flex:1">
                     ${flagA}
-                    <div style="font-size:0.85rem;color:${aName===APP.teamName?accentColor:'#fff'};margin-top:0.4rem;font-weight:${aName===APP.teamName?'700':'600'}">${aName}</div>
+                    <div style="font-size:0.85rem;color:${aName===APP.teamName?accentColor:'#fff'};margin-top:0.4rem;font-weight:${aName===APP.teamName?'700':'600'}">${aDisplayName}</div>
                   </div>
                 </div>
                 ${ev.venue ? `<div style="font-size:0.72rem;color:rgba(255,255,255,0.5);text-align:center;padding:0 1rem 0.3rem">${ev.venue}</div>` : ''}
@@ -1601,6 +1645,7 @@ async function fetchKnockout() {
 // Resolve a knockout placeholder ("Group A Winner", "Third Place Group A/B/C/D/F")
 // to the teams that could currently fill it, using live group standings.
 function koSlotCandidates(name, standings) {
+  if (!name || name === 'TBD' || name === '') return null;
   let m;
   if ((m = name.match(/^Group ([A-L]) Winner$/i))) {
     const rows = standings[m[1].toUpperCase()] || [];
@@ -1835,7 +1880,7 @@ function renderKnockoutBracket(rounds, accent) {
     const ft=trd.status==='FT', live=trd.status==='LIVE';
     const hs=(ft||live)&&trd.home.score>=0?trd.home.score:null;
     const as=(ft||live)&&trd.away.score>=0?trd.away.score:null;
-    const hw=ft&&hs>as, aw=ft&&as>hs;
+    const hw=ft&&hs!==null&&as!==null&&hs>as, aw=ft&&hs!==null&&as!==null&&as>hs;
     const hn=trd.home.real?(trd.home.name.length>9?trd.home.name.slice(0,8)+'…':trd.home.name):'TBD';
     const an=trd.away.real?(trd.away.name.length>9?trd.away.name.slice(0,8)+'…':trd.away.name):'TBD';
     const dateStr=trd.date?istFmt.format(new Date(trd.date))+' IST':'';
