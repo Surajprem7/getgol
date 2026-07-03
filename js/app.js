@@ -308,6 +308,11 @@ function showApp(startTab) {
   window.addEventListener('scroll', window._headerScrollFn, { passive: true });
   showTab(startTab || 'matches');
   if (typeof updateNotifBell === 'function') updateNotifBell();
+  // Deep-link from a notification tap: ?match=<id> auto-opens that match detail
+  const _notifMatchId = new URLSearchParams(location.search).get('match');
+  if (_notifMatchId && typeof openMatchDetail === 'function') {
+    setTimeout(() => { openMatchDetail(_notifMatchId); history.replaceState(null,'','/'); }, 600);
+  }
   // Start tour only if team picker is not in DOM — else closeTeamPicker() triggers it
   if (!localStorage.getItem('gol-tour-v2')) {
     setTimeout(() => {

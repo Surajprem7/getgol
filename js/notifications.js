@@ -90,7 +90,7 @@ function dismissNotifPrompt() {
 
 // Show a notification via the service worker if available (more reliable on
 // mobile/PWA), else fall back to a page Notification.
-function fireNotification(title, body, tag) {
+function fireNotification(title, body, tag, url) {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
   const opts = {
     body,
@@ -98,6 +98,7 @@ function fireNotification(title, body, tag) {
     renotify: true,
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
+    data: { url: url || '/' },
   };
   if (navigator.serviceWorker && navigator.serviceWorker.ready) {
     navigator.serviceWorker.ready
@@ -147,7 +148,12 @@ function notifyScoreChanges(scores) {
 
     // Full time: anything → FT
     if (sc.status === 'FT' && (!prev || prev.status !== 'FT')) {
-      fireNotification('⏱️ Full Time', `${m.home} ${scoreStr} ${m.away}`, 'ft-' + id);
+      fireNotification(
+        `⏱️ Full Time · ${scoreStr}`,
+        `${m.home} vs ${m.away} — Tap to see match summary`,
+        'ft-' + id,
+        `/?match=${id}`
+      );
     }
   });
 

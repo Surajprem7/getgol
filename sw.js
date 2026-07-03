@@ -38,15 +38,21 @@ self.addEventListener('push', e => {
   );
 });
 
-// Tapping a notification focuses an open tab, or opens the app.
+// Tapping a notification focuses an open tab (navigating to the target url),
+// or opens the app at that url if no tab is open.
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const url = e.notification.data?.url || '/';
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
       for (const c of clients) {
-        if (c.url.includes(self.location.origin) && 'focus' in c) return c.focus();
+        if (c.url.includes(self.location.origin) && 'focus' in c) {
+          c.focus();
+          if (url !== '/') c.navigate(url);
+          return;
+        }
       }
-      if (self.clients.openWindow) return self.clients.openWindow('/');
+      if (self.clients.openWindow) return self.clients.openWindow(url);
     })
   );
 });
