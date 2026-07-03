@@ -1795,8 +1795,8 @@ function renderKnockoutBracket(rounds, accent) {
   const H    = N * SLOT; // total column height = 544px
 
   const code = (n) => (typeof getCountryCode === 'function') ? getCountryCode(n) : 'un';
-  const flag = (name) => name
-    ? `<img src="https://flagcdn.com/16x12/${code(name)}.png" style="border-radius:1px;flex-shrink:0;width:16px;height:12px" onerror="this.style.display='none'">`
+  const flagByCode = (iso) => iso && iso !== 'un'
+    ? `<img src="https://flagcdn.com/16x12/${iso}.png" style="border-radius:1px;flex-shrink:0;width:16px;height:12px" onerror="this.style.display='none'">`
     : `<span style="width:16px;display:inline-block"></span>`;
   const istFmt = new Intl.DateTimeFormat('en-IN', {
     timeZone:'Asia/Kolkata', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', hour12:false,
@@ -1823,9 +1823,9 @@ function renderKnockoutBracket(rounds, accent) {
     const bdr = live ? 'rgba(74,222,128,0.55)' : isAccent ? accent + '99' : 'rgba(255,255,255,0.18)';
     const glow = isAccent ? `box-shadow:0 0 14px ${accent}33;` : '';
     const dateStr = m.date ? istFmt.format(new Date(m.date)) + ' IST' : '';
-    const row = (name, real, sc, win) => `
+    const row = (name, iso, real, sc, win) => `
       <div style="display:flex;align-items:center;gap:3px;padding:1px 5px;${win ? 'background:rgba(255,255,255,0.1);font-weight:700' : ''}">
-        ${flag(real ? name : null)}
+        ${flagByCode(real ? iso : null)}
         <span style="flex:1;font-size:0.56rem;color:rgba(255,255,255,${real?'0.9':'0.32'});overflow:hidden;white-space:nowrap">${name}</span>
         ${sc !== null ? `<span style="font-size:0.6rem;font-weight:800;color:${live?'#4ade80':'#fff'}">${sc}</span>` : ''}
       </div>`;
@@ -1833,9 +1833,9 @@ function renderKnockoutBracket(rounds, accent) {
       <div style="position:absolute;top:${top}px;left:0;right:0;height:${CARD}px;border-radius:7px;border:1px solid ${bdr};background:rgba(255,255,255,0.08);overflow:hidden;${glow}display:flex;flex-direction:column">
         <div style="font-size:0.42rem;text-align:center;padding:1px 2px;color:rgba(255,255,255,0.3);background:rgba(0,0,0,0.15);white-space:nowrap;overflow:hidden">${dateStr}</div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:space-around">
-          ${row(hn, m.home.real, hs, hw)}
+          ${row(hn, m.home.code, m.home.real, hs, hw)}
           <div style="height:1px;background:rgba(255,255,255,0.07)"></div>
-          ${row(an, m.away.real, as, aw)}
+          ${row(an, m.away.code, m.away.real, as, aw)}
         </div>
       </div>`;
   };
@@ -1882,17 +1882,17 @@ function renderKnockoutBracket(rounds, accent) {
     const hn=trd.home.real?(trd.home.name.length>9?trd.home.name.slice(0,8)+'…':trd.home.name):'TBD';
     const an=trd.away.real?(trd.away.name.length>9?trd.away.name.slice(0,8)+'…':trd.away.name):'TBD';
     const dateStr=trd.date?istFmt.format(new Date(trd.date))+' IST':'';
-    const row=(name,real,sc,win)=>`<div style="display:flex;align-items:center;gap:3px;padding:2px 5px;${win?'background:rgba(255,255,255,0.1)':''}">
-      ${flag(real?name:null)}<span style="flex:1;font-size:0.56rem;color:rgba(255,255,255,${real?'0.9':'0.3'});overflow:hidden;white-space:nowrap">${name}</span>
+    const row=(name,iso,real,sc,win)=>`<div style="display:flex;align-items:center;gap:3px;padding:2px 5px;${win?'background:rgba(255,255,255,0.1)':''}">
+      ${flagByCode(real?iso:null)}<span style="flex:1;font-size:0.56rem;color:rgba(255,255,255,${real?'0.9':'0.3'});overflow:hidden;white-space:nowrap">${name}</span>
       ${sc!==null?`<span style="font-size:0.6rem;font-weight:800;color:#fff">${sc}</span>`:''}
     </div>`;
     return `<div style="margin-top:0.75rem;text-align:center">
       <div style="font-size:0.6rem;color:rgba(255,255,255,0.38);margin-bottom:4px">🥉 Third Place · ${dateStr}</div>
       <div style="max-width:200px;margin:0 auto;border-radius:7px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.07);overflow:hidden;display:flex;flex-direction:column">
         <div style="height:1px;background:rgba(255,255,255,0.07);margin-top:${CARD*0.4}px"></div>
-        ${row(hn,trd.home.real,hs,hw)}
+        ${row(hn,trd.home.code,trd.home.real,hs,hw)}
         <div style="height:1px;background:rgba(255,255,255,0.07)"></div>
-        ${row(an,trd.away.real,as,aw)}
+        ${row(an,trd.away.code,trd.away.real,as,aw)}
       </div>
     </div>`;
   })() : '';
