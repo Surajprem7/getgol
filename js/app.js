@@ -1125,6 +1125,12 @@ function showTab(tab) {
         }
         section.innerHTML = html;
         updateTimelineActive();
+        // Restore saved KO predictions
+        Object.values(koData).forEach(list => list.forEach(ev => {
+          const matchId = 'ko-' + (ev.espnId || ev.date);
+          const saved = localStorage.getItem('pred_' + matchId);
+          if (saved) highlightPrediction(matchId, saved);
+        }));
       } catch(e) { /* silently skip */ }
     })();
 
@@ -1982,6 +1988,15 @@ function renderKnockout(content, glass, rounds) {
 
   window._koGlass = glass;
 
+  // Restore saved KO predictions (mirrors the group-stage restore in showMatchesTab)
+  if (window._koView === 'list') {
+    Object.values(rounds).forEach(list => list.forEach(ev => {
+      const matchId = 'ko-' + (ev.espnId || ev.date);
+      const saved = localStorage.getItem('pred_' + matchId);
+      if (saved) highlightPrediction(matchId, saved);
+    }));
+  }
+
   // Show one-time hint pointing to Bracket button
   if (window._koView === 'list' && !localStorage.getItem('gol-hint-bracket')) {
     setTimeout(() => {
@@ -2017,6 +2032,29 @@ function renderKnockout(content, glass, rounds) {
   }
 }
 
+function notifyKOFinished(prev, next) {
+  if (typeof fireNotification !== 'function') return;
+  if (typeof notifEnabled !== 'function' || !notifEnabled()) return;
+  if (!prev) return;
+  Object.values(next).forEach(list => list.forEach(ev => {
+    if (ev.status !== 'FT' || !ev.espnId) return;
+    let prevEv = null;
+    for (const pl of Object.values(prev)) {
+      prevEv = pl.find(p => p.espnId === ev.espnId);
+      if (prevEv) break;
+    }
+    if (!prevEv || prevEv.status === 'FT') return;
+    const hs = ev.home.score >= 0 ? ev.home.score : 0;
+    const as = ev.away.score >= 0 ? ev.away.score : 0;
+    fireNotification(
+      `⏱️ Full Time · ${hs}–${as}`,
+      `${ev.home.name} vs ${ev.away.name} — Tap to see match summary`,
+      'ft-ko-' + ev.espnId,
+      `/?match=ko-${ev.espnId}`
+    );
+  }));
+}
+
 function buildKnockoutTab(content, glass) {
   if (window._koData) renderKnockout(content, glass, window._koData);
   else content.innerHTML = `<div style="${glass};padding:2.5rem 1rem;text-align:center;color:rgba(255,255,255,0.5)">Loading knockout bracket…</div>`;
@@ -2028,6 +2066,7 @@ function buildKnockoutTab(content, glass) {
       }
       return;
     }
+    notifyKOFinished(window._koData, rounds);
     window._koData = rounds;
     if (window._activeTab === 'knockout') renderKnockout(content, glass, rounds);
   });
