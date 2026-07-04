@@ -310,8 +310,15 @@ function showApp(startTab) {
   if (typeof updateNotifBell === 'function') updateNotifBell();
   // Deep-link from a notification tap: ?match=<id> auto-opens that match detail
   const _notifMatchId = new URLSearchParams(location.search).get('match');
-  if (_notifMatchId && typeof openMatchDetail === 'function') {
-    setTimeout(() => { openMatchDetail(_notifMatchId); history.replaceState(null,'','/'); }, 600);
+  if (_notifMatchId) {
+    setTimeout(() => {
+      if (String(_notifMatchId).startsWith('ko-') && typeof openKOMatchDetail === 'function') {
+        openKOMatchDetail(String(_notifMatchId).replace('ko-', ''));
+      } else if (typeof openMatchDetail === 'function') {
+        openMatchDetail(_notifMatchId);
+      }
+      history.replaceState(null, '', '/');
+    }, 600);
   }
   // Start tour only if team picker is not in DOM — else closeTeamPicker() triggers it
   if (!localStorage.getItem('gol-tour-v2')) {
@@ -1079,9 +1086,9 @@ function showTab(tab) {
             const predHTML = (h.real && a.real && !isFT)
               ? `<div style="border-top:1px solid rgba(255,255,255,0.06);padding:0.65rem 0.75rem 0.5rem">
                    <div style="display:flex;gap:0.4rem">
-                     <button onclick="predict('ko-${ev.espnId||ev.date}','${hName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko${ev.espnId||ev.date}-home"
+                     <button onclick="predict('ko-${ev.espnId||ev.date}','${hName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko-${ev.espnId||ev.date}-home"
                        style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${hName}</button>
-                     <button onclick="predict('ko-${ev.espnId||ev.date}','${aName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko${ev.espnId||ev.date}-away"
+                     <button onclick="predict('ko-${ev.espnId||ev.date}','${aName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko-${ev.espnId||ev.date}-away"
                        style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${aName}</button>
                    </div>
                  </div>`
@@ -1408,28 +1415,47 @@ function predict(matchId, pick) {
 }
 
 function highlightPrediction(matchId, pick) {
-  const m = MATCHES.find(x => x.id === matchId);
-  if (!m) return;
+  const color = APP.teamColor || '#f0a500';
+  let homePick, awayPick;
+
+  if (String(matchId).startsWith('ko-')) {
+    const key = String(matchId).replace('ko-', '');
+    let koEv = null;
+    if (window._koData) {
+      for (const list of Object.values(window._koData)) {
+        const found = list.find(e => String(e.espnId) === key || e.date === key);
+        if (found) { koEv = found; break; }
+      }
+    }
+    if (!koEv) return;
+    homePick = koEv.home.name;
+    awayPick = koEv.away.name;
+  } else {
+    const m = MATCHES.find(x => String(x.id) === String(matchId));
+    if (!m) return;
+    homePick = m.home;
+    awayPick = m.away;
+  }
+
   const homeBtn = document.getElementById('pred-'+matchId+'-home');
   const drawBtn = document.getElementById('pred-'+matchId+'-draw');
   const awayBtn = document.getElementById('pred-'+matchId+'-away');
   if (!homeBtn) return;
-  [homeBtn, drawBtn, awayBtn].forEach(b => {
+  [homeBtn, drawBtn, awayBtn].filter(Boolean).forEach(b => {
     b.style.borderColor = 'rgba(255,255,255,0.1)';
     b.style.background = 'rgba(255,255,255,0.05)';
     b.style.boxShadow = 'none';
   });
-  if (pick === m.home) {
-    homeBtn.style.borderColor = APP.teamColor;
-    homeBtn.style.background = APP.teamColor+'33';
-    homeBtn.style.boxShadow = '0 0 20px '+APP.teamColor+'44';
+  if (pick === homePick) {
+    homeBtn.style.borderColor = color;
+    homeBtn.style.background = color + '33';
+    homeBtn.style.boxShadow = '0 0 20px ' + color + '44';
   } else if (pick === 'draw') {
-    drawBtn.style.borderColor = 'rgba(255,255,255,0.4)';
-    drawBtn.style.background = 'rgba(255,255,255,0.15)';
-  } else if (pick === m.away) {
-    awayBtn.style.borderColor = APP.teamColor;
-    awayBtn.style.background = APP.teamColor+'33';
-    awayBtn.style.boxShadow = '0 0 20px '+APP.teamColor+'44';
+    if (drawBtn) { drawBtn.style.borderColor = 'rgba(255,255,255,0.4)'; drawBtn.style.background = 'rgba(255,255,255,0.15)'; }
+  } else if (pick === awayPick) {
+    awayBtn.style.borderColor = color;
+    awayBtn.style.background = color + '33';
+    awayBtn.style.boxShadow = '0 0 20px ' + color + '44';
   }
 }
 
@@ -1734,8 +1760,8 @@ function renderKnockoutList(rounds, glass, accent) {
     const predHTML = (h.real && a.real && !isFT)
       ? `<div style="border-top:1px solid rgba(255,255,255,0.06);padding:0.65rem 0.75rem 0.5rem">
            <div style="display:flex;gap:0.4rem">
-             <button onclick="predict('ko-${ev.espnId||ev.date}','${hName.replace(/'/g,"\\'")}');event.stopPropagation()" style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${hName}</button>
-             <button onclick="predict('ko-${ev.espnId||ev.date}','${aName.replace(/'/g,"\\'")}');event.stopPropagation()" style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${aName}</button>
+             <button onclick="predict('ko-${ev.espnId||ev.date}','${hName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko-${ev.espnId||ev.date}-home" style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${hName}</button>
+             <button onclick="predict('ko-${ev.espnId||ev.date}','${aName.replace(/'/g,"\\'")}');event.stopPropagation()" id="pred-ko-${ev.espnId||ev.date}-away" style="flex:1;padding:0.45rem 0.25rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);cursor:pointer;font-size:0.72rem;font-weight:600">${aName}</button>
            </div>
          </div>`
       : '';

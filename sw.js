@@ -1,4 +1,4 @@
-const CACHE = 'gol-v81';
+const CACHE = 'gol-v82';
 const FILES = ['/', '/index.html', '/manifest.json', '/js/matches.js', '/js/notifications.js', '/js/live.js', '/js/poster.js', '/js/matchdetail.js', '/js/app.js', '/js/firebase.js', '/js/selfcheck.js', '/js/install.js'];
 
 self.addEventListener('install', e => {
@@ -12,7 +12,7 @@ self.addEventListener('activate', e => {
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
       .then(() => self.clients.matchAll({ type: 'window' }))
-      .then(clients => Promise.all(clients.map(client => client.navigate(client.url))))
+      .then(clients => clients.forEach(c => c.postMessage({ type: 'UPDATE_AVAILABLE' })))
   );
 });
 
