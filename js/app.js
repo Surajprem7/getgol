@@ -994,7 +994,8 @@ function showTab(tab) {
           const tlEl = document.getElementById('match-timeline');
           if (tlEl) {
             const nodePx = TL_PAD + idx * TL_SPACING;
-            tlEl.scrollTop = Math.max(0, nodePx - tlEl.offsetHeight / 2);
+            const tlH = tlEl.offsetHeight || (window.innerHeight * 0.75);
+            tlEl.scrollTop = Math.max(0, nodePx - tlH / 2);
           }
         }
         updateTimelineActive();
