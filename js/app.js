@@ -859,20 +859,35 @@ function showTab(tab) {
               <button onclick="dismissCalHint()" aria-label="Dismiss" style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:rgba(240,165,0,0.18);border:2px solid #f0a500;color:#f0a500;font-size:0.7rem;font-weight:800;cursor:pointer;line-height:1">✕</button>
             </div>`}
           ${mySection}
-          ${tlDates.map(date => {
-            const d = new Date(date + 'T00:00:00');
-            const dateLabel = `${d.getDate()} ${months[d.getMonth()]}`;
-            const dayMatches = byDate[date] || [];
-            return `
-              <div data-date-header="${date}" style="display:flex;align-items:center;gap:0.5rem;margin:1rem 0 0.5rem">
-                <div style="font-size:0.78rem;font-weight:700;color:${accentColor};white-space:nowrap">${dateLabel}</div>
-                <div style="flex:1;height:1px;background:linear-gradient(90deg,${accentColor}44,transparent)"></div>
-              </div>
-              ${dayMatches.map(m => renderMatch(m)).join('')}
-            `;
-          }).join('')}
-          <!-- Knockout fixtures injected async below -->
+          <!-- Knockout fixtures — shown at top so today's KO matches are immediately visible -->
           <div id="ko-fixtures-section"></div>
+          ${(() => {
+            const todayCheck = new Date(Date.now() + 5.5*60*60*1000).toISOString().slice(0,10);
+            const lastGroupDate = tlDates[tlDates.length - 1] || '2026-06-29';
+            const isKOPhase = todayCheck > lastGroupDate;
+            const groupHTML = tlDates.map(date => {
+              const d = new Date(date + 'T00:00:00');
+              const dateLabel = `${d.getDate()} ${months[d.getMonth()]}`;
+              const dayMatches = byDate[date] || [];
+              return `
+                <div data-date-header="${date}" style="display:flex;align-items:center;gap:0.5rem;margin:1rem 0 0.5rem">
+                  <div style="font-size:0.78rem;font-weight:700;color:${accentColor};white-space:nowrap">${dateLabel}</div>
+                  <div style="flex:1;height:1px;background:linear-gradient(90deg,${accentColor}44,transparent)"></div>
+                </div>
+                ${dayMatches.map(m => renderMatch(m)).join('')}
+              `;
+            }).join('');
+            if (!isKOPhase) return groupHTML;
+            // KO phase — collapse group stage results under a toggle
+            return `
+              <div style="margin:1rem 0 0.4rem">
+                <button id="gs-toggle-btn" onclick="(function(){var c=document.getElementById('gs-content');var b=document.getElementById('gs-toggle-btn');var open=c.style.display!=='none';c.style.display=open?'none':'block';b.innerHTML=open?'▶ Group Stage Results (${sortedMatches.length} matches)':'▼ Group Stage Results (${sortedMatches.length} matches)';})()"
+                  style="width:100%;display:flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.5rem 0.75rem;cursor:pointer;color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:600;text-align:left">
+                  ▶ Group Stage Results (${sortedMatches.length} matches)
+                </button>
+                <div id="gs-content" style="display:none">${groupHTML}</div>
+              </div>`;
+          })()}
         </div>
 
         <!-- Ruler timeline — sticky, scrollable -->
@@ -963,9 +978,14 @@ function showTab(tab) {
       if (activeDate) {
         // Scroll the page to today's date header (instant so timeline logic fires cleanly)
         const headerEl = document.querySelector(`[data-date-header="${activeDate}"]`);
+        const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
         if (headerEl) {
-          const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
           window.scrollTo({ top: headerEl.getBoundingClientRect().top + window.scrollY - headerH - 8 });
+        } else {
+          // KO date — no group-stage date header exists; scroll to KO section at top
+          const koEl = document.getElementById('ko-fixtures-section');
+          if (koEl) window.scrollTo({ top: Math.max(0, koEl.getBoundingClientRect().top + window.scrollY - headerH - 8) });
+          else window.scrollTo({ top: 0 });
         }
         // Centre the timeline on today's node
         const idx = allTlDates.indexOf(activeDate);
