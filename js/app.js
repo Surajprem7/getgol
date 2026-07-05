@@ -972,7 +972,8 @@ function showTab(tab) {
     window.addEventListener('scroll', _tlScrollHandler, { passive: true });
 
     // Auto-scroll the page to today's date and centre it in the timeline
-    (() => {
+    // setTimeout ensures the browser has painted the DOM before getBoundingClientRect is called
+    setTimeout(() => {
       const todayIST = new Date(Date.now() + 5.5*60*60*1000).toISOString().slice(0,10);
       const activeDate = allTlDates.find(d => d >= todayIST) || allTlDates[allTlDates.length - 1];
       if (activeDate) {
@@ -998,7 +999,7 @@ function showTab(tab) {
         }
         updateTimelineActive();
       }
-    })();
+    }, 80);
 
     if (typeof refreshMatchScores === 'function') refreshMatchScores();
 
@@ -1119,6 +1120,7 @@ function showTab(tab) {
             html += `
             <div style="${glass};margin-bottom:0.75rem;overflow:hidden;position:relative;${isMyKO?'border-color:'+accentColor+'66;box-shadow:0 0 24px '+accentColor+'22':'border-color:rgba(167,139,250,0.2)'}">
               <div style="height:3px;background:linear-gradient(90deg,${hc} 0%,${hc} 50%,${ac2} 50%,${ac2} 100%);opacity:0.85"></div>
+              ${ev.espnId && !isFT ? `<button onclick="addToCalendarKO('${ev.espnId}');event.stopPropagation()" title="Add to calendar" style="position:absolute;top:0.5rem;right:0.5rem;z-index:3;width:30px;height:30px;border-radius:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center">🗓️</button>` : ''}
               <div onclick="${ev.espnId?`openKOMatchDetail('${ev.espnId}')`:''}" style="cursor:${ev.espnId?'pointer':'default'}">
                 <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
                   <span style="font-size:0.72rem;font-weight:600;color:#a78bfa;letter-spacing:0.3px">${roundLbl}</span>
@@ -1427,6 +1429,39 @@ function gcalUrl(m) {
 function addToCalendar(matchId) {
   const m = MATCHES.find(x => x.id === matchId);
   if (m) window.open(gcalUrl(m), '_blank', 'noopener');
+}
+
+function addToCalendarKO(espnId) {
+  if (!window._koData) return;
+  let ev = null, round = null;
+  for (const [r, list] of Object.entries(window._koData)) {
+    const found = list.find(e => String(e.espnId) === String(espnId));
+    if (found) { ev = found; round = r; break; }
+  }
+  if (!ev || !ev.date) return;
+  const pad = n => String(n).padStart(2, '0');
+  const ist = new Date(new Date(ev.date).getTime() + 5.5 * 60 * 60 * 1000);
+  const ds = `${ist.getFullYear()}${pad(ist.getMonth()+1)}${pad(ist.getDate())}`;
+  const hh = ist.getHours(), mm = ist.getMinutes();
+  let eh = hh + 2, eds = ds;
+  if (eh >= 24) {
+    eh -= 24;
+    const nd = new Date(ist.getTime() + 86400000);
+    eds = `${nd.getFullYear()}${pad(nd.getMonth()+1)}${pad(nd.getDate())}`;
+  }
+  const KO_LBL = {'round-of-32':'Round of 32','round-of-16':'Round of 16','quarterfinals':'Quarter-finals','semifinals':'Semi-finals','3rd-place-match':'Third Place','final':'THE FINAL'};
+  const lbl = KO_LBL[round] || 'Knockout';
+  const h = ev.home.real ? ev.home.name : 'TBD';
+  const a = ev.away.real ? ev.away.name : 'TBD';
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `${h} vs ${a} — FIFA WC 2026 ${lbl}`,
+    dates: `${ds}T${pad(hh)}${pad(mm)}00/${eds}T${pad(eh)}${pad(mm)}00`,
+    ctz: 'Asia/Kolkata',
+    details: `${lbl} · Watch on ZEE5 / DD Sports · via Gol! (getgol.in)`,
+    location: ev.venue || '',
+  });
+  window.open('https://calendar.google.com/calendar/render?' + params.toString(), '_blank', 'noopener');
 }
 
 function dismissCalHint() {
@@ -1799,6 +1834,7 @@ function renderKnockoutList(rounds, glass, accent) {
     return `
       <div style="${glass};margin-bottom:0.75rem;overflow:hidden;position:relative;${isMyKO ? 'border-color:'+accent+'66;box-shadow:0 0 24px '+accent+'22' : 'border-color:rgba(167,139,250,0.2)'}">
         <div style="height:3px;background:linear-gradient(90deg,${hc} 0%,${hc} 50%,${ac2} 50%,${ac2} 100%);opacity:0.85"></div>
+        ${ev.espnId && !isFT ? `<button onclick="addToCalendarKO('${ev.espnId}');event.stopPropagation()" title="Add to calendar" style="position:absolute;top:0.5rem;right:0.5rem;z-index:3;width:30px;height:30px;border-radius:10px;background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.35);cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center">🗓️</button>` : ''}
         <div onclick="${ev.espnId ? `openKOMatchDetail('${ev.espnId}')` : ''}" style="cursor:${ev.espnId ? 'pointer' : 'default'}">
           <div style="text-align:center;padding:0.6rem 1rem 0;display:flex;align-items:center;justify-content:center;gap:0.5rem">
             <span style="font-size:0.72rem;font-weight:600;color:#a78bfa">${roundLbl}</span>
