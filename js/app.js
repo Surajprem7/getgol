@@ -971,24 +971,25 @@ function showTab(tab) {
     _tlScrollHandler = updateTimelineActive;
     window.addEventListener('scroll', _tlScrollHandler, { passive: true });
 
-    // Auto-scroll the page to today's date and centre it in the timeline
-    // setTimeout ensures the browser has painted the DOM before getBoundingClientRect is called
+    // Auto-scroll the page to today's date and centre it in the timeline (once per tab open).
+    // setTimeout ensures the browser has painted the DOM before getBoundingClientRect is called.
+    // _initialScrollDone tracks whether the page scroll succeeded so the async KO block
+    // can finish the job without re-scrolling the timeline (which would break date taps).
+    let _initialScrollDone = false;
     setTimeout(() => {
       const todayIST = new Date(Date.now() + 5.5*60*60*1000).toISOString().slice(0,10);
       const activeDate = allTlDates.find(d => d >= todayIST) || allTlDates[allTlDates.length - 1];
       if (activeDate) {
-        // Scroll the page to today's date header (instant so timeline logic fires cleanly)
         const headerEl = document.querySelector(`[data-date-header="${activeDate}"]`);
         const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
         if (headerEl) {
           window.scrollTo({ top: headerEl.getBoundingClientRect().top + window.scrollY - headerH - 8 });
+          _initialScrollDone = true;
         } else {
-          // KO date — no group-stage date header exists; scroll to KO section at top
-          const koEl = document.getElementById('ko-fixtures-section');
-          if (koEl) window.scrollTo({ top: Math.max(0, koEl.getBoundingClientRect().top + window.scrollY - headerH - 8) });
-          else window.scrollTo({ top: 0 });
+          // KO date header not in DOM yet (async KO fetch pending) — scroll to top for now
+          window.scrollTo({ top: 0 });
         }
-        // Centre the timeline on today's node
+        // Centre the timeline sidebar on today's node — only done once here, never repeated
         const idx = allTlDates.indexOf(activeDate);
         if (idx >= 0) {
           const tlEl = document.getElementById('match-timeline');
@@ -1147,28 +1148,22 @@ function showTab(tab) {
           }
         }
         section.innerHTML = html;
-        // Re-run auto-scroll now that KO date headers are in the DOM
-        // (the initial setTimeout(80ms) fired before this async section was ready)
-        (() => {
+        // If the initial page scroll failed (today is a KO date, header wasn't in DOM yet),
+        // scroll now that the KO date headers exist. Never touch tlEl.scrollTop here —
+        // resetting the timeline scroll breaks date taps near boundaries.
+        if (!_initialScrollDone) {
           const todayIST = new Date(Date.now() + 5.5*60*60*1000).toISOString().slice(0,10);
           const activeDate = allTlDates.find(d => d >= todayIST) || allTlDates[allTlDates.length - 1];
-          if (!activeDate) return;
-          const headerEl = document.querySelector(`[data-date-header="${activeDate}"]`);
-          const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
-          if (headerEl) {
-            window.scrollTo({ top: headerEl.getBoundingClientRect().top + window.scrollY - headerH - 8 });
-          }
-          const idx = allTlDates.indexOf(activeDate);
-          if (idx >= 0) {
-            const tlEl = document.getElementById('match-timeline');
-            if (tlEl) {
-              const nodePx = TL_PAD + idx * TL_SPACING;
-              const tlH = tlEl.offsetHeight || (window.innerHeight * 0.75);
-              tlEl.scrollTop = Math.max(0, nodePx - tlH / 2);
+          if (activeDate) {
+            const headerEl = document.querySelector(`[data-date-header="${activeDate}"]`);
+            const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
+            if (headerEl) {
+              window.scrollTo({ top: headerEl.getBoundingClientRect().top + window.scrollY - headerH - 8 });
+              _initialScrollDone = true;
             }
+            updateTimelineActive();
           }
-          updateTimelineActive();
-        })();
+        }
         // Restore saved KO predictions
         Object.values(koData).forEach(list => list.forEach(ev => {
           const matchId = 'ko-' + (ev.espnId || ev.date);
