@@ -385,8 +385,14 @@ function mdRenderSummary(data, norm) {
   const m       = MD.match;
   const accent  = APP.teamColor || '#f0a500';
 
-  // Include Halftime event so we can use it as the divider trigger
-  const keep = events.filter(e => /goal|card|substitution|penalty|halftime/i.test(e.type?.text || ''));
+  // Keep all meaningful events; filter out pure noise (kickoff, delay pairs)
+  const keep = events.filter(e => {
+    const t = (e.type?.text || '').toLowerCase();
+    if (/^kickoff$/i.test(e.type?.text || '')) return false;
+    if (/^end delay$/i.test(e.type?.text || '')) return false; // end-delay is noise; start-delay carries the text
+    return /goal|card|substitution|penalty|halftime|start 2nd|end regular|start delay/i.test(e.type?.text || '');
+  });
+
   if (!keep.length) return `
     <div style="${mdGlass()};padding:2rem 1rem;text-align:center">
       <div style="font-size:2rem;margin-bottom:0.5rem">📋</div>
@@ -401,8 +407,9 @@ function mdRenderSummary(data, norm) {
     const isHome   = e.team?.id && String(e.team.id) === String(homeId);
     const min      = e.clock?.displayValue || '';
     const parts    = e.participants || [];
+    const espnText = e.text || ''; // rich description from ESPN
 
-    // ESPN provides a Halftime event — use it as the divider
+    // ── Dividers ──
     if (/halftime/i.test(typeText)) {
       return `
         <div style="display:flex;align-items:center;gap:0.5rem;margin:0.6rem 0">
@@ -411,69 +418,121 @@ function mdRenderSummary(data, norm) {
           <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
         </div>`;
     }
+    if (/start 2nd half/i.test(typeText)) {
+      return `
+        <div style="display:flex;align-items:center;gap:0.5rem;margin:0.6rem 0">
+          <div style="flex:1;height:1px;background:rgba(167,139,250,0.15)"></div>
+          <div style="font-size:0.6rem;font-weight:700;color:rgba(167,139,250,0.5);letter-spacing:1px;white-space:nowrap">2ND HALF</div>
+          <div style="flex:1;height:1px;background:rgba(167,139,250,0.15)"></div>
+        </div>`;
+    }
+    if (/end regular time/i.test(typeText)) {
+      return `
+        <div style="display:flex;align-items:center;gap:0.5rem;margin:0.6rem 0">
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+          <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:1px;white-space:nowrap">EXTRA TIME</div>
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+        </div>`;
+    }
+
+    // ── Delay (drinks break / VAR check) ──
+    if (/start delay/i.test(typeText)) {
+      const isVAR = /var/i.test(espnText);
+      const label = isVAR ? '🖥️ VAR Check' : '⏸️ ' + (espnText || 'Delay');
+      const teamName = e.team?.displayName || '';
+      return `
+        <div style="display:flex;align-items:center;gap:0.5rem;margin:0.3rem 0">
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.05)"></div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.25);letter-spacing:0.5px;white-space:nowrap">${min ? min + ' · ' : ''}${label}${teamName ? ' · ' + teamName : ''}</div>
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.05)"></div>
+        </div>`;
+    }
 
     let iconEl = '', detail = '', subDetail = '';
 
-    if (/goal/i.test(typeText)) {
-      const isOG  = /own goal/i.test(typeText);
-      const isPK  = /penalty/i.test(typeText);
-      // ESPN participants have no type.text — parts[0] = scorer, parts[1] = assister
+    // ── Goals ──
+    if (/goal/i.test(typeText) && !/penalty\s*-\s*(miss|saved)/i.test(typeText)) {
+      const isOG     = /own goal/i.test(typeText);
+      const isPK     = /penalty\s*-\s*scored/i.test(typeText);
+      const isHeader = /header/i.test(typeText);
+      const isFree   = /free.?kick/i.test(espnText);
       const scorer   = parts[0]?.athlete?.displayName || '';
       const assister = parts[1]?.athlete?.displayName || '';
       if (isHome) hGoals++; else aGoals++;
-      iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:${isOG ? 'rgba(255,255,255,0.15)' : '#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">⚽</div>`;
-      detail = `<div style="font-size:0.8rem;font-weight:700;color:#fff">${scorer}${isOG ? ' <span style="color:rgba(255,255,255,0.4);font-size:0.65rem">(OG)</span>' : ''}${isPK ? ' <span style="color:#f0a500;font-size:0.65rem">(P)</span>' : ''}</div>`;
-      if (assister) subDetail = `<div style="font-size:0.65rem;color:rgba(255,255,255,0.4);margin-top:1px">Assist: ${assister}</div>`;
-      subDetail += `<div style="font-size:0.62rem;color:${accent};font-weight:800;margin-top:2px">${hGoals}–${aGoals}</div>`;
+      iconEl = `<div style="width:22px;height:22px;border-radius:50%;background:${isOG ? 'rgba(255,255,255,0.12)' : '#fff'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem">${isOG ? '🙈' : '⚽'}</div>`;
+      const badges = [
+        isOG     ? `<span style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);font-size:0.58rem;padding:1px 5px;border-radius:4px;font-weight:700">OG</span>` : '',
+        isPK     ? `<span style="background:rgba(240,165,0,0.18);color:#f0a500;font-size:0.58rem;padding:1px 5px;border-radius:4px;font-weight:700">PEN</span>` : '',
+        isHeader ? `<span style="background:rgba(96,165,250,0.15);color:#60a5fa;font-size:0.58rem;padding:1px 5px;border-radius:4px;font-weight:700">HDR</span>` : '',
+        isFree   ? `<span style="background:rgba(167,139,250,0.15);color:#a78bfa;font-size:0.58rem;padding:1px 5px;border-radius:4px;font-weight:700">FK</span>` : '',
+      ].filter(Boolean).join(' ');
+      detail = `<div style="font-size:0.8rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:4px;flex-wrap:wrap">${scorer} ${badges}</div>`;
+      if (assister) subDetail += `<div style="font-size:0.63rem;color:rgba(255,255,255,0.4);margin-top:1px">▶ ${assister}</div>`;
+      subDetail += `<div style="font-size:0.63rem;color:${accent};font-weight:800;margin-top:2px">${hGoals}–${aGoals}</div>`;
+
+    // ── Cards ──
     } else if (/yellow.*red|red.*yellow/i.test(typeText)) {
       const player = parts[0]?.athlete?.displayName || '';
-      iconEl = `<div style="position:relative;width:14px;height:18px;flex-shrink:0"><div style="position:absolute;width:12px;height:16px;background:#f59e0b;border-radius:2px;top:0;left:0"></div><div style="position:absolute;width:12px;height:16px;background:#ef4444;border-radius:2px;top:2px;left:2px"></div></div>`;
+      const reason = espnText.match(/for\s+(.+?)\.?\s*$/i)?.[1] || '';
+      iconEl = `<div style="position:relative;width:16px;height:20px;flex-shrink:0"><div style="position:absolute;width:12px;height:16px;background:#f59e0b;border-radius:2px;top:0;left:0"></div><div style="position:absolute;width:12px;height:16px;background:#ef4444;border-radius:2px;top:4px;left:4px"></div></div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:#fff">${player}</div>`;
-      subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">Second Yellow / Red</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">2nd Yellow / Red${reason ? ' · ' + reason : ''}</div>`;
     } else if (/red/i.test(typeText)) {
       const player = parts[0]?.athlete?.displayName || '';
+      const reason = espnText.match(/for\s+(.+?)\.?\s*$/i)?.[1] || '';
       iconEl = `<div style="width:14px;height:18px;background:#ef4444;border-radius:2px;flex-shrink:0"></div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:#fff">${player}</div>`;
-      subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">Red Card</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:#ef4444">Red Card${reason ? ' · ' + reason : ''}</div>`;
     } else if (/yellow/i.test(typeText)) {
       const player = parts[0]?.athlete?.displayName || '';
+      const reason = espnText.match(/for\s+(.+?)\.?\s*$/i)?.[1] || '';
       iconEl = `<div style="width:14px;height:18px;background:#f59e0b;border-radius:2px;flex-shrink:0"></div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:#fff">${player}</div>`;
-      subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">Yellow Card</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:#f59e0b">Yellow Card${reason ? ' · ' + reason : ''}</div>`;
+
+    // ── Penalty events (non-goal) ──
     } else if (/penalty\s*-\s*miss/i.test(typeText)) {
       const player = parts[0]?.athlete?.displayName || '';
-      iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">❌</div>`;
+      iconEl = `<div style="width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.8rem">❌</div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.7)">${player}</div>`;
-      subDetail = `<div style="font-size:0.62rem;color:rgba(255,100,100,0.8)">Penalty Missed</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:#ef4444;font-weight:700">Penalty Missed</div>`;
     } else if (/penalty\s*-\s*saved/i.test(typeText)) {
-      // parts[0] = taker, parts[1] = goalkeeper
       const taker  = parts[0]?.athlete?.displayName || '';
-      const keeper = parts[1]?.athlete?.displayName || '';
-      iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">🧤</div>`;
+      // Try to extract keeper name from espnText "saved by X"
+      const keeperMatch = espnText.match(/saved.*?by\s+([A-ZÀ-ÖØ-öø-ÿ][^\(\.]+)/i);
+      const keeper = keeperMatch?.[1]?.trim() || parts[1]?.athlete?.displayName || '';
+      iconEl = `<div style="width:22px;height:22px;border-radius:50%;background:rgba(74,222,128,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.8rem">🧤</div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.7)">${taker}</div>`;
-      subDetail = `<div style="font-size:0.62rem;color:#4ade80">Saved${keeper ? ' by ' + keeper : ''}</div>`;
+      subDetail = `<div style="font-size:0.62rem;color:#4ade80;font-weight:700">Penalty Saved${keeper ? ' · ' + keeper : ''}</div>`;
     } else if (/penalty/i.test(typeText)) {
       const player = parts[0]?.athlete?.displayName || '';
-      iconEl = `<div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.7rem">🥅</div>`;
+      iconEl = `<div style="width:22px;height:22px;border-radius:50%;background:rgba(240,165,0,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.8rem">🥅</div>`;
       detail = `<div style="font-size:0.78rem;font-weight:700;color:#f0a500">${player}</div>`;
       subDetail = `<div style="font-size:0.62rem;color:rgba(255,255,255,0.4)">${typeText}</div>`;
+
+    // ── Substitutions ──
     } else if (/substitution/i.test(typeText)) {
-      // ESPN parts[0] = player going OFF, parts[1] = player coming ON
       const off = parts[0]?.athlete?.displayName || '';
       const on  = parts[1]?.athlete?.displayName || '';
-      iconEl = `<div style="font-size:1rem;flex-shrink:0;line-height:1">🔁</div>`;
+      // Check if ESPN text mentions injury
+      const isInjury = /injury|injur/i.test(espnText);
+      iconEl = `<div style="font-size:1rem;flex-shrink:0;line-height:1">${isInjury ? '🚑' : '🔁'}</div>`;
       detail = on
         ? `<div style="font-size:0.73rem;font-weight:700;color:#4ade80">▲ ${on}</div><div style="font-size:0.73rem;color:rgba(255,255,255,0.45)">▼ ${off}</div>`
         : `<div style="font-size:0.73rem;font-weight:700;color:#fff">${off}</div>`;
+      if (isInjury) subDetail = `<div style="font-size:0.58rem;color:rgba(248,113,113,0.7);margin-top:1px">Injury</div>`;
     } else {
       const player = parts[0]?.athlete?.displayName || '';
       iconEl = `<div style="font-size:0.75rem;flex-shrink:0">•</div>`;
       detail = `<div style="font-size:0.75rem;color:#fff">${player ? player + ' — ' : ''}${typeText}</div>`;
     }
 
+    // Skip empty detail (dividers handled above already returned)
+    if (!detail) return '';
+
     const minBadge = `<div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.35);white-space:nowrap;min-width:28px;text-align:center">${min}</div>`;
 
-    // Home events: icon-left, content-left; Away: mirrored
+    // Home: icon-left; Away: icon-right (mirrored)
     const evRow = isHome
       ? `<div style="display:flex;align-items:flex-start;gap:0.4rem">
            ${iconEl}
@@ -489,7 +548,7 @@ function mdRenderSummary(data, norm) {
          </div>`;
 
     return `<div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05)">${evRow}</div>`;
-  }).join('');
+  }).filter(Boolean).join('');
 
   // Column headers
   const headers = `
@@ -498,5 +557,5 @@ function mdRenderSummary(data, norm) {
       <div style="font-size:0.65rem;font-weight:800;color:#4cc9f0;letter-spacing:0.5px">${m.away}</div>
     </div>`;
 
-  return `<div style="${mdGlass()};padding:0.75rem 1rem">${headers}${rows}</div>`;
+  return `<div style="${mdGlass()};padding:0.75rem 1rem">${headers}${rows || '<div style="text-align:center;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:1rem">No events yet.</div>'}</div>`;
 }
