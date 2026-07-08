@@ -1147,7 +1147,28 @@ function showTab(tab) {
           }
         }
         section.innerHTML = html;
-        updateTimelineActive();
+        // Re-run auto-scroll now that KO date headers are in the DOM
+        // (the initial setTimeout(80ms) fired before this async section was ready)
+        (() => {
+          const todayIST = new Date(Date.now() + 5.5*60*60*1000).toISOString().slice(0,10);
+          const activeDate = allTlDates.find(d => d >= todayIST) || allTlDates[allTlDates.length - 1];
+          if (!activeDate) return;
+          const headerEl = document.querySelector(`[data-date-header="${activeDate}"]`);
+          const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
+          if (headerEl) {
+            window.scrollTo({ top: headerEl.getBoundingClientRect().top + window.scrollY - headerH - 8 });
+          }
+          const idx = allTlDates.indexOf(activeDate);
+          if (idx >= 0) {
+            const tlEl = document.getElementById('match-timeline');
+            if (tlEl) {
+              const nodePx = TL_PAD + idx * TL_SPACING;
+              const tlH = tlEl.offsetHeight || (window.innerHeight * 0.75);
+              tlEl.scrollTop = Math.max(0, nodePx - tlH / 2);
+            }
+          }
+          updateTimelineActive();
+        })();
         // Restore saved KO predictions
         Object.values(koData).forEach(list => list.forEach(ev => {
           const matchId = 'ko-' + (ev.espnId || ev.date);
