@@ -1409,6 +1409,11 @@ function showTab(tab) {
         const m = MATCHES.find(x => x.id === topMatchId);
         el.textContent = m ? `${m.home} vs ${m.away}` : 'No predictions yet';
       });
+
+    // Recall Match Memory
+    const recallContainer = document.createElement('div');
+    content.appendChild(recallContainer);
+    if (typeof renderRecall === 'function') renderRecall(recallContainer);
   }
 }
 
