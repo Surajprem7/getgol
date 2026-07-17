@@ -483,6 +483,7 @@ function updateTimelineActive() {
   const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
   const mid = headerH + (window.innerHeight - headerH) * 0.35;
   headers.forEach(h => {
+    if (h.offsetParent === null) return; // skip headers inside display:none containers
     const rect = h.getBoundingClientRect();
     if (rect.top <= mid) activeDate = h.dataset.dateHeader;
   });
