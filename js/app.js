@@ -257,6 +257,8 @@ function showApp(startTab) {
             <span class="gol-tagline" style="color:#f0a500;font-size:0.7rem;font-style:italic;margin-left:0.4rem;opacity:0.8;transition:opacity 0.3s">¡Pasion por el Gol!</span>
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem">
+            <button id="today-btn" onclick="scrollToToday()" title="Jump to today"
+              style="display:none;background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.4);border-radius:20px;font-size:0.78rem;font-weight:700;cursor:pointer;padding:0.4rem 0.75rem;color:#f0a500;white-space:nowrap">Today</button>
             <button id="notif-bell" onclick="toggleNotifications()" title="Tap to enable match alerts"
               style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0.4rem 0.75rem;display:flex;align-items:center;gap:0.3rem;flex-shrink:0;white-space:nowrap;color:rgba(255,255,255,0.6)">🔕 Alerts</button>
             ${headerRight}
@@ -464,6 +466,15 @@ function startTour() {
   render(el, steps[0], 0);
 }
 
+function scrollToToday() {
+  const todayIST = new Date(Date.now() + 5.5*60*60*1000).toISOString().slice(0,10);
+  const headers = [...document.querySelectorAll('[data-date-header]')].filter(h => h.offsetParent !== null);
+  const target = headers.find(h => h.dataset.dateHeader >= todayIST) || headers[headers.length - 1];
+  if (!target) return;
+  const headerH = document.getElementById('gol-header')?.getBoundingClientRect().height || 72;
+  window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - headerH - 8, behavior: 'smooth' });
+}
+
 function jumpToDate(date) {
   const el = document.querySelector(`[data-date-header="${date}"]`);
   if (!el) return;
@@ -557,6 +568,8 @@ function shortScoreHTML(matchId) {
 
 function showTab(tab) {
   window._activeTab = tab;
+  const todayBtn = document.getElementById('today-btn');
+  if (todayBtn) todayBtn.style.display = tab === 'matches' ? 'inline-block' : 'none';
   // Remove any floating hint from knockout tab
   const oldHint = document.getElementById('ko-bracket-hint');
   if (oldHint) oldHint.remove();
